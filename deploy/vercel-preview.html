@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#11100e" />
+  <meta name="description" content="PACKSHIFT — packaging as a compiled surface." />
+  <title>PACKSHIFT — Day 19</title>
+  <style>
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f1efe9;
+  background: #11100e;
+  font-synthesis: none;
+  --ink: #11100e;
+  --ivory: #f2ede2;
+  --paper: #e8dfcf;
+  --muted: #938f87;
+  --line: rgba(255,255,255,.12);
+  --blue: #6ea8ff;
+  --red: #ff665f;
+}
+*{box-sizing:border-box}
+body{margin:0;min-width:320px;background:#11100e;color:#f4f1e9;overflow-x:hidden}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.app-shell{min-height:100vh;background:radial-gradient(circle at 55% 46%,rgba(255,255,255,.055),transparent 35%),#11100e}
+.topbar{min-height:122px;padding:24px 30px 20px;display:grid;grid-template-columns:1.15fr 1fr auto;gap:24px;align-items:end;border-bottom:1px solid var(--line)}
+.eyebrow,.control-label{font-size:10px;letter-spacing:.2em;color:#8f8b83}
+h1{font-family:Georgia,serif;font-weight:500;font-size:48px;line-height:.9;margin:8px 0 0;letter-spacing:-.05em}
+.thesis{margin:0;font-family:Georgia,serif;font-size:18px;line-height:1.25;color:#d8d2c8}
+.demo-button,.compile-button{border:1px solid #55514b;background:transparent;padding:14px 18px;letter-spacing:.12em;font-size:11px;cursor:pointer;transition:.25s}
+.demo-button:hover,.compile-button:hover{background:#f1eee5;color:#11100e}
+.demo-button:disabled{opacity:.45;cursor:default}
+.workbench{min-height:calc(100vh - 122px);display:grid;grid-template-columns:260px minmax(520px,1fr) 270px}
+.controls,.inspector{padding:24px;border-right:1px solid var(--line)}
+.inspector{border-right:0;border-left:1px solid var(--line)}
+.control-group{margin:32px 0 22px}.control-group>span,.pressure-meter span,.runtime-state span{display:block;color:#77736c;font-size:10px;letter-spacing:.16em;margin-bottom:10px}
+.segmented{display:grid;grid-template-columns:1fr 1fr;border:1px solid #3e3a35}.segmented button{border:0;background:transparent;padding:11px 8px;font-size:11px;cursor:pointer}.segmented button.active{background:#ece7dc;color:#11100e}
+.constraint{width:100%;display:grid;grid-template-columns:30px 1fr;text-align:left;gap:10px;align-items:center;background:transparent;border:0;border-top:1px solid #2f2c29;padding:15px 0;cursor:pointer}.constraint:last-of-type{border-bottom:1px solid #2f2c29}.constraint b{display:block;font-size:11px;letter-spacing:.08em}.constraint small{display:block;color:#6f6b65;margin-top:4px}.toggle-indicator{display:grid;place-items:center;width:24px;height:24px;border:1px solid #514d47;color:#aaa}.constraint.checked .toggle-indicator{background:#eee9dd;color:#11100e;border-color:#eee9dd}
+.pressure-meter{margin:26px 0}.meter-row{display:flex;justify-content:space-between;align-items:center}.meter-row span{margin:0}.meter-row strong{font-family:Georgia,serif;font-size:28px;font-weight:400}.meter-track{height:2px;background:#322f2b;margin-top:12px;overflow:hidden}.meter-track i{display:block;height:100%;background:linear-gradient(90deg,#706e67,#eee9dd,#ff665f);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.compile-button{width:100%;margin-top:4px}.compile-button.urgent{border-color:rgba(255,102,95,.8);box-shadow:0 0 32px rgba(255,102,95,.12)}
+.stage{position:relative;overflow:hidden;min-height:650px;display:grid;place-items:center;perspective:1200px}
+.stage-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at center,#000 0,transparent 72%)}
+.axis{position:absolute;background:rgba(255,255,255,.09)}.axis-x{height:1px;width:82%;left:9%;top:50%}.axis-y{width:1px;height:78%;top:11%;left:50%}
+.force-field{position:absolute;top:25%;bottom:22%;width:21%;border:1px solid rgba(255,255,255,.11);transition:.7s cubic-bezier(.2,.8,.2,1);backdrop-filter:blur(3px);z-index:1}.force-field span{position:absolute;top:-22px;font-size:9px;letter-spacing:.14em;color:#716e68}.force-left{left:9%;background:linear-gradient(90deg,rgba(255,102,95,.26),rgba(255,102,95,.04));border-color:rgba(255,102,95,.35)}.force-right{right:9%;background:linear-gradient(270deg,rgba(110,168,255,.25),rgba(110,168,255,.03));border-color:rgba(110,168,255,.35)}
+.is-collision .force-left{transform:translateX(42px)}.is-collision .force-right{transform:translateX(-42px)}.is-compiled .force-left,.is-compiled .force-right{opacity:.22!important;transform:none}
+.carton-wrap{position:relative;width:300px;height:440px;transform-style:preserve-3d;z-index:3;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.is-collision .carton-wrap{transform:scale(.96) rotateY(-4deg)}.is-compiled .carton-wrap{transform:scale(.98) rotateY(4deg)}
+.halo{position:absolute;inset:20px;border:1px solid rgba(255,255,255,.15);box-shadow:0 0 80px rgba(255,255,255,.07)}
+.carton{position:absolute;left:50%;top:50%;width:170px;height:330px;transform-style:preserve-3d;transform:translate(-50%,-50%) rotateY(-18deg) rotateX(1deg);transition:.8s cubic-bezier(.2,.8,.2,1)}
+.is-compiled .carton{transform:translate(-50%,-50%) rotateY(-12deg) rotateX(0)}
+.face{position:absolute;background:linear-gradient(145deg,#f6f0e3,#e3dac9);color:#151310;border:1px solid rgba(34,28,20,.22);box-shadow:inset 0 0 30px rgba(70,45,20,.05)}
+.front-face{width:170px;height:330px;left:0;top:0;transform:translateZ(42px);padding:20px 17px 14px;overflow:hidden}
+.side-face{width:84px;height:330px;left:128px;top:0;transform:rotateY(90deg) translateZ(42px);transform-origin:center;color:#221f1a;padding:22px 11px;background:linear-gradient(90deg,#ded4c2,#eee6d8)}
+.edge-face{width:170px;height:84px;left:0;top:-42px;transform:rotateX(90deg) translateZ(42px);background:#e7dece}
+.carton-top{position:absolute;top:-22px;left:58px;width:56px;height:24px;border-radius:3px 3px 0 0;background:#e7dece;border:1px solid rgba(34,28,20,.2);transform:translateZ(45px);z-index:4}.carton-top span{position:absolute;width:34px;height:11px;border:1px solid #b8ad9e;border-radius:50%;left:10px;top:-6px;background:#eee6d8}
+.brand{font-family:Georgia,serif;font-size:18px;margin-bottom:22px}.product-name{font-weight:800;font-size:33px;line-height:.88;letter-spacing:-.055em;transform:scale(var(--density));transform-origin:left top;transition:.8s}.variant{font-weight:700;margin-top:7px;font-size:14px}.divider{height:1px;background:#1b1916;width:44px;margin:12px 0}.descriptor{font-family:Georgia,serif;font-size:8px;line-height:1.4;color:#4e493f}.claim{position:absolute;left:16px;bottom:64px;font-weight:900;font-size:23px;line-height:.84;letter-spacing:-.055em;transition:.55s cubic-bezier(.2,.8,.2,1);transform:scale(var(--density));transform-origin:left bottom}.claim-collision{background:rgba(255,88,76,.16);box-shadow:0 0 0 8px rgba(255,88,76,.09)}
+.oat-mark{position:absolute;width:72px;height:130px;right:0;bottom:30px;color:#bb8f55;opacity:.72}.bottom-row{position:absolute;left:16px;right:15px;bottom:12px;display:flex;justify-content:space-between;font-size:10px}
+.side-title{font-size:9px;font-weight:800;letter-spacing:.12em;margin-bottom:10px}.nutrition-line{height:1px;background:#615b51;margin:8px 0;opacity:.6}.qr{width:38px;height:38px;margin-top:18px;background:#f7f3ea;padding:4px}.qr svg{display:block;width:100%;height:100%;fill:#111}.symbols{position:absolute;bottom:18px;left:10px;font-size:13px;letter-spacing:.25em}
+.wireframe{position:absolute;border:1px solid rgba(255,255,255,.16);left:50%;top:50%;transform:translate(-50%,-50%);transition:.8s}.wf-a{width:220px;height:380px}.wf-b{width:252px;height:410px;border-color:rgba(110,168,255,.18)}.wf-c{width:280px;height:435px;border-color:rgba(255,102,95,.14)}.is-collision .wf-a{width:200px}.is-collision .wf-c{width:240px}.is-compiled .wireframe{opacity:.38}
+.collision-note{position:absolute;left:50%;top:12%;transform:translate(-50%,-12px);display:flex;gap:12px;align-items:center;background:#581f1d;border:1px solid #a43d38;padding:11px 14px;opacity:0;pointer-events:none;transition:.35s;z-index:8}.collision-note.show{opacity:1;transform:translate(-50%,0)}.warning{display:grid;place-items:center;width:24px;height:24px;border:1px solid #fff;font-weight:800}.collision-note b,.collision-note small{display:block}.collision-note b{font-size:10px;letter-spacing:.12em}.collision-note small{font-size:9px;color:#d6a8a5;margin-top:3px}
+.compile-trace{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);display:flex;gap:8px;opacity:0;transition:.45s}.compile-trace.show{opacity:1}.compile-trace span{font-size:8px;letter-spacing:.12em;border:1px solid rgba(110,168,255,.3);background:rgba(18,31,52,.72);padding:8px 9px;color:#b8d2ff}
+.runtime-state{margin:32px 0 24px;padding-bottom:24px;border-bottom:1px solid #2f2c29}.runtime-state span{margin-bottom:5px}.runtime-state strong{font-family:Georgia,serif;font-weight:400;font-size:26px}.runtime-state strong.collision{color:#ff7770}.runtime-state strong.valid-form{color:#dcebdc}.runtime-list{border-top:1px solid #2f2c29}.runtime-row{display:flex;justify-content:space-between;border-bottom:1px solid #2f2c29;padding:13px 0;color:#56524d;font-size:11px}.runtime-row.active{color:#ded9cf}.runtime-row strong{font-weight:500}
+.valid-card{margin-top:24px;border:1px solid #3b483a;padding:13px;display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;opacity:0;transform:translateY(8px);transition:.4s}.valid-card.show{opacity:1;transform:none}.check{display:grid;place-items:center;background:#e9eee6;color:#111;width:25px;height:25px}.valid-card b,.valid-card small{display:block}.valid-card b{font-size:10px;letter-spacing:.1em}.valid-card small{color:#7d887a;font-size:9px;margin-top:4px}
+.signature{margin-top:44px;display:grid;grid-template-columns:auto 12px;align-items:center;gap:7px;color:#66625c;font-size:8px;letter-spacing:.11em}.signature i{font-style:normal;color:#3f3b36}.signature span:last-child{color:#b8b2a8}
+@media (max-width: 1050px){.workbench{grid-template-columns:220px minmax(430px,1fr)}.inspector{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 2fr 1fr;gap:20px}.signature{display:none}.runtime-state{margin:0}.valid-card{margin:0}.runtime-list{border:0}}
+@media (max-width: 760px){.topbar{grid-template-columns:1fr auto;padding:18px}.thesis{grid-column:1/-1;grid-row:2}.topbar h1{font-size:38px}.workbench{display:flex;flex-direction:column}.controls{order:2;border-right:0;border-top:1px solid var(--line)}.stage{order:1;min-height:580px}.inspector{order:3;display:block}.carton-wrap{transform:scale(.85)}.force-field{width:25%}.compile-trace{max-width:92%;flex-wrap:wrap;justify-content:center}.demo-button{padding:10px}.controls,.inspector{padding:18px}.segmented{max-width:320px}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+</style>
+</head>
+<body>
+<main class="app-shell">
+  <header class="topbar">
+    <div><div class="eyebrow">DAY 19 / CONSTRAINT COMPILER</div><h1>PACKSHIFT</h1></div>
+    <p class="thesis">Packaging is not a file.<br/>It is a compiled surface.</p>
+    <button class="demo-button" id="runDemo">RUN 15S DEMO</button>
+  </header>
+
+  <section class="workbench">
+    <aside class="controls">
+      <div class="control-label">INPUT CONSTRAINTS</div>
+      <div class="control-group">
+        <span>MARKET</span>
+        <div class="segmented">
+          <button id="marketEU">EU</button>
+          <button id="marketCA">CANADA</button>
+        </div>
+      </div>
+      <button class="constraint" id="toggleBilingual"><span class="toggle-indicator">+</span><span><b>FR / EN</b><small>language</small></span></button>
+      <button class="constraint" id="toggleData"><span class="toggle-indicator">+</span><span><b>DATA CARRIER</b><small>QR / recycling</small></span></button>
+      <button class="constraint" id="toggleClaim"><span class="toggle-indicator">+</span><span><b>24H HYDRATION</b><small>marketing claim</small></span></button>
+      <div class="pressure-meter">
+        <div class="meter-row"><span>SURFACE PRESSURE</span><strong id="pressureValue">28%</strong></div>
+        <div class="meter-track"><i id="pressureBar"></i></div>
+      </div>
+      <button class="compile-button" id="compile">COMPILE SURFACE</button>
+    </aside>
+
+    <section class="stage" id="stage">
+      <div class="stage-grid"></div><div class="axis axis-x"></div><div class="axis axis-y"></div>
+      <div class="force-field force-left" id="forceLeft"><span>LANGUAGE / CLAIM</span></div>
+      <div class="force-field force-right" id="forceRight"><span>DATA / RECYCLING</span></div>
+
+      <div class="carton-wrap eu" id="cartonWrap">
+        <div class="halo"></div>
+        <div class="carton">
+          <div class="carton-top"><span></span></div>
+          <div class="face front-face">
+            <div class="brand">Nord</div>
+            <div class="product-name" id="productName">OAT<br/>MILK</div>
+            <div class="variant">Barista</div>
+            <div class="divider"></div>
+            <div class="descriptor" id="descriptor">Smooth &amp; creamy<br/>Plant-based<br/>No added sugar</div>
+            <div class="claim" id="claim">24H<br/>HYDRATION</div>
+            <svg class="oat-mark" viewBox="0 0 110 180" aria-hidden="true">
+              <path d="M56 170 C65 120 67 70 54 12" fill="none" stroke="currentColor" stroke-width="2" />
+              <g transform="translate(48 28) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(62 48) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(48 70) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(62 94) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(48 120) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+            </svg>
+            <div class="bottom-row"><span>1L ℮</span><span id="marketCode">EU</span></div>
+          </div>
+          <div class="face side-face">
+            <div class="side-title">NUTRITION</div>
+            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
+            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
+            <div class="qr" id="qr"><svg viewBox="0 0 7 7" aria-hidden="true">
+              <rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/>
+              <rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/>
+              <rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/>
+              <rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/>
+              <rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/>
+              <rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/>
+              <rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/>
+            </svg></div>
+            <div class="symbols">♻︎ ◌ ⊕</div>
+          </div>
+          <div class="face edge-face"></div>
+        </div>
+        <div class="wireframe wf-a"></div><div class="wireframe wf-b"></div><div class="wireframe wf-c"></div>
+      </div>
+
+      <div class="collision-note" id="collisionNote"><span class="warning">!</span><div><b>COLLISION DETECTED</b><small>Claim vs. mandatory information</small></div></div>
+      <div class="compile-trace" id="compileTrace"><span>REFLOW LAYOUT</span><span>RESIZE ELEMENTS</span><span>ADJUST HIERARCHY</span><span>VALIDATE CLEAR SPACE</span></div>
+    </section>
+
+    <aside class="inspector">
+      <div class="control-label">RUNTIME</div>
+      <div class="runtime-state"><span>STATUS</span><strong id="status">OPEN</strong></div>
+      <div class="runtime-list">
+        <div class="runtime-row active"><span>Mandatory info</span><strong id="mandatoryValue">+28%</strong></div>
+        <div class="runtime-row" id="rowLang"><span>Language</span><strong>—</strong></div>
+        <div class="runtime-row" id="rowData"><span>Data carrier</span><strong>—</strong></div>
+        <div class="runtime-row" id="rowClaim"><span>Claim</span><strong>—</strong></div>
+      </div>
+      <div class="valid-card" id="validCard"><span class="check">✓</span><div><b id="validText">VALID FOR EU</b><small>Compiled surface resolved</small></div></div>
+      <div class="signature"><span>CONSTRAINT</span><i>→</i><span>PRESSURE</span><i>→</i><span>COLLISION</span><i>→</i><span>REFLOW</span><i>→</i><span>VALID FORM</span></div>
+    </aside>
+  </section>
+</main>
+<script>
+const base = { market: 'EU', bilingual: false, dataCarrier: false, claim: false, compiled: false };
+let state = { ...base };
+let running = false;
+const $ = (id) => document.getElementById(id);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function pressure() {
+  let value = state.market === 'EU' ? 28 : 22;
+  if (state.bilingual) value += 18;
+  if (state.dataCarrier) value += 12;
+  if (state.claim) value += 20;
+  return value;
+}
+function collision() { return pressure() >= 70 && !state.compiled; }
+function setState(patch, preserveCompiled = false) {
+  state = { ...state, ...patch };
+  if (!preserveCompiled && !Object.prototype.hasOwnProperty.call(patch, 'compiled')) state.compiled = false;
+  render();
+}
+function renderToggle(id, active) {
+  const el = $(id); el.classList.toggle('checked', active); el.querySelector('.toggle-indicator').textContent = active ? '×' : '+';
+}
+function runtimeRow(id, active, value) {
+  const el = $(id); el.classList.toggle('active', active); el.querySelector('strong').textContent = active ? value : '—';
+}
+function render() {
+  const p = pressure(); const hit = collision();
+  $('marketEU').classList.toggle('active', state.market === 'EU');
+  $('marketCA').classList.toggle('active', state.market === 'CANADA');
+  renderToggle('toggleBilingual', state.bilingual); renderToggle('toggleData', state.dataCarrier); renderToggle('toggleClaim', state.claim);
+  $('pressureValue').textContent = `${p}%`; $('pressureBar').style.width = `${Math.min(100,p)}%`;
+  $('forceLeft').style.opacity = state.bilingual || state.claim ? 1 : 0; $('forceRight').style.opacity = state.dataCarrier ? 1 : 0;
+  $('stage').classList.toggle('is-collision', hit); $('stage').classList.toggle('is-compiled', state.compiled);
+  $('cartonWrap').className = `carton-wrap ${state.market.toLowerCase()}`;
+  const density = state.compiled ? Math.max(.72, 1 - p / 330) : 1; $('cartonWrap').style.setProperty('--density', density);
+  $('productName').innerHTML = state.market === 'EU' && state.bilingual ? 'BOISSON<br/>D’AVOINE' : 'OAT<br/>MILK';
+  $('descriptor').innerHTML = `Smooth & creamy<br/>${state.bilingual ? 'Onctueuse et crémeuse' : 'Plant-based'}<br/>No added sugar`;
+  $('marketCode').textContent = state.market === 'EU' ? 'EU' : 'CA';
+  $('claim').style.display = state.claim ? 'block' : 'none'; $('claim').classList.toggle('claim-collision', hit);
+  $('qr').style.display = state.dataCarrier ? 'block' : 'none';
+  $('collisionNote').classList.toggle('show', hit); $('compileTrace').classList.toggle('show', state.compiled);
+  const status = hit ? 'COLLISION' : state.compiled ? 'VALID FORM' : 'OPEN'; $('status').textContent = status; $('status').className = status.toLowerCase().replace(' ', '-');
+  $('mandatoryValue').textContent = state.market === 'EU' ? '+28%' : '+22%';
+  runtimeRow('rowLang', state.bilingual, '+18%'); runtimeRow('rowData', state.dataCarrier, '+12%'); runtimeRow('rowClaim', state.claim, '+20%');
+  $('validCard').classList.toggle('show', state.compiled); $('validText').textContent = `VALID FOR ${state.market}`;
+  $('compile').classList.toggle('urgent', hit);
+}
+
+$('marketEU').onclick = () => setState({ market:'EU' });
+$('marketCA').onclick = () => setState({ market:'CANADA' });
+$('toggleBilingual').onclick = () => setState({ bilingual:!state.bilingual });
+$('toggleData').onclick = () => setState({ dataCarrier:!state.dataCarrier });
+$('toggleClaim').onclick = () => setState({ claim:!state.claim });
+$('compile').onclick = () => setState({ compiled:true }, true);
+$('runDemo').onclick = async () => {
+  if (running) return; running = true; $('runDemo').disabled = true; $('runDemo').textContent = 'RUNNING…';
+  state={...base}; render(); await wait(900);
+  state={...base, market:'EU'}; render(); await wait(900);
+  state={...base, market:'EU', bilingual:true}; render(); await wait(900);
+  state={...base, market:'EU', bilingual:true, dataCarrier:true}; render(); await wait(900);
+  state={...base, market:'EU', bilingual:true, dataCarrier:true, claim:true}; render(); await wait(1200);
+  state={...base, market:'EU', bilingual:true, dataCarrier:true, claim:true, compiled:true}; render(); await wait(1500);
+  state={market:'CANADA', bilingual:true, dataCarrier:true, claim:true, compiled:true}; render();
+  running=false; $('runDemo').disabled=false; $('runDemo').textContent='RUN 15S DEMO';
+};
+render();
+
+</script>
+</body>
+</html>

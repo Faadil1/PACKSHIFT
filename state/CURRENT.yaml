@@ -1,0 +1,22 @@
+project: PACKSHIFT
+challenge: Day 19
+phase: VERTICAL_SLICE_BUILD
+north_star: "Packaging is not a file. It is a compiled surface."
+locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> REFLOW -> VALID FORM"
+visual_direction: "Industrial Constraint Machine + editorial typography + restrained paper materiality"
+truth_boundary: "Concept prototype; demo rule weights are not regulatory validation."
+current_scope:
+  - one carton master
+  - EU / Canada market switch
+  - bilingual pressure
+  - data carrier pressure
+  - 24H HYDRATION claim collision
+  - compile/reflow
+  - deterministic 15s demo
+status:
+  concept: PROVEN_FOR_BUILD
+  visual_direction: LOCKED
+  vertical_slice: IMPLEMENTED
+  production_build: PASSED
+  runtime_visual: BLOCKED_IN_CONTAINER_BROWSER
+next_gate: "Build + runtime visual verification"

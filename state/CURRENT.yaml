@@ -17,8 +17,11 @@ status:
   concept: PROVEN_FOR_BUILD
   visual_direction: LOCKED
   vertical_slice: IMPLEMENTED
-  production_build: PASSED
+  local_build: PASSED
+  github_branch_ci: PASSED
+  github_pr_ci: PASSED
+  built_artifact: AVAILABLE
   github_pr: DRAFT_DO_NOT_MERGE
-  github_actions_proof: REQUESTED
+  pages_enablement: BLOCKED_PROTECTED_HUMAN_ACTION
   runtime_visual: PENDING_PUBLIC_RUNTIME
-next_gate: "GitHub Actions build -> Pages deployment -> desktop/mobile runtime verification"
+next_gate: "Enable GitHub Pages once -> deploy branch artifact -> desktop/mobile runtime verification"

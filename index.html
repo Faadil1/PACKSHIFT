@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#11100e" />
+  <meta name="description" content="PACKSHIFT — packaging as a compiled surface." />
+  <title>PACKSHIFT — Day 19</title>
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+<body>
+<main class="app-shell">
+  <header class="topbar">
+    <div><div class="eyebrow">DAY 19 / CONSTRAINT COMPILER</div><h1>PACKSHIFT</h1></div>
+    <p class="thesis">Packaging is not a file.<br/>It is a compiled surface.</p>
+    <button class="demo-button" id="runDemo">RUN 15S DEMO</button>
+  </header>
+
+  <section class="workbench">
+    <aside class="controls">
+      <div class="control-label">INPUT CONSTRAINTS</div>
+      <div class="control-group">
+        <span>MARKET</span>
+        <div class="segmented">
+          <button id="marketEU">EU</button>
+          <button id="marketCA">CANADA</button>
+        </div>
+      </div>
+      <button class="constraint" id="toggleBilingual"><span class="toggle-indicator">+</span><span><b>FR / EN</b><small>language</small></span></button>
+      <button class="constraint" id="toggleData"><span class="toggle-indicator">+</span><span><b>DATA CARRIER</b><small>QR / recycling</small></span></button>
+      <button class="constraint" id="toggleClaim"><span class="toggle-indicator">+</span><span><b>24H HYDRATION</b><small>marketing claim</small></span></button>
+      <div class="pressure-meter">
+        <div class="meter-row"><span>SURFACE PRESSURE</span><strong id="pressureValue">28%</strong></div>
+        <div class="meter-track"><i id="pressureBar"></i></div>
+      </div>
+      <button class="compile-button" id="compile">COMPILE SURFACE</button>
+    </aside>
+
+    <section class="stage" id="stage">
+      <div class="stage-grid"></div><div class="axis axis-x"></div><div class="axis axis-y"></div>
+      <div class="force-field force-left" id="forceLeft"><span>LANGUAGE / CLAIM</span></div>
+      <div class="force-field force-right" id="forceRight"><span>DATA / RECYCLING</span></div>
+
+      <div class="carton-wrap eu" id="cartonWrap">
+        <div class="halo"></div>
+        <div class="carton">
+          <div class="carton-top"><span></span></div>
+          <div class="face front-face">
+            <div class="brand">Nord</div>
+            <div class="product-name" id="productName">OAT<br/>MILK</div>
+            <div class="variant">Barista</div>
+            <div class="divider"></div>
+            <div class="descriptor" id="descriptor">Smooth &amp; creamy<br/>Plant-based<br/>No added sugar</div>
+            <div class="claim" id="claim">24H<br/>HYDRATION</div>
+            <svg class="oat-mark" viewBox="0 0 110 180" aria-hidden="true">
+              <path d="M56 170 C65 120 67 70 54 12" fill="none" stroke="currentColor" stroke-width="2" />
+              <g transform="translate(48 28) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(62 48) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(48 70) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(62 94) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+              <g transform="translate(48 120) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
+            </svg>
+            <div class="bottom-row"><span>1L ℮</span><span id="marketCode">EU</span></div>
+          </div>
+          <div class="face side-face">
+            <div class="side-title">NUTRITION</div>
+            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
+            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
+            <div class="qr" id="qr"><svg viewBox="0 0 7 7" aria-hidden="true">
+              <rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/>
+              <rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/>
+              <rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/>
+              <rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/>
+              <rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/>
+              <rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/>
+              <rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/>
+            </svg></div>
+            <div class="symbols">♻︎ ◌ ⊕</div>
+          </div>
+          <div class="face edge-face"></div>
+        </div>
+        <div class="wireframe wf-a"></div><div class="wireframe wf-b"></div><div class="wireframe wf-c"></div>
+      </div>
+
+      <div class="collision-note" id="collisionNote"><span class="warning">!</span><div><b>COLLISION DETECTED</b><small>Claim vs. mandatory information</small></div></div>
+      <div class="compile-trace" id="compileTrace"><span>REFLOW LAYOUT</span><span>RESIZE ELEMENTS</span><span>ADJUST HIERARCHY</span><span>VALIDATE CLEAR SPACE</span></div>
+    </section>
+
+    <aside class="inspector">
+      <div class="control-label">RUNTIME</div>
+      <div class="runtime-state"><span>STATUS</span><strong id="status">OPEN</strong></div>
+      <div class="runtime-list">
+        <div class="runtime-row active"><span>Mandatory info</span><strong id="mandatoryValue">+28%</strong></div>
+        <div class="runtime-row" id="rowLang"><span>Language</span><strong>—</strong></div>
+        <div class="runtime-row" id="rowData"><span>Data carrier</span><strong>—</strong></div>
+        <div class="runtime-row" id="rowClaim"><span>Claim</span><strong>—</strong></div>
+      </div>
+      <div class="valid-card" id="validCard"><span class="check">✓</span><div><b id="validText">VALID FOR EU</b><small>Compiled surface resolved</small></div></div>
+      <div class="signature"><span>CONSTRAINT</span><i>→</i><span>PRESSURE</span><i>→</i><span>COLLISION</span><i>→</i><span>REFLOW</span><i>→</i><span>VALID FORM</span></div>
+    </aside>
+  </section>
+</main>
+<script src="./src/app.js"></script>
+</body>
+</html>

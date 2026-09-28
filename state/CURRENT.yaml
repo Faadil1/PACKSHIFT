@@ -22,6 +22,8 @@ status:
   github_pr_ci: PASSED
   built_artifact: AVAILABLE
   github_pr: DRAFT_DO_NOT_MERGE
-  pages_enablement: BLOCKED_PROTECTED_HUMAN_ACTION
+  pages_enablement: NOT_REQUIRED_FOR_VERCEL_PATH
+  vercel_config: READY
+  vercel_deploy_action: BLOCKED_CONNECTOR_WRITE_TOOL_UNAVAILABLE
   runtime_visual: PENDING_PUBLIC_RUNTIME
-next_gate: "Enable GitHub Pages once -> deploy branch artifact -> desktop/mobile runtime verification"
+next_gate: "Import day19/vertical-slice into Vercel -> deploy -> desktop/mobile runtime verification"

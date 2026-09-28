@@ -1,0 +1,15 @@
+project: PACKSHIFT
+handover_version: 0.1
+resume_from: "Run npm install, npm run build, then visually verify desktop/mobile and deterministic demo sequence."
+do_not_change:
+  - central physical package interaction
+  - locked interaction signature
+  - truth boundary around regulatory validity
+  - anti-dashboard / anti-chatbot direction
+verify:
+  - desktop composition
+  - 360-430px mobile behavior
+  - collision state visibility
+  - compile state readability
+  - EU -> Canada transition
+  - reduced-motion support

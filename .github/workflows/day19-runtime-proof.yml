@@ -1,4 +1,4 @@
-name: Day 19 Runtime Proof
+name: Day 19 Verify
 
 on:
   push:
@@ -8,12 +8,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages-day19
-  cancel-in-progress: true
 
 jobs:
   verify:
@@ -33,23 +27,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+      - name: Upload built site
+        uses: actions/upload-artifact@v4
         with:
-          enablement: true
-
-      - name: Upload static artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
+          name: packshift-day19-dist
           path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: verify
-    steps:
-      - name: Deploy Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

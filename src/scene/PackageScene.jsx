@@ -353,18 +353,18 @@ export function PackageScene({
       <group ref={rig} rotation={[-0.055, -0.26, 0]}>
         <Panel size={[WIDTH, HEIGHT]} texture={paperTexture} label="FRONT / 01">
           <div className="front-brand">NORD</div>
-          <div className="front-title">OAT<br />MILK</div>
-          <div className="front-variant">BARISTA</div>
+          <div className="front-title">HYDRA<br />VEIL</div>
+          <div className="front-variant">BARRIER CREAM</div>
           <div className="art-rule"></div>
           <div className="front-copy">
             {language ? (
-              <>Smooth &amp; creamy<br />Onctueux &amp; crémeux<br />No added sugar</>
+              <>Ceramide complex<br />Complexe aux céramides<br />Sensitive skin / Peaux sensibles</>
             ) : (
-              <>Smooth &amp; creamy<br />Plant-based<br />No added sugar</>
+              <>Ceramide complex<br />Barrier support<br />Sensitive skin</>
             )}
           </div>
           <div className={'front-claim ' + (claim ? 'show' : '')}>24H<br /><b>HYDRATION</b></div>
-          <div className="front-footer"><span>1 L ℮</span><span>{market === 'EU' ? 'EU' : 'CA'}</span></div>
+          <div className="front-footer"><span>50 mL ℮</span><span>{market === 'EU' ? 'EU' : 'CA'}</span></div>
         </Panel>
 
         <CollisionFrame active={collision} />
@@ -372,7 +372,7 @@ export function PackageScene({
         <group ref={rightHinge} position={[WIDTH / 2, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
           <group position={[DEPTH / 2, 0, 0]}>
             <Panel size={[DEPTH, HEIGHT]} texture={paperTexture} label="SIDE / DATA">
-              <div className="side-title">PRODUCT DATA</div>
+              <div className="side-title">FORMULA / PRODUCT DATA</div>
               <div className="fake-lines">{Array.from({ length: 7 }).map((_, i) => <i key={i} />)}</div>
               <div className={'qr-grid ' + (data ? 'show' : '')}></div>
               <div className="side-foot">♻︎ &nbsp; ◌ &nbsp; ⊕</div>
@@ -384,7 +384,7 @@ export function PackageScene({
               <Panel size={[WIDTH, HEIGHT]} texture={paperTexture} label="BACK / 02">
                 <div className="back-title">ONE SOURCE.<br />EVERY MARKET.</div>
                 <p className="back-copy">
-                  Ingredients, disposal, claims and market copy migrate here when the front reaches its limit.
+                  Ingredients, directions, disposal and market copy migrate here when the front reaches its limit.
                 </p>
                 <div className="art-rule"></div>
                 <div className="back-foot">MASTER 01 / {market}</div>

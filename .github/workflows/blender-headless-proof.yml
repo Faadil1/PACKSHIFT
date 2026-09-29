@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/blender-master-pipeline
+      - feat/v5-spatial-negotiation-studio
     paths:
       - 'blender/**'
       - '.github/workflows/blender-headless-proof.yml'

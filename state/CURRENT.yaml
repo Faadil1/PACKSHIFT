@@ -65,9 +65,21 @@ status:
   deep_asset_contract: PROVEN
   static_blender_contract: PASSED
   vite_build: PASSED_ON_V5_CONTRACT_RUN
-  v5_runtime_integration: PENDING_FINAL_RUN
-  live_browser_visual_qa: PENDING
+  v5_runtime_integration: PASSED
+  live_browser_visual_qa: PENDING_USER_VISUAL_REVIEW
   mobile_qa: PENDING
   blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
 
-next_gate: "V5 runtime integration CI -> public preview -> desktop interaction QA -> mobile QA -> visual/memory-hook verdict"
+next_gate: "Public preview -> desktop interaction QA -> mobile QA -> Impossible Front memory-hook verdict -> promotion decision"
+
+
+v5_ci:
+  blender_master_contract_run: 36617468376
+  blender_master_contract: PASS
+  blender_runtime_integration_run: 36617468359
+  blender_runtime_integration: PASS
+  remote_blender_headless_run: 36617424391
+  remote_blender_headless: PASS
+  cloudflare_branch_preview: "https://feat-v5-spatial-negotiation.packshift-awd.pages.dev"
+  cloudflare_snapshot: "https://913bb94d.packshift-awd.pages.dev"
+  vercel_preview: "https://packshift-git-feat-v5-spatial-negotiat-6d517a-faadil1s-projects.vercel.app"

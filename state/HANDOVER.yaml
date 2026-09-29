@@ -4,8 +4,7 @@ active_branch: "feat/blender-master-pipeline"
 base_branch: "feat/threejs-compiler-scene"
 
 resume_from: >-
-  First use the remote headless Blender worker to prove the prepared master pipeline without requiring local Blender.
-  Do not replace the procedural Three.js V3 baseline until the GLB round-trip is proven. Add interactive remote Blender MCP only if it materially improves authoring.
+  Remote headless Blender is proven and the validated canonical GLB is now on the branch. Next, load that GLB in React Three Fiber and bind the exported hinge/anchor nodes. Preserve the procedural Three.js V3 baseline until runtime behavior is proven. Add interactive remote Blender MCP only if it materially improves authoring.
 
 preserve:
   - V2 production runtime on day19/vertical-slice
@@ -63,4 +62,12 @@ do_not_promote_if:
   - mobile_performance_or_legibility_regresses
   - concept_geometry_is_misrepresented_as_manufacturing_validated
 
-exact_next_gate: "REMOTE_HEADLESS_BLENDER_PROOF -> GLB_ARTIFACT_INSPECTION -> R3F_IMPORT -> RUNTIME_QA -> OPTIONAL_REMOTE_MCP"
+exact_next_gate: "CANONICAL_GLB -> R3F_IMPORT -> EXPORTED_HINGE_BINDING -> RUNTIME_QA -> OPTIONAL_REMOTE_MCP"
+
+
+remote_blender_proof:
+  status: PASS
+  evidence: blender/evidence/HEADLESS-REMOTE-PROOF-001.yaml
+  clean_glb_sha256: 49879f951341ecb4119a5c8432d4a7c4c03f1ba236c62cf7f6739cab2a0b0034
+  failure_recovery_observed: true
+  Blender_MCP_required_for_this_proof: false

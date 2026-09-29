@@ -31,6 +31,9 @@ jobs:
         run: |
           blender --background --python blender/scripts/ci_build_export.py
 
+      - name: Validate GLB contract
+        run: python3 blender/scripts/validate_glb.py
+
       - name: Inspect generated assets
         run: |
           test -f blender/PACKSHIFT_MASTER.blend

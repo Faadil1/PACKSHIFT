@@ -23,7 +23,8 @@ status:
   built_artifact: AVAILABLE
   github_pr: DRAFT_DO_NOT_MERGE
   pages_enablement: NOT_REQUIRED_FOR_VERCEL_PATH
-  vercel_config: READY
-  vercel_deploy_action: BLOCKED_CONNECTOR_WRITE_TOOL_UNAVAILABLE
+  vercel_config: READY_BUT_NOT_SELECTED
+  cloudflare_pages_config: READY
+  cloudflare_production_branch: "day19/vertical-slice"
   runtime_visual: PENDING_PUBLIC_RUNTIME
-next_gate: "Import day19/vertical-slice into Vercel -> deploy -> desktop/mobile runtime verification"
+next_gate: "Cloudflare Pages Git deploy -> verify pages.dev -> desktop/mobile runtime verification"

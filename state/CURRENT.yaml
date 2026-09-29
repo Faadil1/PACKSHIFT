@@ -71,7 +71,10 @@ status:
   blender_scripts_runtime_validation: PENDING_REAL_BLENDER_RUN
   glb_export: PROVEN_REMOTE_HEADLESS
   glb_contract: PASSED
-  threejs_glb_import: NOT_YET_PROVEN
+  threejs_glb_import: PROVEN_BUILD_INTEGRATION
+  blender_runtime_integration_ci: PASSED
+  blender_runtime_integration_run: 36573896774
+  live_browser_visual_qa: PENDING
   blender_mcp_promotion: BLOCKED_UNTIL_BENCHMARK_PASS
 
-next_gate: "Load canonical GLB in React Three Fiber -> bind exported hinges/anchors -> runtime fold/unfold/refold QA -> then decide whether interactive remote Blender MCP adds material value"
+next_gate: "Cloudflare/Vercel preview visual QA -> verify exported hinge fold/unfold/refold -> mobile QA -> decide whether interactive remote Blender MCP adds material value"

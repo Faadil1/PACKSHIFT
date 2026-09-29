@@ -1,87 +1,53 @@
 project: PACKSHIFT
-handover_version: 0.5
-active_branch: "feat/blender-master-pipeline"
-base_branch: "feat/threejs-compiler-scene"
+handover_version: 0.6
+active_branch: feat/v5-spatial-negotiation-studio
+base_branch: feat/blender-master-pipeline
 
 resume_from: >-
-  Remote headless Blender is proven and the validated canonical GLB is now on the branch. Next, load that GLB in React Three Fiber and bind the exported hinge/anchor nodes. Preserve the procedural Three.js V3 baseline until runtime behavior is proven. Add interactive remote Blender MCP only if it materially improves authoring.
+  V5 rebuild is implemented. The deep Blender asset is remotely proven. Verify the V5 runtime integration workflow,
+  then inspect the public preview for drag/raycast/orbit/decomposition/X-Ray/Pressure/Impossible-Front behavior.
+  Do not promote until live visual and interaction QA pass.
 
 preserve:
-  - V2 production runtime on day19/vertical-slice
-  - V3 procedural Three.js baseline on feat/threejs-compiler-scene
-  - north star and compiled-surface thesis
-  - anti-dashboard direction
-  - editorial ivory visual language
-  - regulatory and manufacturing truth boundaries
-  - Cloudflare as preferred public runtime
+  - day19/vertical-slice production runtime
+  - V4 Blender pipeline as fallback
+  - V3 procedural Three.js fallback via procedural query path
+  - remote-first Blender architecture
+  - regulatory/manufacturing truth boundaries
+  - Blender asset proof vs live runtime proof separation
 
-central_system:
-  capability: spatial_asset_and_digital_twin_engineering
-  repository: Faadil1/faadil-agent-system
-  pr: 26
-  provider_state:
-    Blender: REGISTERED_LOCAL_3D_PROVIDER
-    Blender_MCP: CANDIDATE_NOT_PROMOTED
+v5_core:
+  concept: SPATIAL_NEGOTIATION_STUDIO
+  signature: IMPOSSIBLE_FRONT
+  blender_asset_version: "0.5.0"
+  blender_evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
 
-prepared_project_contract:
-  - blender/README.md
-  - blender/specs/PACKAGING-GEOMETRY.yaml
-  - blender/specs/GLB-CONTRACT.md
-  - blender/scripts/build_master.py
-  - blender/scripts/validate_scene.py
-  - blender/scripts/export_glb.py
-  - public/models/README.md
-
-protected_human_action:
-  status: NOT_REQUIRED_FOR_HEADLESS_CI_PROOF
-  action: provision_or_authorize_interactive_remote_Blender_worker_only_if_needed
-  setup_guide: blender/mcp/SETUP.md
-  cursor_macos_linux: blender/mcp/cursor.macos-linux.json
-  cursor_windows: blender/mcp/cursor.windows.json
-  first_run_prompt: blender/mcp/FIRST-RUN-PROMPT.md
-
-benchmark_sequence:
-  - connect_provider
-  - execute_or_reproduce_build_master
-  - validate_scene
-  - save_PACKSHIFT_MASTER_blend
-  - export_packshift_master_glb
-  - verify_required_nodes_and_pivots
-  - import_GLTF_in_React_Three_Fiber
-  - bind_fold_unfold_refold_to_exported_nodes
-  - test_FR_EN_data_claim_collision
-  - test_desktop_and_mobile
-  - exercise_one_failure_and_recovery_path
-  - record_benchmark_verdict
+verify_live:
+  - orbit_control
+  - drag_each_requirement
+  - raycast_FRONT_LEFT_RIGHT_BACK
+  - pressure_increases_on_surface
+  - over_capacity_state
+  - decomposition_scrubber_0_to_100
+  - internal_jar_cap_seal_insert_leaflet_separation
+  - glue_and_dust_flap_opening
+  - xray_mode
+  - pressure_mode
+  - dieline_mode
+  - manual_collision_resolution
+  - compile_open_reflow_refold
+  - signature_demo
+  - EU_to_CANADA
+  - mobile_pointer_and_touch
+  - frame_rate
 
 do_not_promote_if:
-  - Blender_MCP_is_only_connected_but_not_benchmarked
-  - GLB_exports_but_live_runtime_breaks
-  - node_or_pivot_contract_drifts
-  - asset_is_only_cinematic_and_not_load_bearing
-  - mobile_performance_or_legibility_regresses
-  - concept_geometry_is_misrepresented_as_manufacturing_validated
+  - Blender_depth_is_not_visually_legible
+  - drag_drop_feels_unreliable
+  - scrubber_does_not_explain_product_structure
+  - XRay_or_Pressure_are_decorative_only
+  - Impossible_Front_is_not_immediately_understood
+  - mobile_interaction_collapses
+  - GLB_asset_is_stronger_but_product_story_is_weaker
 
-exact_next_gate: "R3F_BUILD_PROVEN -> LIVE_PREVIEW_VISUAL_QA -> EXPORTED_HINGE_RUNTIME_QA -> MOBILE_QA -> OPTIONAL_REMOTE_MCP"
-
-
-remote_blender_proof:
-  status: PASS
-  evidence: blender/evidence/HEADLESS-REMOTE-PROOF-001.yaml
-  clean_glb_sha256: 49879f951341ecb4119a5c8432d4a7c4c03f1ba236c62cf7f6739cab2a0b0034
-  failure_recovery_observed: true
-  Blender_MCP_required_for_this_proof: false
-
-
-blender_runtime_integration:
-  status: BUILD_PROVEN
-  github_actions_run: 36573896774
-  glb_contract_validation: PASS
-  npm_install: PASS
-  vite_build: PASS
-  dist_glb_copy: PASS
-  artifact_upload: PASS
-  live_browser_visual_qa: PENDING
-  secondary_preview: "https://packshift-git-feat-blender-master-pipeline-faadil1s-projects.vercel.app"
-  preferred_preview: "https://feat-blender-master-pipeline.packshift-awd.pages.dev/"
-  truth_boundary: "Build integration is proven; live visual behavior is not yet independently verified."
+next_gate: "RUNTIME_CI -> PUBLIC_PREVIEW -> LIVE_INTERACTION_QA -> MOBILE_QA -> PROMOTION_DECISION"

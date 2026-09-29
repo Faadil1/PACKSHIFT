@@ -1,44 +1,47 @@
-# PACKSHIFT — Hero Storyboard v0.1
+# PACKSHIFT — Hero Storyboard v0.2
 
-## Thesis
-**Packaging is not a file. It is a compiled surface.**
+## North Star
+**You don't watch the rules change. You watch the package make room for them.**
 
-## Interaction signature
+## Signature
 `CONSTRAINT → PRESSURE → COLLISION → REFLOW → VALID FORM`
 
 ## 15-second hero sequence
 
-### 01 — ONE MASTER
-One clean oat-milk carton sits at the center of the constraint field. No dashboard is required to understand the object.
+### 00:00–00:02 — ONE MASTER
+A nearly full-screen oat carton sits in a warm editorial print studio. No dashboard. No diagnostic panels. The object is calm.
 
-### 02 — MARKET: EU
-EU becomes the active market. Mandatory information enters as a visible force and begins consuming surface area.
+### 00:02–00:04 — LANGUAGE ENTERS
+The **FR / EN** requirement physically enters from the left. Front-panel typography tightens and bilingual copy appears.
 
-### 03 — + FR / EN
-Bilingual content is added. Typography compresses and reorganizes; the package remains the same physical object.
+### 00:04–00:06 — DATA CLAIMS A FACE
+A **DATA CARRIER** module enters from the right. The side face becomes visibly occupied by QR / recycling information.
 
-### 04 — + DATA CARRIER
-A QR/data-carrier requirement enters from the opposite side. The system makes the new spatial demand visible.
+### 00:06–00:08 — CLAIM DOES NOT FIT
+**24H HYDRATION** enters from below and attempts to own the same front-panel territory. Registration-red collision geometry appears.
 
-### 05 — + 24H HYDRATION
-The marketing claim enters. Total demo pressure crosses the collision threshold. The package visibly compresses and the collision state becomes explicit.
+### 00:08–00:11 — COMPILE
+The carton opens into a living dieline. Front, side, back, top and bottom become one continuous print surface.
 
-### 06 — COMPILE
-The user triggers **COMPILE SURFACE**. Layout reflows, elements resize, hierarchy is adjusted, and clear-space conflicts are resolved.
+### 00:11–00:13 — REFLOW
+Copy, data and claim rebalance across the dieline. The hierarchy changes rather than merely hiding an error.
 
-### 07 — VALID FORM
-Motion calms. The package resolves into a stable compiled state.
+### 00:13–00:14 — REFOLD
+The dieline folds back into the same carton.
 
-### 08 — MARKET: CANADA
-The exact same master object recompiles for Canada, demonstrating that PACKSHIFT is a constraint system rather than a collection of manually duplicated files.
+### 00:14–00:15 — VALID FORM
+The object is calm again. The collision is gone.
+
+### Optional coda — EU → CANADA
+Market changes. The same master begins recompiling, proving the object is governed by a system rather than a fixed animation.
 
 ## Motion rules
 - Motion must explain causality.
-- Constraints push.
-- Collision compresses.
-- Compile redistributes.
-- Valid form becomes calm.
-- Reduced-motion mode must preserve state clarity without relying on animation.
+- Constraints enter from the direction of the surface they demand.
+- Collision should feel spatial, not modal.
+- Dieline opening is the main explanatory transformation.
+- Refold must feel like resolution, not decoration.
+- Reduced-motion mode must preserve every state change without depending on animation.
 
 ## Truth boundary
-The storyboard visualizes deterministic concept rules. It does **not** claim regulatory compliance or legal validation.
+This storyboard visualizes deterministic concept rules. It does not claim legal or regulatory compliance.

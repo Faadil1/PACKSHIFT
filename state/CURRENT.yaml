@@ -1,6 +1,6 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V4_BLENDER_MASTER_PIPELINE
+phase: V4_REMOTE_BLENDER_MASTER_PIPELINE
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> DIELINE -> REFLOW -> VALID FORM"
@@ -58,7 +58,9 @@ status:
   v2_runtime: PRESERVED
   v3_threejs_baseline: PRESERVED
   blender_project_contract: IMPLEMENTED
-  blender_mcp_connection: PENDING_PROTECTED_HUMAN_ACTION
+  blender_execution_mode: REMOTE_FIRST_LOCAL_FALLBACK
+  blender_headless_worker: ACTIVE_CI_PROOF
+  blender_mcp_connection: OPTIONAL_AFTER_HEADLESS_PROOF
   blender_mcp_setup_kit: READY
   cursor_configs: READY
   first_run_prompt: READY
@@ -67,4 +69,4 @@ status:
   threejs_glb_import: NOT_YET_PROVEN
   blender_mcp_promotion: BLOCKED_UNTIL_BENCHMARK_PASS
 
-next_gate: "Human installs/enables Blender MCP locally -> read-only connection test -> execute FIRST-RUN-PROMPT -> export/inspect GLB -> runtime integration"
+next_gate: "Headless remote Blender CI -> inspect .blend/GLB artifact -> integrate GLB in R3F -> then decide whether interactive remote Blender MCP adds material value"

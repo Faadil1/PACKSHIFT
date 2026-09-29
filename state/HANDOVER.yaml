@@ -50,4 +50,16 @@ do_not_promote_if:
   - mobile_interaction_collapses
   - GLB_asset_is_stronger_but_product_story_is_weaker
 
-next_gate: "RUNTIME_CI -> PUBLIC_PREVIEW -> LIVE_INTERACTION_QA -> MOBILE_QA -> PROMOTION_DECISION"
+next_gate: "PUBLIC_PREVIEW -> LIVE_INTERACTION_QA -> MOBILE_QA -> MEMORY_HOOK_VERDICT -> PROMOTION_DECISION"
+
+
+v5_final_branch_proof:
+  blender_master_contract: PASS
+  blender_master_contract_run: 36617468376
+  blender_runtime_integration: PASS
+  blender_runtime_integration_run: 36617468359
+  remote_blender_headless: PASS
+  remote_blender_headless_run: 36617424391
+  preferred_preview: "https://feat-v5-spatial-negotiation.packshift-awd.pages.dev"
+  immutable_preview: "https://913bb94d.packshift-awd.pages.dev"
+  live_visual_verdict: PENDING

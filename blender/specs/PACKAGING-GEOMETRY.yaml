@@ -1,6 +1,6 @@
-version: 0.2.0
+version: 0.5.0
 status: CONCEPT_DIMENSIONS__NOT_MANUFACTURING_VALIDATED
-asset: PACKSHIFT_MASTER_01
+asset: PACKSHIFT_MASTER_V5
 product: NORD_HYDRA_VEIL_BARRIER_CREAM
 nominal_fill: 50_mL
 
@@ -15,9 +15,16 @@ carton:
   depth: 36
   height: 130
   board_thickness: 0.45
-  top_flap_depth: 36
-  bottom_flap_depth: 36
   glue_flap_width: 12
+  dust_flap_depth: 16
+
+product_architecture:
+  insert_tray: true
+  inner_jar: true
+  cream_core: true
+  jar_cap: true
+  seal_disc: true
+  leaflet: true
 
 print:
   bleed: 3
@@ -43,52 +50,62 @@ nodes:
   back: BACK
   left_hinge: HINGE_LEFT
   left: LEFT_COPY
+  glue_hinge: HINGE_GLUE
+  glue_flap: GLUE_FLAP
   top_hinge: HINGE_TOP
   top: TOP
   bottom_hinge: HINGE_BOTTOM
   bottom: BOTTOM
+  top_dust_left_hinge: HINGE_TOP_DUST_LEFT
+  top_dust_left: TOP_DUST_LEFT
+  top_dust_right_hinge: HINGE_TOP_DUST_RIGHT
+  top_dust_right: TOP_DUST_RIGHT
+  bottom_dust_left_hinge: HINGE_BOTTOM_DUST_LEFT
+  bottom_dust_left: BOTTOM_DUST_LEFT
+  bottom_dust_right_hinge: HINGE_BOTTOM_DUST_RIGHT
+  bottom_dust_right: BOTTOM_DUST_RIGHT
+
+internal_nodes:
+  assembly: INNER_ASSEMBLY
+  insert: INSERT_TRAY
+  jar: INNER_JAR
+  cream: CREAM_CORE
+  cap: JAR_CAP
+  seal: SEAL_DISC
+  leaflet: LEAFLET
 
 runtime_anchors:
   claim_front: ANCHOR_CLAIM_FRONT
   copy_left: ANCHOR_COPY_LEFT
   data_right: ANCHOR_DATA_RIGHT
   back_reflow: ANCHOR_BACK_REFLOW
+  surface_front: ANCHOR_SURFACE_FRONT
+  surface_left: ANCHOR_SURFACE_LEFT
+  surface_right: ANCHOR_SURFACE_RIGHT
+  surface_back: ANCHOR_SURFACE_BACK
+  explode_jar: ANCHOR_EXPLODE_JAR
+  explode_cap: ANCHOR_EXPLODE_CAP
+  explode_seal: ANCHOR_EXPLODE_SEAL
+  explode_insert: ANCHOR_EXPLODE_INSERT
+  explode_leaflet: ANCHOR_EXPLODE_LEAFLET
+
+surface_capacity:
+  FRONT: 0.72
+  RIGHT_DATA: 0.64
+  BACK: 0.88
+  LEFT_COPY: 0.68
 
 fold_contract:
-  HINGE_RIGHT:
-    axis: Z
-    closed_deg: 0
-    flat_deg: 90
-  HINGE_BACK:
-    axis: Z
-    closed_deg: 0
-    flat_deg: 90
-  HINGE_LEFT:
-    axis: Z
-    closed_deg: 0
-    flat_deg: -90
-  HINGE_TOP:
-    axis: X
-    closed_deg: 0
-    flat_deg: -90
-  HINGE_BOTTOM:
-    axis: X
-    closed_deg: 0
-    flat_deg: 90
-
-runtime_semantics:
-  FRONT:
-    primary_role: brand_and_claim_surface
-  RIGHT_DATA:
-    primary_role: data_carrier_and_recycling
-  BACK:
-    primary_role: overflow_copy_and_market_content
-  LEFT_COPY:
-    primary_role: language_and_secondary_copy
-  TOP:
-    primary_role: master_identity
-  BOTTOM:
-    primary_role: compiled_surface_identity
+  HINGE_RIGHT: {axis: Z, closed_deg: 0, flat_deg: 90}
+  HINGE_BACK: {axis: Z, closed_deg: 0, flat_deg: 90}
+  HINGE_LEFT: {axis: Z, closed_deg: 0, flat_deg: -90}
+  HINGE_GLUE: {axis: Z, closed_deg: 0, flat_deg: 105}
+  HINGE_TOP: {axis: X, closed_deg: 0, flat_deg: -90}
+  HINGE_BOTTOM: {axis: X, closed_deg: 0, flat_deg: 90}
+  HINGE_TOP_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: 78}
+  HINGE_TOP_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: -78}
+  HINGE_BOTTOM_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: -78}
+  HINGE_BOTTOM_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: 78}
 
 truth_boundary:
   - dimensions_are_conceptual_until_verified_against_real_packaging_engineering

@@ -59,9 +59,12 @@ status:
   v3_threejs_baseline: PRESERVED
   blender_project_contract: IMPLEMENTED
   blender_mcp_connection: PENDING_PROTECTED_HUMAN_ACTION
+  blender_mcp_setup_kit: READY
+  cursor_configs: READY
+  first_run_prompt: READY
   blender_scripts_runtime_validation: PENDING_REAL_BLENDER_RUN
   glb_export: NOT_YET_PROVEN
   threejs_glb_import: NOT_YET_PROVEN
   blender_mcp_promotion: BLOCKED_UNTIL_BENCHMARK_PASS
 
-next_gate: "Connect Blender MCP locally -> run PACKSHIFT Blender benchmark -> export GLB -> integrate into Three.js -> validate fold/unfold/refold and failure/recovery"
+next_gate: "Human installs/enables Blender MCP locally -> read-only connection test -> execute FIRST-RUN-PROMPT -> export/inspect GLB -> runtime integration"

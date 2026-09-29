@@ -1,65 +1,52 @@
 project: PACKSHIFT
-handover_version: 0.6
-active_branch: feat/v5-spatial-negotiation-studio
-base_branch: feat/blender-master-pipeline
+handover_version: 0.7
+active_branch: main
+baseline: V5_SPATIAL_NEGOTIATION_STUDIO
+main_merge_pr: 4
+main_merge_commit: "12444c85d4045799533ffef2dfe0a346de85fcac"
 
 resume_from: >-
-  V5 rebuild is implemented. The deep Blender asset is remotely proven. Verify the V5 runtime integration workflow,
-  then inspect the public preview for drag/raycast/orbit/decomposition/X-Ray/Pressure/Impossible-Front behavior.
-  Do not promote until live visual and interaction QA pass.
+  V5 is now the canonical main baseline. Do not rebuild the project from the old stacked branches.
+  Use the uploaded 2026-09-29 runtime capture and user feedback to identify what is still missing,
+  then create a V5.1 branch from main. Preserve the deep Blender pipeline and current interaction model
+  unless evidence shows a specific mechanism should be replaced.
 
 preserve:
-  - day19/vertical-slice production runtime
-  - V4 Blender pipeline as fallback
-  - V3 procedural Three.js fallback via procedural query path
-  - remote-first Blender architecture
-  - regulatory/manufacturing truth boundaries
-  - Blender asset proof vs live runtime proof separation
+  - main_as_source_of_truth
+  - V5_remote_first_Blender_pipeline
+  - deep_Blender_GLTF_asset_contract
+  - ThreeJS_R3F_live_runtime
+  - free_orbit
+  - drag_to_surface_interaction
+  - pressure_model
+  - decomposition_scrubber
+  - XRay_and_Pressure_views
+  - Impossible_Front_signature
+  - regulatory_and_manufacturing_truth_boundaries
+  - procedural_fallback_where_still_available
 
-v5_core:
-  concept: SPATIAL_NEGOTIATION_STUDIO
-  signature: IMPOSSIBLE_FRONT
-  blender_asset_version: "0.5.0"
-  blender_evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
+known_open_gaps:
+  - visual_and_product_depth_not_yet_final
+  - decomposition_can_be_richer_and_more_surprising
+  - Blender_contribution_should_be_even_more_obvious
+  - user_agency_should_extend_beyond_current_controls
+  - memorable_signature_detail_is_not_yet_locked
+  - mobile_QA_not_complete
+  - performance_QA_not_complete
 
-verify_live:
-  - orbit_control
-  - drag_each_requirement
-  - raycast_FRONT_LEFT_RIGHT_BACK
-  - pressure_increases_on_surface
-  - over_capacity_state
-  - decomposition_scrubber_0_to_100
-  - internal_jar_cap_seal_insert_leaflet_separation
-  - glue_and_dust_flap_opening
-  - xray_mode
-  - pressure_mode
-  - dieline_mode
-  - manual_collision_resolution
-  - compile_open_reflow_refold
-  - signature_demo
-  - EU_to_CANADA
-  - mobile_pointer_and_touch
-  - frame_rate
+evidence_to_review_next:
+  uploaded_runtime_capture: "20260929-2203-22.9500519.mp4"
+  user_feedback: >-
+    The build is already well advanced, but still feels too simple in places; Blender is not yet exploited
+    to its maximum, decomposition remains too simple, user control is still limited, and the experience
+    needs more depth/memorability.
 
-do_not_promote_if:
-  - Blender_depth_is_not_visually_legible
-  - drag_drop_feels_unreliable
-  - scrubber_does_not_explain_product_structure
-  - XRay_or_Pressure_are_decorative_only
-  - Impossible_Front_is_not_immediately_understood
-  - mobile_interaction_collapses
-  - GLB_asset_is_stronger_but_product_story_is_weaker
+do_not_regress:
+  - remote_Blender_worker_proof
+  - 42_node_8_material_GLTF_contract
+  - build_green_baseline
+  - direct_spatial_manipulation
+  - truth_boundary
+  - main_history
 
-next_gate: "PUBLIC_PREVIEW -> LIVE_INTERACTION_QA -> MOBILE_QA -> MEMORY_HOOK_VERDICT -> PROMOTION_DECISION"
-
-
-v5_final_branch_proof:
-  blender_master_contract: PASS
-  blender_master_contract_run: 36617468376
-  blender_runtime_integration: PASS
-  blender_runtime_integration_run: 36617468359
-  remote_blender_headless: PASS
-  remote_blender_headless_run: 36617424391
-  preferred_preview: "https://feat-v5-spatial-negotiation.packshift-awd.pages.dev"
-  immutable_preview: "https://913bb94d.packshift-awd.pages.dev"
-  live_visual_verdict: PENDING
+next_gate: "MAIN_CI_HARDENING -> VIDEO_GAP_REVIEW -> V5_1_DEPTH_LOCK -> IMPLEMENT -> LIVE_QA"

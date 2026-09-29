@@ -36,6 +36,10 @@ prepared_project_contract:
 protected_human_action:
   status: REQUIRED
   action: install_or_connect_Blender_and_Blender_MCP_locally
+  setup_guide: blender/mcp/SETUP.md
+  cursor_macos_linux: blender/mcp/cursor.macos-linux.json
+  cursor_windows: blender/mcp/cursor.windows.json
+  first_run_prompt: blender/mcp/FIRST-RUN-PROMPT.md
 
 benchmark_sequence:
   - connect_provider
@@ -59,4 +63,4 @@ do_not_promote_if:
   - mobile_performance_or_legibility_regresses
   - concept_geometry_is_misrepresented_as_manufacturing_validated
 
-exact_next_gate: "BLENDER_MCP_CONNECTION -> REAL_BLENDER_RUN -> GLB_ROUNDTRIP -> RUNTIME_QA"
+exact_next_gate: "HUMAN_LOCAL_SETUP -> READ_ONLY_CONNECTION_TEST -> PACKSHIFT_FIRST_RUN_PROMPT -> GLB_ROUNDTRIP -> RUNTIME_QA"

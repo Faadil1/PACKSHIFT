@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   blender-proof:
@@ -39,7 +39,7 @@ jobs:
           test -f blender/PACKSHIFT_MASTER.blend
           test -f public/models/packshift-master.glb
           ls -lh blender/PACKSHIFT_MASTER.blend public/models/packshift-master.glb
-          sha256sum public/models/packshift-master.glb | tee blender/PACKSHIFT_MASTER.glb.sha256
+          sha256sum public/models/packshift-master.glb | tee public/models/packshift-master.glb.sha256
 
       - name: Upload Blender proof artifacts
         uses: actions/upload-artifact@v4
@@ -48,5 +48,18 @@ jobs:
           if-no-files-found: error
           path: |
             blender/PACKSHIFT_MASTER.blend
-            blender/PACKSHIFT_MASTER.glb.sha256
+            public/models/packshift-master.glb.sha256
             public/models/packshift-master.glb
+
+      - name: Promote validated GLB to branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/packshift-master.glb public/models/packshift-master.glb.sha256
+          if git diff --cached --quiet; then
+            echo "Validated GLB already matches branch"
+          else
+            git commit -m "generated(blender): update validated PACKSHIFT GLB [skip ci]"
+            git push
+          fi

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PackageScene } from './scene/PackageScene.jsx';
 
@@ -161,15 +161,17 @@ export default function App() {
             camera={{ position: [4.8, 2.8, 7.6], fov: 33 }}
             gl={{ antialias: true, alpha: true }}
           >
-            <PackageScene
-              stage={stage}
-              market={market}
-              language={language}
-              data={data}
-              claim={claim}
-              collision={collision}
-              compiled={compiled}
-            />
+            <Suspense fallback={null}>
+              <PackageScene
+                stage={stage}
+                market={market}
+                language={language}
+                data={data}
+                claim={claim}
+                collision={collision}
+                compiled={compiled}
+              />
+            </Suspense>
           </Canvas>
         </div>
 

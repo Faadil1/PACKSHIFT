@@ -1,9 +1,21 @@
-# Runtime 3D Assets
+# Runtime 3D Models
 
-Expected benchmark output:
+Canonical PACKSHIFT runtime asset target:
 
 `packshift-master.glb`
 
-Do not commit or promote a generated GLB as canonical merely because export succeeded.
+This file must be produced from the Blender master pipeline documented in `blender/README.md`.
 
-Before the runtime switches from procedural geometry to the Blender master, verify the node contract in `blender/specs/GLB-CONTRACT.md` and record the runtime import/fold/unfold result.
+## Truth boundary
+
+Presence of a GLB here proves only that an asset was exported.
+
+It does **not** prove:
+- Blender MCP promotion;
+- successful React Three Fiber integration;
+- fold/unfold/refold behavior;
+- live constraint/collision behavior;
+- manufacturing validity;
+- regulatory validity.
+
+Before replacing the procedural V3 geometry, validate the node hierarchy and run the live runtime benchmark.

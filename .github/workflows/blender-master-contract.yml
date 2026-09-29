@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/blender-master-pipeline
+      - feat/v5-spatial-negotiation-studio
   pull_request:
     paths:
       - 'blender/**'

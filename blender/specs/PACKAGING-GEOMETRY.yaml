@@ -1,0 +1,48 @@
+version: 0.1.0
+status: CONCEPT_DIMENSIONS__NOT_MANUFACTURING_VALIDATED
+product: NORD_HYDRA_VEIL_BARRIER_CREAM
+nominal_fill: 50_mL
+
+units: millimeters
+
+carton:
+  width: 56
+  depth: 36
+  height: 130
+  board_thickness: 0.45
+  top_flap_depth: 28
+  bottom_flap_depth: 28
+  glue_flap_width: 12
+
+print:
+  bleed: 3
+  safe_margin: 4
+  registration_zone: 5
+
+nodes:
+  root: PACKSHIFT_ROOT
+  front: FRONT
+  right: RIGHT_DATA
+  back: BACK
+  left: LEFT_COPY
+  top: TOP
+  bottom: BOTTOM
+
+runtime_semantics:
+  FRONT:
+    primary_role: brand_and_claim_surface
+  RIGHT_DATA:
+    primary_role: data_carrier_and_recycling
+  BACK:
+    primary_role: overflow_copy_and_market_content
+  LEFT_COPY:
+    primary_role: language_and_secondary_copy
+  TOP:
+    primary_role: master_identity
+  BOTTOM:
+    primary_role: compiled_surface_identity
+
+truth_boundary:
+  - dimensions_are_conceptual_until_verified_against_real_packaging_engineering
+  - safe_area_is_demo_logic_not_regulatory_validation
+  - board_thickness_is_visual_physical_assumption

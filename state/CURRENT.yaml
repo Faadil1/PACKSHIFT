@@ -1,80 +1,73 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V4_REMOTE_BLENDER_MASTER_PIPELINE
+phase: V5_SPATIAL_NEGOTIATION_STUDIO
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
-locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> DIELINE -> REFLOW -> VALID FORM"
-visual_direction: "Premium editorial packaging studio x canonical Blender master x live Three.js runtime"
-truth_boundary: "Concept prototype; demo constraints and concept carton dimensions are not regulatory or manufacturing validation."
+signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
+truth_boundary: "Concept prototype; surface capacities are demo logic; Blender dimensions are not manufacturing validation."
 
 base_runtime:
-  v2_cloudflare_url: "https://packshift-awd.pages.dev/"
-  production_branch: "day19/vertical-slice"
-  preserved: true
+  production_branch: day19/vertical-slice
+  v4_branch: feat/blender-master-pipeline
+  v4_preserved: true
 
-v3_runtime:
-  branch: "feat/threejs-compiler-scene"
-  pr: 2
-  cloudflare_branch_url: "https://feat-threejs-compiler-scene.packshift-awd.pages.dev/"
-  status: PRESERVED_AS_PROCEDURAL_THREEJS_BASELINE
-
-v4_branch:
-  name: "feat/blender-master-pipeline"
+v5_branch:
+  name: feat/v5-spatial-negotiation-studio
   production_impact: NONE
 
-central_system_integration:
-  repository: Faadil1/faadil-agent-system
-  pr: 26
-  capability: spatial_asset_and_digital_twin_engineering
-  blender_mcp_status: CANDIDATE_NOT_PROMOTED
-  benchmark: BLENDER_MCP_ADOPTION_BENCHMARK_001
+v5_product_change:
+  from: "3D package demo with button-driven states"
+  to: "user-controlled spatial negotiation studio"
 
-blender_pipeline:
-  geometry_spec: blender/specs/PACKAGING-GEOMETRY.yaml
-  glb_contract: blender/specs/GLB-CONTRACT.md
-  build_script: blender/scripts/build_master.py
-  validation_script: blender/scripts/validate_scene.py
-  export_script: blender/scripts/export_glb.py
-  expected_runtime_asset: public/models/packshift-master.glb
-  node_contract:
-    - PACKSHIFT_ROOT
-    - FRONT
-    - HINGE_RIGHT
-    - RIGHT_DATA
-    - HINGE_BACK
-    - BACK
-    - HINGE_LEFT
-    - LEFT_COPY
-    - HINGE_TOP
-    - TOP
-    - HINGE_BOTTOM
-    - BOTTOM
-    - ANCHOR_CLAIM_FRONT
-    - ANCHOR_COPY_LEFT
-    - ANCHOR_DATA_RIGHT
-    - ANCHOR_BACK_REFLOW
+blender_master:
+  version: "0.5.0"
+  remote_headless_run: 36617036558
+  remote_headless_result: PASS
+  glb_contract: PASS
+  nodes: 42
+  materials: 8
+  blend_size: "1.2M"
+  glb_size: "80K"
+  glb_sha256: "840fbdf82124fd3aca11d1da134ef0f509b8fe53610a29b26f609e269936ebdf"
+  evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
+
+physical_depth:
+  folding_shell: ACTIVE
+  glue_flap: ACTIVE
+  dust_flaps: ACTIVE
+  insert_tray: ACTIVE
+  inner_jar: ACTIVE
+  cream_core: ACTIVE
+  jar_cap: ACTIVE
+  seal_disc: ACTIVE
+  leaflet: ACTIVE
+
+interaction_depth:
+  free_orbit: IMPLEMENTED
+  drag_constraints_in_3d: IMPLEMENTED
+  raycast_real_blender_surfaces: IMPLEMENTED
+  continuous_decomposition_scrubber: IMPLEMENTED
+  pack_view: IMPLEMENTED
+  exploded_view: IMPLEMENTED
+  dieline_view: IMPLEMENTED
+  xray_view: IMPLEMENTED
+  pressure_view: IMPLEMENTED
+  manual_tradeoff_resolution: IMPLEMENTED
+  compile_reflow_refold: IMPLEMENTED
+
+memory_hook:
+  name: IMPOSSIBLE_FRONT
+  mechanism: "Place all three requirements on FRONT -> over-capacity refusal -> physical decomposition -> reflow -> refold"
+  status: IMPLEMENTED_AWAITING_LIVE_QA
 
 status:
-  v2_runtime: PRESERVED
-  v3_threejs_baseline: PRESERVED
-  blender_project_contract: IMPLEMENTED
-  blender_execution_mode: REMOTE_FIRST_LOCAL_FALLBACK
-  blender_headless_worker: PROVEN_REMOTE_EXECUTION
-  blender_headless_proof: blender/evidence/HEADLESS-REMOTE-PROOF-001.yaml
-  blender_failure_recovery: PROVEN_NUMPY_EXPORT_DEPENDENCY
-  canonical_glb: public/models/packshift-master.glb
-  canonical_glb_sha256: 49879f951341ecb4119a5c8432d4a7c4c03f1ba236c62cf7f6739cab2a0b0034
-  blender_mcp_connection: OPTIONAL_AFTER_HEADLESS_PROOF
-  blender_mcp_setup_kit: READY
-  cursor_configs: READY
-  first_run_prompt: READY
-  blender_scripts_runtime_validation: PENDING_REAL_BLENDER_RUN
-  glb_export: PROVEN_REMOTE_HEADLESS
-  glb_contract: PASSED
-  threejs_glb_import: PROVEN_BUILD_INTEGRATION
-  blender_runtime_integration_ci: PASSED
-  blender_runtime_integration_run: 36573896774
+  blender_remote_execution: PROVEN
+  deep_asset_contract: PROVEN
+  static_blender_contract: PASSED
+  vite_build: PASSED_ON_V5_CONTRACT_RUN
+  v5_runtime_integration: PENDING_FINAL_RUN
   live_browser_visual_qa: PENDING
-  blender_mcp_promotion: BLOCKED_UNTIL_BENCHMARK_PASS
+  mobile_qa: PENDING
+  blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
 
-next_gate: "Cloudflare/Vercel preview visual QA -> verify exported hinge fold/unfold/refold -> mobile QA -> decide whether interactive remote Blender MCP adds material value"
+next_gate: "V5 runtime integration CI -> public preview -> desktop interaction QA -> mobile QA -> visual/memory-hook verdict"

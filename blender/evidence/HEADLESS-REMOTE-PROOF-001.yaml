@@ -1,0 +1,69 @@
+proof:
+  id: PACKSHIFT_REMOTE_BLENDER_HEADLESS_001
+  date: 2026-09-29
+  execution_mode: REMOTE_HEADLESS_GITHUB_ACTIONS
+  local_Blender_required: false
+  Blender_MCP_required: false
+
+  source:
+    repository: Faadil1/PACKSHIFT
+    branch: feat/blender-master-pipeline
+    workflow: Blender Headless Proof
+
+  environment:
+    runner: ubuntu-24.04
+    blender_version: 4.0.2
+
+  first_attempt:
+    run_id: 36570022448
+    result: FAIL_RECOVERABLE
+    build_master: PASS
+    scene_validation: PASS
+    blend_save: PASS
+    glb_export: FAIL
+    failure: "Blender glTF addon could not import numpy"
+    recovery: "Install python3-numpy in the remote worker"
+
+  recovery_attempt:
+    run_id: 36570208445
+    result: PASS
+    build_master: PASS
+    scene_validation: PASS
+    blend_save: PASS
+    glb_export: PASS
+    artifact_upload: PASS
+    artifact_id: 11033337707
+    artifact_digest: "sha256:25d73d77c772e79a45f233a571a1e22a909f5705303a808dfa992a0941fd4c6c"
+    blend_size: "918K"
+    glb_size: "13K"
+    glb_sha256: "0ff91209c0baad5c6e17a2f8ca4ba8dcbbda0e261c1c77eb551d1e22f8399337"
+
+  clean_export_gate:
+    run_id: 36570570491
+    result: PASS
+    scene_validation: PASS
+    glb_export: PASS
+    glb_contract: PASS
+    blend_size: "918K"
+    glb_size: "12K"
+    glb_sha256: "49879f951341ecb4119a5c8432d4a7c4c03f1ba236c62cf7f6739cab2a0b0034"
+    asset_contract:
+      root: PACKSHIFT_ROOT
+      default_Blender_objects_absent: true
+      required_hinges_present: true
+      runtime_anchors_present: true
+
+  canonical_asset_commit:
+    status: PROMOTED_TO_BRANCH_BY_VALIDATED_WORKFLOW
+    branch_head_after_generation: "010146158e3d62e54a99ac21daefcfdcc741329d"
+    glb_path: public/models/packshift-master.glb
+    hash_path: public/models/packshift-master.glb.sha256
+
+  truth_boundary:
+    blender_capability_remote_execution: PROVEN
+    Blender_MCP_provider: NOT_YET_PROVEN
+    ThreeJS_import: NOT_YET_PROVEN
+    live_fold_unfold_on_GLTF: NOT_YET_PROVEN
+    manufacturing_validation: NOT_CLAIMED
+
+  next_gate: "Load canonical GLB in React Three Fiber and bind exported hinge nodes to the live compiler"

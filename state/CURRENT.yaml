@@ -1,17 +1,22 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V3_THREEJS_SPATIAL_PROOF
+phase: V3_SPATIAL_COMPILER
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
-locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> REFLOW -> VALID FORM"
-visual_direction: "Editorial print lab x real spatial package geometry"
+locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> DIELINE -> REFLOW -> VALID FORM"
+visual_direction: "Premium editorial packaging studio x real hinged package geometry"
 truth_boundary: "Concept prototype; demo constraints are not regulatory validation."
+
 base_runtime:
   v2_cloudflare_url: "https://packshift-awd.pages.dev/"
   production_branch: "day19/vertical-slice"
+  preserved: true
+
 v3_branch:
   name: "feat/threejs-compiler-scene"
+  pr: 2
   production_impact: NONE
+
 stack:
   - React
   - Vite
@@ -19,26 +24,30 @@ stack:
   - React Three Fiber
   - Drei
   - GSAP
-v3_scope:
-  - real six-face carton geometry
-  - independent package faces
-  - warm paper material
-  - real 3D camera and lighting
-  - folded -> dieline unfold
-  - dieline -> refold
-  - DOM artwork anchored onto 3D faces
-  - EU / Canada proof state
-out_of_scope_until_spatial_proof_passes:
-  - full FR/EN collision logic
-  - claim migration
-  - full data-carrier reflow
-  - final 15s cinematic timeline
-  - final mobile polish
+
+v3_load_bearing_features:
+  - six-face physical carton
+  - true hinge-based fold geometry
+  - folded -> dieline -> refold
+  - procedural paper texture
+  - real camera choreography
+  - studio lighting and contact shadows
+  - FR/EN spatial constraint
+  - data-carrier spatial constraint
+  - 24H HYDRATION spatial claim
+  - package-surface collision frame
+  - flat-state reflow routes
+  - EU / Canada state
+  - deterministic 15s demo
+  - premium skincare master aligned with hydration claim
+
 status:
   v2_runtime: PRESERVED
   v3_branch: ACTIVE
-  v3_spatial_proof: IMPLEMENTED
-  v3_ci: PASSED
-  v3_runtime: PREVIEW_PENDING_VISUAL_QA
-  merge_to_v2: BLOCKED_UNTIL_VISUAL_PROOF
-next_gate: "Cloudflare/Vercel branch preview -> visual proof of unfold/refold -> then reconnect constraints"
+  v3_ci_head_b3a5727: PASSED
+  v3_cloudflare_preview: DEPLOYING_LATEST
+  v3_cloudflare_branch_url: "https://feat-threejs-compiler-scene.packshift-awd.pages.dev/"
+  v3_vercel_preview: AVAILABLE_AS_SECONDARY
+  merge_to_v2: BLOCKED_UNTIL_VISUAL_QA
+
+next_gate: "Latest Cloudflare preview -> desktop/mobile visual QA -> motion/performance polish -> promotion decision"

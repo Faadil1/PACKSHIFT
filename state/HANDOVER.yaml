@@ -41,3 +41,13 @@ do_not_promote_if:
   - artwork floats or occludes incorrectly
   - mobile legibility collapses
   - camera motion causes disorientation
+
+
+blender_system_integration:
+  central_capability: spatial_asset_and_digital_twin_engineering
+  benchmark: BLENDER_MCP_ADOPTION_BENCHMARK_001
+  status: CONTRACT_LAYER_READY__PROVIDER_CONNECTION_PENDING
+  next_action: >-
+    Connect Blender MCP locally, then create/inspect PACKSHIFT_MASTER_01 from the project geometry contract,
+    export the canonical GLB, load it through React Three Fiber, compare it against the procedural fallback,
+    and record one failure/recovery path before any provider promotion.

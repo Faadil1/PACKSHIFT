@@ -1,0 +1,43 @@
+name: Blender Master Contract
+
+on:
+  push:
+    branches:
+      - feat/blender-master-pipeline
+      - feat/v5-spatial-negotiation-studio
+  pull_request:
+    paths:
+      - 'blender/**'
+      - 'public/models/**'
+      - 'src/**'
+      - 'package.json'
+      - '.github/workflows/blender-master-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Syntax-check Blender Python
+        run: python -m py_compile blender/scripts/build_master.py blender/scripts/validate_scene.py blender/scripts/export_glb.py blender/scripts/validate_contract.py
+
+      - name: Validate static Blender/GLB contract
+        run: python blender/scripts/validate_contract.py
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web runtime
+        run: npm install
+
+      - name: Build React Three Fiber runtime
+        run: npm run build

@@ -1,0 +1,52 @@
+proof:
+  id: PACKSHIFT_V5_DEEP_BLENDER_MASTER_001
+  date: 2026-09-29
+  branch: feat/v5-spatial-negotiation-studio
+
+  remote_blender:
+    workflow_run: 36617036558
+    result: PASS
+    blender_version: 4.0.2
+    local_blender_required: false
+    blender_mcp_required: false
+    scene_validation: PASS
+    glb_contract: PASS
+    blend_size: "1.2M"
+    glb_size: "80K"
+    glb_sha256: "840fbdf82124fd3aca11d1da134ef0f509b8fe53610a29b26f609e269936ebdf"
+    artifact_id: 11056041670
+    artifact_digest: "sha256:3cefe1600b20402faf7a4db92e8e6e88964764cf2d5adf2ff55f9e3a26c84c31"
+
+  asset_depth:
+    glb_nodes: 42
+    glb_materials: 8
+    folding_shell: PRESENT
+    glue_flap: PRESENT
+    dust_flaps: PRESENT
+    insert_tray: PRESENT
+    jar: PRESENT
+    cream_core: PRESENT
+    cap: PRESENT
+    seal: PRESENT
+    leaflet: PRESENT
+    surface_anchors: PRESENT
+    explode_anchors: PRESENT
+
+  runtime_v5:
+    orbit_controls: IMPLEMENTED
+    3d_drag_constraints: IMPLEMENTED
+    glb_surface_raycast: IMPLEMENTED
+    pressure_model: IMPLEMENTED
+    decomposition_scrubber: IMPLEMENTED
+    xray_mode: IMPLEMENTED
+    pressure_mode: IMPLEMENTED
+    dieline_mode: IMPLEMENTED
+    signature_impossible_front: IMPLEMENTED
+    compile_reflow_sequence: IMPLEMENTED
+    live_browser_visual_qa: PENDING
+
+  truth_boundary:
+    manufacturing_validation: NOT_CLAIMED
+    regulatory_validation: NOT_CLAIMED
+    live_browser_behavior: NOT_YET_PROVEN
+    blender_mcp_provider_promotion: NOT_YET_PROVEN

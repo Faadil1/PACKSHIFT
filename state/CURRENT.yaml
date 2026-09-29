@@ -1,0 +1,85 @@
+project: PACKSHIFT
+challenge: Day 19
+phase: V5_SPATIAL_NEGOTIATION_STUDIO
+north_star: "You don't watch the rules change. You watch the package make room for them."
+thesis: "Packaging is not a file. It is a compiled surface."
+signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
+truth_boundary: "Concept prototype; surface capacities are demo logic; Blender dimensions are not manufacturing validation."
+
+base_runtime:
+  production_branch: day19/vertical-slice
+  v4_branch: feat/blender-master-pipeline
+  v4_preserved: true
+
+v5_branch:
+  name: feat/v5-spatial-negotiation-studio
+  production_impact: NONE
+
+v5_product_change:
+  from: "3D package demo with button-driven states"
+  to: "user-controlled spatial negotiation studio"
+
+blender_master:
+  version: "0.5.0"
+  remote_headless_run: 36617036558
+  remote_headless_result: PASS
+  glb_contract: PASS
+  nodes: 42
+  materials: 8
+  blend_size: "1.2M"
+  glb_size: "80K"
+  glb_sha256: "840fbdf82124fd3aca11d1da134ef0f509b8fe53610a29b26f609e269936ebdf"
+  evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
+
+physical_depth:
+  folding_shell: ACTIVE
+  glue_flap: ACTIVE
+  dust_flaps: ACTIVE
+  insert_tray: ACTIVE
+  inner_jar: ACTIVE
+  cream_core: ACTIVE
+  jar_cap: ACTIVE
+  seal_disc: ACTIVE
+  leaflet: ACTIVE
+
+interaction_depth:
+  free_orbit: IMPLEMENTED
+  drag_constraints_in_3d: IMPLEMENTED
+  raycast_real_blender_surfaces: IMPLEMENTED
+  continuous_decomposition_scrubber: IMPLEMENTED
+  pack_view: IMPLEMENTED
+  exploded_view: IMPLEMENTED
+  dieline_view: IMPLEMENTED
+  xray_view: IMPLEMENTED
+  pressure_view: IMPLEMENTED
+  manual_tradeoff_resolution: IMPLEMENTED
+  compile_reflow_refold: IMPLEMENTED
+
+memory_hook:
+  name: IMPOSSIBLE_FRONT
+  mechanism: "Place all three requirements on FRONT -> over-capacity refusal -> physical decomposition -> reflow -> refold"
+  status: IMPLEMENTED_AWAITING_LIVE_QA
+
+status:
+  blender_remote_execution: PROVEN
+  deep_asset_contract: PROVEN
+  static_blender_contract: PASSED
+  vite_build: PASSED_ON_V5_CONTRACT_RUN
+  v5_runtime_integration: PASSED
+  live_browser_visual_qa: PENDING_USER_VISUAL_REVIEW
+  mobile_qa: PENDING
+  blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
+
+next_gate: "Public preview -> desktop interaction QA -> mobile QA -> Impossible Front memory-hook verdict -> promotion decision"
+
+
+v5_ci:
+  blender_master_contract_run: 36617468376
+  blender_master_contract: PASS
+  blender_runtime_integration_run: 36617468359
+  blender_runtime_integration: PASS
+  remote_blender_headless_run: 36617424391
+  remote_blender_headless: PASS
+  cloudflare_branch_preview: "https://feat-v5-spatial-negotiation.packshift-awd.pages.dev"
+  cloudflare_snapshot: "https://913bb94d.packshift-awd.pages.dev"
+  vercel_preview: "https://packshift-git-feat-v5-spatial-negotiat-6d517a-faadil1s-projects.vercel.app"

@@ -3,102 +3,173 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#11100e" />
-  <meta name="description" content="PACKSHIFT — packaging as a compiled surface." />
+  <meta name="theme-color" content="#f1eee6" />
+  <meta name="description" content="PACKSHIFT — packaging is not a file. It is a compiled surface." />
   <title>PACKSHIFT — Day 19</title>
   <link rel="stylesheet" href="./src/styles.css" />
 </head>
 <body>
-<main class="app-shell">
-  <header class="topbar">
-    <div><div class="eyebrow">DAY 19 / CONSTRAINT COMPILER</div><h1>PACKSHIFT</h1></div>
-    <p class="thesis">Packaging is not a file.<br/>It is a compiled surface.</p>
-    <button class="demo-button" id="runDemo">RUN 15S DEMO</button>
+<main class="experience">
+  <header class="masthead">
+    <div class="brand-lockup">
+      <span class="kicker">DAY 19 / PACKAGING COMPILER</span>
+      <strong>PACKSHIFT</strong>
+    </div>
+
+    <p class="thesis">Packaging is not a file.<br><em>It is a compiled surface.</em></p>
+
+    <div class="header-actions">
+      <div class="market-switch" role="group" aria-label="Market">
+        <button id="marketEU" class="market-btn active">EU</button>
+        <button id="marketCA" class="market-btn">CANADA</button>
+      </div>
+      <button id="runDemo" class="text-button">RUN 15S DEMO</button>
+    </div>
   </header>
 
-  <section class="workbench">
-    <aside class="controls">
-      <div class="control-label">INPUT CONSTRAINTS</div>
-      <div class="control-group">
-        <span>MARKET</span>
-        <div class="segmented">
-          <button id="marketEU">EU</button>
-          <button id="marketCA">CANADA</button>
-        </div>
-      </div>
-      <button class="constraint" id="toggleBilingual"><span class="toggle-indicator">+</span><span><b>FR / EN</b><small>language</small></span></button>
-      <button class="constraint" id="toggleData"><span class="toggle-indicator">+</span><span><b>DATA CARRIER</b><small>QR / recycling</small></span></button>
-      <button class="constraint" id="toggleClaim"><span class="toggle-indicator">+</span><span><b>24H HYDRATION</b><small>marketing claim</small></span></button>
-      <div class="pressure-meter">
-        <div class="meter-row"><span>SURFACE PRESSURE</span><strong id="pressureValue">28%</strong></div>
-        <div class="meter-track"><i id="pressureBar"></i></div>
-      </div>
-      <button class="compile-button" id="compile">COMPILE SURFACE</button>
-    </aside>
+  <section class="studio" id="studio" aria-live="polite">
+    <div class="paper-grid"></div>
+    <span class="reg-mark reg-a">+</span>
+    <span class="reg-mark reg-b">+</span>
+    <span class="reg-mark reg-c">+</span>
+    <span class="reg-mark reg-d">+</span>
 
-    <section class="stage" id="stage">
-      <div class="stage-grid"></div><div class="axis axis-x"></div><div class="axis axis-y"></div>
-      <div class="force-field force-left" id="forceLeft"><span>LANGUAGE / CLAIM</span></div>
-      <div class="force-field force-right" id="forceRight"><span>DATA / RECYCLING</span></div>
+    <div class="scene-caption">
+      <span id="sceneStep">ONE MASTER</span>
+      <small id="sceneHint">Add a constraint. Watch the package make room for it.</small>
+    </div>
 
-      <div class="carton-wrap eu" id="cartonWrap">
-        <div class="halo"></div>
-        <div class="carton">
-          <div class="carton-top"><span></span></div>
-          <div class="face front-face">
-            <div class="brand">Nord</div>
-            <div class="product-name" id="productName">OAT<br/>MILK</div>
-            <div class="variant">Barista</div>
-            <div class="divider"></div>
-            <div class="descriptor" id="descriptor">Smooth &amp; creamy<br/>Plant-based<br/>No added sugar</div>
-            <div class="claim" id="claim">24H<br/>HYDRATION</div>
-            <svg class="oat-mark" viewBox="0 0 110 180" aria-hidden="true">
-              <path d="M56 170 C65 120 67 70 54 12" fill="none" stroke="currentColor" stroke-width="2" />
-              <g transform="translate(48 28) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
-              <g transform="translate(62 48) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
-              <g transform="translate(48 70) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
-              <g transform="translate(62 94) rotate(28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
-              <g transform="translate(48 120) rotate(-28)"><ellipse rx="7" ry="18" fill="currentColor" opacity=".56"/></g>
-            </svg>
-            <div class="bottom-row"><span>1L ℮</span><span id="marketCode">EU</span></div>
+    <div class="incoming incoming-language" id="incomingLanguage">
+      <span class="constraint-index">01</span>
+      <div><b>FR / EN</b><small>LANGUAGE TAKES WIDTH</small></div>
+    </div>
+
+    <div class="incoming incoming-data" id="incomingData">
+      <span class="constraint-index">02</span>
+      <div><b>DATA CARRIER</b><small>REQUIRES A REAL SURFACE</small></div>
+      <div class="mini-qr" aria-hidden="true"></div>
+    </div>
+
+    <div class="incoming incoming-claim" id="incomingClaim">
+      <span class="constraint-index">03</span>
+      <div><b>24H<br>HYDRATION</b><small>CLAIM WANTS THE FRONT</small></div>
+    </div>
+
+    <div class="collision-burst" id="collisionBurst">
+      <span>COLLISION</span>
+      <small>TWO REQUIREMENTS / ONE PIECE OF SURFACE</small>
+    </div>
+
+    <div class="compile-caption" id="compileCaption">
+      <span>OPENING DIELINE</span>
+      <span>MOVING CONTENT</span>
+      <span>REBALANCING HIERARCHY</span>
+      <span>REFOLDING</span>
+    </div>
+
+    <div class="package-stage">
+      <div class="package-shadow"></div>
+      <div class="package-rig" id="packageRig">
+        <div class="dieline-outline"></div>
+
+        <section class="panel front-panel">
+          <div class="panel-corner tl"></div><div class="panel-corner tr"></div>
+          <div class="panel-corner bl"></div><div class="panel-corner br"></div>
+          <div class="front-copy">
+            <div class="pack-brand">NORD</div>
+            <div class="pack-title" id="packTitle">OAT<br>MILK</div>
+            <div class="pack-variant">BARISTA</div>
+            <div class="pack-rule"></div>
+            <div class="pack-description" id="packDescription">Smooth &amp; creamy<br>Plant-based<br>No added sugar</div>
+            <div class="pack-language-note" id="packLanguageNote">FR / EN COPY RESERVED</div>
           </div>
-          <div class="face side-face">
-            <div class="side-title">NUTRITION</div>
-            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
-            <div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div><div class="nutrition-line"></div>
-            <div class="qr" id="qr"><svg viewBox="0 0 7 7" aria-hidden="true">
-              <rect x="0" y="0" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/>
-              <rect x="0" y="1" width="1" height="1"/><rect x="1" y="1" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/>
-              <rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/>
-              <rect x="0" y="3" width="1" height="1"/><rect x="1" y="3" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/>
-              <rect x="0" y="4" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/>
-              <rect x="1" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/>
-              <rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/>
-            </svg></div>
-            <div class="symbols">♻︎ ◌ ⊕</div>
+
+          <div class="claim-block" id="claimBlock">
+            <span>24H</span>
+            <b>HYDRATION</b>
           </div>
-          <div class="face edge-face"></div>
-        </div>
-        <div class="wireframe wf-a"></div><div class="wireframe wf-b"></div><div class="wireframe wf-c"></div>
-      </div>
 
-      <div class="collision-note" id="collisionNote"><span class="warning">!</span><div><b>COLLISION DETECTED</b><small>Claim vs. mandatory information</small></div></div>
-      <div class="compile-trace" id="compileTrace"><span>REFLOW LAYOUT</span><span>RESIZE ELEMENTS</span><span>ADJUST HIERARCHY</span><span>VALIDATE CLEAR SPACE</span></div>
-    </section>
+          <svg class="botanical" viewBox="0 0 120 210" aria-hidden="true">
+            <path d="M59 198C70 140 72 82 58 14" fill="none" stroke="currentColor" stroke-width="2"/>
+            <ellipse cx="48" cy="45" rx="9" ry="23" transform="rotate(-28 48 45)" fill="currentColor" opacity=".45"/>
+            <ellipse cx="70" cy="68" rx="9" ry="23" transform="rotate(28 70 68)" fill="currentColor" opacity=".45"/>
+            <ellipse cx="49" cy="95" rx="9" ry="23" transform="rotate(-28 49 95)" fill="currentColor" opacity=".45"/>
+            <ellipse cx="72" cy="125" rx="9" ry="23" transform="rotate(28 72 125)" fill="currentColor" opacity=".45"/>
+            <ellipse cx="51" cy="157" rx="9" ry="23" transform="rotate(-28 51 157)" fill="currentColor" opacity=".45"/>
+          </svg>
 
-    <aside class="inspector">
-      <div class="control-label">RUNTIME</div>
-      <div class="runtime-state"><span>STATUS</span><strong id="status">OPEN</strong></div>
-      <div class="runtime-list">
-        <div class="runtime-row active"><span>Mandatory info</span><strong id="mandatoryValue">+28%</strong></div>
-        <div class="runtime-row" id="rowLang"><span>Language</span><strong>—</strong></div>
-        <div class="runtime-row" id="rowData"><span>Data carrier</span><strong>—</strong></div>
-        <div class="runtime-row" id="rowClaim"><span>Claim</span><strong>—</strong></div>
+          <div class="pack-footer"><span>1 L ℮</span><span id="marketCode">EU</span></div>
+          <div class="collision-hatch"></div>
+        </section>
+
+        <section class="panel side-panel">
+          <div class="side-heading">PRODUCT DATA</div>
+          <div class="micro-lines"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="data-module" id="dataModule">
+            <div class="qr-large" aria-hidden="true"></div>
+            <div><b>SCAN</b><small>RECYCLING / PRODUCT DATA</small></div>
+          </div>
+          <div class="side-marks">♻︎  ◌  ⊕</div>
+        </section>
+
+        <section class="panel back-panel">
+          <div class="back-kicker">COMPILED COPY</div>
+          <div class="back-title">ONE SOURCE.<br>EVERY MARKET.</div>
+          <div class="back-copy" id="backCopy">Ingredients, usage, disposal and legal copy resolve here when the front surface reaches its limit.</div>
+          <div class="back-rule"></div>
+          <div class="back-meta"><span>MASTER 01</span><span id="backMarket">EU</span></div>
+        </section>
+
+        <section class="panel top-panel">
+          <span>NORD / MASTER</span>
+          <b id="topMarket">EU</b>
+        </section>
+
+        <section class="panel bottom-panel">
+          <span>PACKSHIFT</span>
+          <span>COMPILED SURFACE</span>
+        </section>
+
+        <div class="fold-guide guide-left"></div>
+        <div class="fold-guide guide-right"></div>
+        <div class="fold-guide guide-top"></div>
+        <div class="fold-guide guide-bottom"></div>
       </div>
-      <div class="valid-card" id="validCard"><span class="check">✓</span><div><b id="validText">VALID FOR EU</b><small>Compiled surface resolved</small></div></div>
-      <div class="signature"><span>CONSTRAINT</span><i>→</i><span>PRESSURE</span><i>→</i><span>COLLISION</span><i>→</i><span>REFLOW</span><i>→</i><span>VALID FORM</span></div>
-    </aside>
+    </div>
+
+    <div class="status-line">
+      <span class="status-dot" id="statusDot"></span>
+      <strong id="statusText">SURFACE STABLE</strong>
+      <small id="statusSub">One source. No active collision.</small>
+    </div>
   </section>
+
+  <nav class="constraint-dock" aria-label="Constraints">
+    <button class="constraint-pill" id="toggleBilingual">
+      <span class="pill-num">01</span>
+      <span><b>FR / EN</b><small>LANGUAGE</small></span>
+    </button>
+    <button class="constraint-pill" id="toggleData">
+      <span class="pill-num">02</span>
+      <span><b>DATA CARRIER</b><small>QR / RECYCLING</small></span>
+    </button>
+    <button class="constraint-pill" id="toggleClaim">
+      <span class="pill-num">03</span>
+      <span><b>24H HYDRATION</b><small>MARKETING CLAIM</small></span>
+    </button>
+
+    <div class="dock-divider"></div>
+
+    <button class="compile-button" id="compile">
+      <span>COMPILE</span>
+      <small>OPEN → REFLOW → REFOLD</small>
+    </button>
+  </nav>
+
+  <footer class="footer-note">
+    <span>CONSTRAINT → PRESSURE → COLLISION → REFLOW → VALID FORM</span>
+    <span>CONCEPT PROTOTYPE / NOT REGULATORY VALIDATION</span>
+  </footer>
 </main>
 <script src="./src/app.js"></script>
 </body>

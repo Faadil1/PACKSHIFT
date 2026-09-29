@@ -67,7 +67,7 @@ function Panel({ size, children, texture, label }) {
         position={[0, 0, 0.031]}
         style={{ pointerEvents: 'none' }}
       >
-        <div className="panel-art">
+        <div className={'panel-art' + (w < 2 ? ' panel-art-narrow' : '') + (h < 2 ? ' panel-art-flap' : '')}>
           <span className="panel-tag">{label}</span>
           {children}
         </div>

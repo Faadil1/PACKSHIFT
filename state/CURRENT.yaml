@@ -1,28 +1,43 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V2_STRUCTURAL_REDIRECTION
+phase: V3_THREEJS_SPATIAL_PROOF
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> REFLOW -> VALID FORM"
-visual_direction: "Editorial print lab x industrial dieline system"
+visual_direction: "Editorial print lab x real spatial package geometry"
 truth_boundary: "Concept prototype; demo constraints are not regulatory validation."
-runtime:
-  cloudflare_url: "https://packshift-awd.pages.dev/"
+base_runtime:
+  v2_cloudflare_url: "https://packshift-awd.pages.dev/"
   production_branch: "day19/vertical-slice"
-v2_changes:
-  - remove permanent dashboard sidebars
-  - package becomes dominant hero object
-  - warm ivory editorial studio replaces dark SaaS shell
-  - language/data/claim enter as physical surface demands
-  - collision shown as actual competing front-panel territory
-  - compile opens carton into living dieline
-  - content reflows before refold
-  - manual controls retained as bottom operator dock
+v3_branch:
+  name: "feat/threejs-compiler-scene"
+  production_impact: NONE
+stack:
+  - React
+  - Vite
+  - Three.js
+  - React Three Fiber
+  - Drei
+  - GSAP
+v3_scope:
+  - real six-face carton geometry
+  - independent package faces
+  - warm paper material
+  - real 3D camera and lighting
+  - folded -> dieline unfold
+  - dieline -> refold
+  - DOM artwork anchored onto 3D faces
+  - EU / Canada proof state
+out_of_scope_until_spatial_proof_passes:
+  - full FR/EN collision logic
+  - claim migration
+  - full data-carrier reflow
+  - final 15s cinematic timeline
+  - final mobile polish
 status:
-  concept: PROVEN_FOR_BUILD
-  v1_runtime: REJECTED_FOR_VISUAL_DIRECTION
-  v2_structure: IMPLEMENTED
-  github_pr: DRAFT_DO_NOT_MERGE
-  cloudflare_auto_deploy: EXPECTED_FROM_GIT_PUSH
-  runtime_visual_v2: PENDING_DEPLOY_AND_QA
-next_gate: "CI pass -> Cloudflare auto-deploy -> desktop/mobile V2 visual QA -> motion polish"
+  v2_runtime: PRESERVED
+  v3_branch: ACTIVE
+  v3_spatial_proof: IMPLEMENTED_AWAITING_CI
+  v3_runtime: NOT_PROMOTED
+  merge_to_v2: BLOCKED_UNTIL_VISUAL_PROOF
+next_gate: "npm install/build CI -> Cloudflare preview -> visual proof of unfold/refold -> then reconnect constraints"

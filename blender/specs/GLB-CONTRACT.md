@@ -4,75 +4,110 @@
 
 This contract prevents Blender and the Three.js runtime from drifting apart.
 
+Blender owns **asset authoring**. React Three Fiber owns **live interaction**.
+
 ## Format
 
 - Runtime asset: `GLB`
-- Units in Blender: meters internally, sourced from millimeter spec values
-- Up axis: Blender Z-up
-- Export target: glTF 2.0 / GLB
-- Transform application: explicit before export where safe
+- Source dimensions: millimeters
+- Blender geometry: meters
+- Up axis in Blender: +Z
+- Front normal: +Y
 - Runtime: Three.js / React Three Fiber
+- Export target: glTF 2.0 / GLB
 
 ## Required hierarchy
 
-```
+```text
 PACKSHIFT_ROOT
 ├── FRONT
-├── RIGHT_DATA
-├── BACK
-├── LEFT_COPY
-├── TOP
-└── BOTTOM
+├── HINGE_RIGHT
+│   ├── RIGHT_DATA
+│   └── HINGE_BACK
+│       └── BACK
+├── HINGE_LEFT
+│   └── LEFT_COPY
+├── HINGE_TOP
+│   └── TOP
+├── HINGE_BOTTOM
+│   └── BOTTOM
+├── ANCHOR_CLAIM_FRONT
+├── ANCHOR_COPY_LEFT
+├── ANCHOR_DATA_RIGHT
+└── ANCHOR_BACK_REFLOW
 ```
 
-Every foldable panel must expose a stable pivot aligned to its intended fold edge.
+The hinge empties are **load-bearing runtime nodes**. Do not collapse, apply away, or rename them without a coordinated runtime change.
 
-## Stable names
+## Fold contract
 
-The six panel node names are runtime contracts.
+| Node | Axis | Closed | Flat |
+| --- | --- | ---: | ---: |
+| `HINGE_RIGHT` | Z | 0° | +90° |
+| `HINGE_BACK` | Z | 0° | +90° |
+| `HINGE_LEFT` | Z | 0° | −90° |
+| `HINGE_TOP` | X | 0° | −90° |
+| `HINGE_BOTTOM` | X | 0° | +90° |
 
-Renaming requires a coordinated change in:
-- Blender validation
-- export validation
-- Three.js loader
-- runtime animation bindings
-- state/handover
+The exported asset is **closed by default**. The browser opens the dieline by animating the hinge transforms.
 
-## Material contract
+## Runtime anchors
 
-At minimum:
+- `ANCHOR_CLAIM_FRONT` — 24H HYDRATION entry/collision target
+- `ANCHOR_COPY_LEFT` — FR/EN pressure target
+- `ANCHOR_DATA_RIGHT` — QR/data-carrier target
+- `ANCHOR_BACK_REFLOW` — back-panel content migration target
+
+Anchors are transform nodes, not visible geometry.
+
+## Materials
+
+Minimum stable materials:
 
 - `MAT_PAPER_OUTER`
 - `MAT_PAPER_EDGE`
 
-Additional print/varnish materials may be introduced, but the runtime must not depend on arbitrary Blender viewport-only state.
+The browser may add temporary collision/reflow materials, but the physical paper master originates in Blender.
 
-## Fold contract
+## Export requirements
 
-The runtime must be able to address each foldable panel independently.
+Target:
 
-Initial target semantics:
+`public/models/packshift-master.glb`
 
-- RIGHT_DATA folds from FRONT right edge
-- BACK folds from RIGHT_DATA outer edge
-- LEFT_COPY folds from FRONT left edge
-- TOP folds from FRONT top edge
-- BOTTOM folds from FRONT bottom edge
+Requirements:
 
-## Export receipt
+- binary GLB
+- stable node names
+- hinge empties/transforms preserved
+- custom properties exported as extras where supported
+- no Blender camera/light dependency
+- no hidden debug geometry
+- `export_apply=False` so hinge transforms survive
+- deterministic project-relative output path
 
-Before promotion, record:
+## Runtime handoff
 
-- source .blend version
-- geometry spec version
-- exported GLB file hash
-- node-name validation result
-- pivot validation result
-- material validation result
-- Three.js import result
-- runtime fold/unfold result
-- desktop/mobile result
+The V3 procedural geometry should eventually be replaced by:
+
+```js
+const { nodes, materials } = useGLTF('/models/packshift-master.glb')
+```
+
+The runtime must bind to stable hinge names rather than reconstructing the package topology independently.
+
+## Proof classes
+
+A Blender scene proves **asset authoring**.
+
+A valid GLB proves **artifact generation**.
+
+A successful `useGLTF()` load proves **runtime import**.
+
+PACKSHIFT is not spatially proven until the live runtime preserves:
+
+`constraint → collision → unfold → reflow → refold → valid form`
 
 ## Truth boundary
 
-A valid GLB is an asset proof. It is not evidence that the live compiler, constraint logic, collision logic, or interaction loop works.
+A valid GLB is not live runtime proof. This is a concept packaging master, not manufacturing CAD or regulatory validation.

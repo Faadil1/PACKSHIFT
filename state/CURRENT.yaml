@@ -1,53 +1,58 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V3_SPATIAL_COMPILER
+phase: V4_BLENDER_MASTER_PIPELINE
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> DIELINE -> REFLOW -> VALID FORM"
-visual_direction: "Premium editorial packaging studio x real hinged package geometry"
-truth_boundary: "Concept prototype; demo constraints are not regulatory validation."
+visual_direction: "Premium editorial packaging studio x canonical Blender master x live Three.js runtime"
+truth_boundary: "Concept prototype; demo constraints and concept carton dimensions are not regulatory or manufacturing validation."
 
 base_runtime:
   v2_cloudflare_url: "https://packshift-awd.pages.dev/"
   production_branch: "day19/vertical-slice"
   preserved: true
 
-v3_branch:
-  name: "feat/threejs-compiler-scene"
+v3_runtime:
+  branch: "feat/threejs-compiler-scene"
   pr: 2
+  cloudflare_branch_url: "https://feat-threejs-compiler-scene.packshift-awd.pages.dev/"
+  status: PRESERVED_AS_PROCEDURAL_THREEJS_BASELINE
+
+v4_branch:
+  name: "feat/blender-master-pipeline"
   production_impact: NONE
 
-stack:
-  - React
-  - Vite
-  - Three.js
-  - React Three Fiber
-  - Drei
-  - GSAP
+central_system_integration:
+  repository: Faadil1/faadil-agent-system
+  pr: 26
+  capability: spatial_asset_and_digital_twin_engineering
+  blender_mcp_status: CANDIDATE_NOT_PROMOTED
+  benchmark: BLENDER_MCP_ADOPTION_BENCHMARK_001
 
-v3_load_bearing_features:
-  - six-face physical carton
-  - true hinge-based fold geometry
-  - folded -> dieline -> refold
-  - procedural paper texture
-  - real camera choreography
-  - studio lighting and contact shadows
-  - FR/EN spatial constraint
-  - data-carrier spatial constraint
-  - 24H HYDRATION spatial claim
-  - package-surface collision frame
-  - flat-state reflow routes
-  - EU / Canada state
-  - deterministic 15s demo
-  - premium skincare master aligned with hydration claim
+blender_pipeline:
+  geometry_spec: blender/specs/PACKAGING-GEOMETRY.yaml
+  glb_contract: blender/specs/GLB-CONTRACT.md
+  build_script: blender/scripts/build_master.py
+  validation_script: blender/scripts/validate_scene.py
+  export_script: blender/scripts/export_glb.py
+  expected_runtime_asset: public/models/packshift-master.glb
+  node_contract:
+    - PACKSHIFT_ROOT
+    - FRONT
+    - RIGHT_DATA
+    - BACK
+    - LEFT_COPY
+    - TOP
+    - BOTTOM
 
 status:
   v2_runtime: PRESERVED
-  v3_branch: ACTIVE
-  v3_ci_head_b3a5727: PASSED
-  v3_cloudflare_preview: DEPLOYING_LATEST
-  v3_cloudflare_branch_url: "https://feat-threejs-compiler-scene.packshift-awd.pages.dev/"
-  v3_vercel_preview: AVAILABLE_AS_SECONDARY
-  merge_to_v2: BLOCKED_UNTIL_VISUAL_QA
+  v3_threejs_baseline: PRESERVED
+  blender_project_contract: IMPLEMENTED
+  blender_mcp_connection: PENDING_PROTECTED_HUMAN_ACTION
+  blender_scripts_runtime_validation: PENDING_REAL_BLENDER_RUN
+  glb_export: NOT_YET_PROVEN
+  threejs_glb_import: NOT_YET_PROVEN
+  blender_mcp_promotion: BLOCKED_UNTIL_BENCHMARK_PASS
 
-next_gate: "Latest Cloudflare preview -> desktop/mobile visual QA -> motion/performance polish -> promotion decision"
+next_gate: "Connect Blender MCP locally -> run PACKSHIFT Blender benchmark -> export GLB -> integrate into Three.js -> validate fold/unfold/refold and failure/recovery"

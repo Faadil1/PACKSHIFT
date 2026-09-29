@@ -3,6 +3,7 @@ name: Blender Headless Proof
 on:
   push:
     branches:
+      - main
       - feat/blender-master-pipeline
       - feat/v5-spatial-negotiation-studio
     paths:
@@ -53,7 +54,7 @@ jobs:
             public/models/packshift-master.glb
 
       - name: Promote validated GLB to branch
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref != 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

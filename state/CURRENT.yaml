@@ -51,3 +51,21 @@ status:
   merge_to_v2: BLOCKED_UNTIL_VISUAL_QA
 
 next_gate: "Latest Cloudflare preview -> desktop/mobile visual QA -> motion/performance polish -> promotion decision"
+
+
+blender_system_integration:
+  central_capability: spatial_asset_and_digital_twin_engineering
+  central_repository: Faadil1/faadil-agent-system
+  central_branch: capability/blender-spatial-engineering
+  provider:
+    Blender: REGISTERED_LOCAL_3D_PROVIDER
+    Blender_MCP: CANDIDATE_NOT_PROMOTED
+    candidate_implementation: teamipc/blender-mcp
+  project_contracts:
+    geometry: blender/specs/PACKAGING-GEOMETRY.yaml
+    glb: blender/specs/GLB-CONTRACT.md
+    readme: blender/README.md
+  current_asset_source: PROCEDURAL_THREEJS_GEOMETRY
+  target_asset_source: BLENDER_MASTER_GLTF_AFTER_BENCHMARK_PASS
+  protected_setup_action: INSTALL_OR_CONNECT_LOCAL_BLENDER_MCP
+  truth_boundary: "No Blender MCP execution claimed until the local provider is actually connected and invoked."

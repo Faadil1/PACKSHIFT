@@ -1,0 +1,49 @@
+name: Blender Headless Proof
+
+on:
+  push:
+    branches:
+      - feat/blender-master-pipeline
+    paths:
+      - 'blender/**'
+      - '.github/workflows/blender-headless-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blender-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+
+      - name: Build validate and export in Blender
+        run: |
+          blender --background --python blender/scripts/ci_build_export.py
+
+      - name: Inspect generated assets
+        run: |
+          test -f blender/PACKSHIFT_MASTER.blend
+          test -f public/models/packshift-master.glb
+          ls -lh blender/PACKSHIFT_MASTER.blend public/models/packshift-master.glb
+          sha256sum public/models/packshift-master.glb | tee blender/PACKSHIFT_MASTER.glb.sha256
+
+      - name: Upload Blender proof artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packshift-blender-master
+          if-no-files-found: error
+          path: |
+            blender/PACKSHIFT_MASTER.blend
+            blender/PACKSHIFT_MASTER.glb.sha256
+            public/models/packshift-master.glb

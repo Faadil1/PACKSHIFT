@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Validate PACKSHIFT GLB structure without Blender.
+"""Validate PACKSHIFT V5 GLB structure without Blender.
 
-This verifies the exported glTF node contract on the committed binary.
-It does not prove browser rendering or live interaction.
+This proves the committed artifact contract only.
+It does not prove live browser behavior.
 """
 from __future__ import annotations
-
 import json
 import struct
 from pathlib import Path
@@ -15,75 +14,74 @@ ROOT = Path(__file__).resolve().parents[1]
 GLB = ROOT / "public" / "models" / "packshift-master.glb"
 
 REQUIRED_NODES = {
-    "PACKSHIFT_ROOT",
-    "FRONT",
-    "HINGE_RIGHT",
-    "RIGHT_DATA",
-    "HINGE_BACK",
-    "BACK",
-    "HINGE_LEFT",
-    "LEFT_COPY",
-    "HINGE_TOP",
-    "TOP",
-    "HINGE_BOTTOM",
-    "BOTTOM",
-    "ANCHOR_CLAIM_FRONT",
-    "ANCHOR_COPY_LEFT",
-    "ANCHOR_DATA_RIGHT",
-    "ANCHOR_BACK_REFLOW",
+    "PACKSHIFT_ROOT","FRONT","HINGE_RIGHT","RIGHT_DATA","HINGE_BACK","BACK",
+    "HINGE_LEFT","LEFT_COPY","HINGE_GLUE","GLUE_FLAP","HINGE_TOP","TOP",
+    "HINGE_BOTTOM","BOTTOM","HINGE_TOP_DUST_LEFT","TOP_DUST_LEFT",
+    "HINGE_TOP_DUST_RIGHT","TOP_DUST_RIGHT","HINGE_BOTTOM_DUST_LEFT",
+    "BOTTOM_DUST_LEFT","HINGE_BOTTOM_DUST_RIGHT","BOTTOM_DUST_RIGHT",
+    "INNER_ASSEMBLY","INSERT_TRAY","INNER_JAR","CREAM_CORE","JAR_CAP","SEAL_DISC","LEAFLET",
+    "ANCHOR_CLAIM_FRONT","ANCHOR_COPY_LEFT","ANCHOR_DATA_RIGHT","ANCHOR_BACK_REFLOW",
+    "ANCHOR_SURFACE_FRONT","ANCHOR_SURFACE_LEFT","ANCHOR_SURFACE_RIGHT","ANCHOR_SURFACE_BACK",
+    "ANCHOR_EXPLODE_JAR","ANCHOR_EXPLODE_CAP","ANCHOR_EXPLODE_SEAL",
+    "ANCHOR_EXPLODE_INSERT","ANCHOR_EXPLODE_LEAFLET",
+}
+
+REQUIRED_MATERIALS = {
+    "MAT_PAPER_OUTER","MAT_PAPER_EDGE","MAT_INSERT_PULP","MAT_JAR",
+    "MAT_CREAM","MAT_CAP","MAT_SEAL","MAT_LEAFLET",
 }
 
 def fail(message: str) -> int:
-    print("PACKSHIFT GLB CONTRACT: FAIL")
-    print(f"- {message}")
+    print("PACKSHIFT V5 GLB CONTRACT: FAIL")
+    print("- " + message)
     return 1
 
 def main() -> int:
     if not GLB.is_file():
         return fail(f"missing GLB: {GLB}")
 
-    data = GLB.read_bytes()
-    if len(data) < 20:
+    raw=GLB.read_bytes()
+    if len(raw)<20:
         return fail("GLB too small")
 
-    magic, version, total_length = struct.unpack_from("<4sII", data, 0)
-    if magic != b"glTF":
-        return fail("invalid GLB magic")
-    if version != 2:
-        return fail(f"unexpected GLB version: {version}")
-    if total_length != len(data):
-        return fail("declared GLB length does not match file size")
+    magic,version,total=struct.unpack_from("<4sII",raw,0)
+    if magic!=b"glTF" or version!=2:
+        return fail("invalid GLB header")
+    if total!=len(raw):
+        return fail("declared GLB length mismatch")
 
-    offset = 12
-    json_chunk = None
-    while offset + 8 <= len(data):
-        chunk_length, chunk_type = struct.unpack_from("<II", data, offset)
-        offset += 8
-        chunk = data[offset: offset + chunk_length]
-        offset += chunk_length
-        if chunk_type == 0x4E4F534A:
-            json_chunk = chunk.rstrip(b" \t\r\n\x00")
+    offset=12
+    json_chunk=None
+    while offset+8<=len(raw):
+        length,chunk_type=struct.unpack_from("<II",raw,offset)
+        offset+=8
+        chunk=raw[offset:offset+length]
+        offset+=length
+        if chunk_type==0x4E4F534A:
+            json_chunk=chunk.rstrip(b" \t\r\n\x00")
             break
-
     if json_chunk is None:
-        return fail("GLB JSON chunk missing")
+        return fail("JSON chunk missing")
 
-    gltf = json.loads(json_chunk.decode("utf-8"))
-    node_names = {node.get("name") for node in gltf.get("nodes", []) if node.get("name")}
-    missing = sorted(REQUIRED_NODES - node_names)
-    if missing:
-        return fail("missing required nodes: " + ", ".join(missing))
+    gltf=json.loads(json_chunk.decode("utf-8"))
+    nodes={n.get("name") for n in gltf.get("nodes",[]) if n.get("name")}
+    materials={m.get("name") for m in gltf.get("materials",[]) if m.get("name")}
 
-    extras = gltf.get("asset", {}).get("extras", {})
-    print("PACKSHIFT GLB CONTRACT: PASS")
-    print(f"- file: {GLB.name}")
-    print(f"- bytes: {len(data)}")
-    print(f"- nodes: {len(node_names)}")
-    print("- required hinges/anchors present")
-    print("- browser/runtime behavior not asserted by this check")
-    if extras:
-        print("- asset extras present")
+    missing_nodes=sorted(REQUIRED_NODES-nodes)
+    missing_materials=sorted(REQUIRED_MATERIALS-materials)
+    if missing_nodes:
+        return fail("missing nodes: "+", ".join(missing_nodes))
+    if missing_materials:
+        return fail("missing materials: "+", ".join(missing_materials))
+
+    print("PACKSHIFT V5 GLB CONTRACT: PASS")
+    print(f"- bytes: {len(raw)}")
+    print(f"- nodes: {len(nodes)}")
+    print(f"- materials: {len(materials)}")
+    print("- folding shell and internal product architecture present")
+    print("- surface and explode anchors present")
+    print("- browser behavior not asserted by this check")
     return 0
 
-if __name__ == "__main__":
+if __name__=="__main__":
     sys.exit(main())

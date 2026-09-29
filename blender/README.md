@@ -12,7 +12,8 @@ Central policy:
 Replace procedural-only carton geometry with a canonical Blender master that can serve:
 
 - the interactive Three.js / React Three Fiber runtime;
-- the fold/unfold spatial compiler;
+- real hinge-driven fold/unfold behavior;
+- stable runtime anchors for language, data and claim constraints;
 - premium stills and cinematic shots;
 - future packaging-family experiments.
 
@@ -21,12 +22,30 @@ Replace procedural-only carton geometry with a canonical Blender master that can
 Current Blender scripts and dimensions are **concept engineering inputs**, not manufacturing validation.
 
 A successful Blender render is not live runtime proof.
+
 A successful GLB export is not Three.js integration proof.
-A plausible carton is not a manufacturing-certified dieline.
+
+A plausible carton is not a manufacturing-certified dieline or a regulatory-valid package.
 
 ## Canonical project route
 
-`PACKAGING-GEOMETRY.yaml → build_master.py → validate_scene.py → PACKSHIFT_MASTER.blend → export_glb.py → packshift-master.glb → Three.js/R3F runtime`
+```text
+PACKAGING-GEOMETRY.yaml
+        ↓
+build_master.py
+        ↓
+validate_scene.py
+        ↓
+PACKSHIFT_MASTER.blend
+        ↓
+export_glb.py
+        ↓
+public/models/packshift-master.glb
+        ↓
+Three.js / React Three Fiber
+        ↓
+constraint → collision → unfold → reflow → refold → valid form
+```
 
 ## Blender MCP role
 
@@ -40,28 +59,41 @@ until the central benchmark passes:
 
 `Faadil1/faadil-agent-system/validation/BLENDER-MCP-ADOPTION-BENCHMARK-001.yaml`
 
-## Required node contract
+Connection alone is not promotion.
+
+## Required runtime hierarchy
 
 - `PACKSHIFT_ROOT`
 - `FRONT`
+- `HINGE_RIGHT`
 - `RIGHT_DATA`
+- `HINGE_BACK`
 - `BACK`
+- `HINGE_LEFT`
 - `LEFT_COPY`
+- `HINGE_TOP`
 - `TOP`
+- `HINGE_BOTTOM`
 - `BOTTOM`
+- `ANCHOR_CLAIM_FRONT`
+- `ANCHOR_COPY_LEFT`
+- `ANCHOR_DATA_RIGHT`
+- `ANCHOR_BACK_REFLOW`
 
-These names are runtime contracts. Do not rename them without updating `blender/specs/GLB-CONTRACT.md` and the Three.js loader.
+These names are runtime contracts.
 
-## First local benchmark
+## First benchmark sequence
 
 1. Open Blender.
 2. Connect the selected Blender MCP provider.
 3. Run or reproduce `build_master.py`.
 4. Run `validate_scene.py`.
-5. Save `PACKSHIFT_MASTER.blend`.
-6. Export with `export_glb.py`.
-7. Place the GLB under `public/models/packshift-master.glb`.
-8. Replace procedural geometry in the V3 runtime with the GLB while preserving the live constraint logic.
-9. Test fold/unfold/refold, desktop/mobile, and one export/runtime failure-recovery case.
+5. Save as `blender/PACKSHIFT_MASTER.blend`.
+6. Export using `export_glb.py`.
+7. Verify `public/models/packshift-master.glb`.
+8. Replace procedural panel construction in the V3 runtime with the GLB.
+9. Bind animation to the named hinge nodes.
+10. Test FR/EN, data carrier, claim collision, unfold, reflow, refold, desktop/mobile.
+11. Exercise at least one failed export/import and recovery path.
 
-No provider promotion occurs until that round-trip is proven.
+No provider promotion occurs until that complete round-trip is proven.

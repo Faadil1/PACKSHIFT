@@ -39,11 +39,20 @@ blender_pipeline:
   node_contract:
     - PACKSHIFT_ROOT
     - FRONT
+    - HINGE_RIGHT
     - RIGHT_DATA
+    - HINGE_BACK
     - BACK
+    - HINGE_LEFT
     - LEFT_COPY
+    - HINGE_TOP
     - TOP
+    - HINGE_BOTTOM
     - BOTTOM
+    - ANCHOR_CLAIM_FRONT
+    - ANCHOR_COPY_LEFT
+    - ANCHOR_DATA_RIGHT
+    - ANCHOR_BACK_REFLOW
 
 status:
   v2_runtime: PRESERVED

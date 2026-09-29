@@ -4,8 +4,8 @@ active_branch: "feat/blender-master-pipeline"
 base_branch: "feat/threejs-compiler-scene"
 
 resume_from: >-
-  Connect the local Blender MCP provider, then execute the prepared Blender master pipeline.
-  Do not replace the procedural Three.js V3 baseline until the GLB round-trip is proven.
+  First use the remote headless Blender worker to prove the prepared master pipeline without requiring local Blender.
+  Do not replace the procedural Three.js V3 baseline until the GLB round-trip is proven. Add interactive remote Blender MCP only if it materially improves authoring.
 
 preserve:
   - V2 production runtime on day19/vertical-slice
@@ -34,8 +34,8 @@ prepared_project_contract:
   - public/models/README.md
 
 protected_human_action:
-  status: REQUIRED
-  action: install_or_connect_Blender_and_Blender_MCP_locally
+  status: NOT_REQUIRED_FOR_HEADLESS_CI_PROOF
+  action: provision_or_authorize_interactive_remote_Blender_worker_only_if_needed
   setup_guide: blender/mcp/SETUP.md
   cursor_macos_linux: blender/mcp/cursor.macos-linux.json
   cursor_windows: blender/mcp/cursor.windows.json
@@ -63,4 +63,4 @@ do_not_promote_if:
   - mobile_performance_or_legibility_regresses
   - concept_geometry_is_misrepresented_as_manufacturing_validated
 
-exact_next_gate: "HUMAN_LOCAL_SETUP -> READ_ONLY_CONNECTION_TEST -> PACKSHIFT_FIRST_RUN_PROMPT -> GLB_ROUNDTRIP -> RUNTIME_QA"
+exact_next_gate: "REMOTE_HEADLESS_BLENDER_PROOF -> GLB_ARTIFACT_INSPECTION -> R3F_IMPORT -> RUNTIME_QA -> OPTIONAL_REMOTE_MCP"

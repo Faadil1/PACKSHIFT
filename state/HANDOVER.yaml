@@ -62,7 +62,7 @@ do_not_promote_if:
   - mobile_performance_or_legibility_regresses
   - concept_geometry_is_misrepresented_as_manufacturing_validated
 
-exact_next_gate: "CANONICAL_GLB -> R3F_IMPORT -> EXPORTED_HINGE_BINDING -> RUNTIME_QA -> OPTIONAL_REMOTE_MCP"
+exact_next_gate: "R3F_BUILD_PROVEN -> LIVE_PREVIEW_VISUAL_QA -> EXPORTED_HINGE_RUNTIME_QA -> MOBILE_QA -> OPTIONAL_REMOTE_MCP"
 
 
 remote_blender_proof:
@@ -71,3 +71,17 @@ remote_blender_proof:
   clean_glb_sha256: 49879f951341ecb4119a5c8432d4a7c4c03f1ba236c62cf7f6739cab2a0b0034
   failure_recovery_observed: true
   Blender_MCP_required_for_this_proof: false
+
+
+blender_runtime_integration:
+  status: BUILD_PROVEN
+  github_actions_run: 36573896774
+  glb_contract_validation: PASS
+  npm_install: PASS
+  vite_build: PASS
+  dist_glb_copy: PASS
+  artifact_upload: PASS
+  live_browser_visual_qa: PENDING
+  secondary_preview: "https://packshift-git-feat-blender-master-pipeline-faadil1s-projects.vercel.app"
+  preferred_preview: "https://feat-blender-master-pipeline.packshift-awd.pages.dev/"
+  truth_boundary: "Build integration is proven; live visual behavior is not yet independently verified."

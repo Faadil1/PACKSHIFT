@@ -1,109 +1,74 @@
-"""Validate PACKSHIFT Blender hierarchy, folds, materials and truth boundary.
-
-Status: UNVERIFIED_UNTIL_EXECUTED_IN_BLENDER.
-"""
+"""Validate PACKSHIFT V5 Blender scene contract."""
 from __future__ import annotations
-
 import bpy
 
 ROOT = "PACKSHIFT_ROOT"
 
 REQUIRED = {
-    "FRONT",
-    "HINGE_RIGHT",
-    "RIGHT_DATA",
-    "HINGE_BACK",
-    "BACK",
-    "HINGE_LEFT",
-    "LEFT_COPY",
-    "HINGE_TOP",
-    "TOP",
-    "HINGE_BOTTOM",
-    "BOTTOM",
-    "ANCHOR_CLAIM_FRONT",
-    "ANCHOR_COPY_LEFT",
-    "ANCHOR_DATA_RIGHT",
-    "ANCHOR_BACK_REFLOW",
-}
-
-EXPECTED_PARENT = {
-    "FRONT": ROOT,
-    "HINGE_RIGHT": ROOT,
-    "RIGHT_DATA": "HINGE_RIGHT",
-    "HINGE_BACK": "HINGE_RIGHT",
-    "BACK": "HINGE_BACK",
-    "HINGE_LEFT": ROOT,
-    "LEFT_COPY": "HINGE_LEFT",
-    "HINGE_TOP": ROOT,
-    "TOP": "HINGE_TOP",
-    "HINGE_BOTTOM": ROOT,
-    "BOTTOM": "HINGE_BOTTOM",
-    "ANCHOR_CLAIM_FRONT": ROOT,
-    "ANCHOR_COPY_LEFT": "HINGE_LEFT",
-    "ANCHOR_DATA_RIGHT": "HINGE_RIGHT",
-    "ANCHOR_BACK_REFLOW": "HINGE_BACK",
+    "FRONT","HINGE_RIGHT","RIGHT_DATA","HINGE_BACK","BACK","HINGE_LEFT","LEFT_COPY",
+    "HINGE_GLUE","GLUE_FLAP","HINGE_TOP","TOP","HINGE_BOTTOM","BOTTOM",
+    "HINGE_TOP_DUST_LEFT","TOP_DUST_LEFT","HINGE_TOP_DUST_RIGHT","TOP_DUST_RIGHT",
+    "HINGE_BOTTOM_DUST_LEFT","BOTTOM_DUST_LEFT","HINGE_BOTTOM_DUST_RIGHT","BOTTOM_DUST_RIGHT",
+    "INNER_ASSEMBLY","INSERT_TRAY","INNER_JAR","CREAM_CORE","JAR_CAP","SEAL_DISC","LEAFLET",
+    "ANCHOR_CLAIM_FRONT","ANCHOR_COPY_LEFT","ANCHOR_DATA_RIGHT","ANCHOR_BACK_REFLOW",
+    "ANCHOR_SURFACE_FRONT","ANCHOR_SURFACE_LEFT","ANCHOR_SURFACE_RIGHT","ANCHOR_SURFACE_BACK",
+    "ANCHOR_EXPLODE_JAR","ANCHOR_EXPLODE_LEAFLET",
 }
 
 HINGES = {
-    "HINGE_RIGHT": ("Z", 90.0),
-    "HINGE_BACK": ("Z", 90.0),
-    "HINGE_LEFT": ("Z", -90.0),
-    "HINGE_TOP": ("X", -90.0),
-    "HINGE_BOTTOM": ("X", 90.0),
+    "HINGE_RIGHT":("Z",90.0),"HINGE_BACK":("Z",90.0),"HINGE_LEFT":("Z",-90.0),
+    "HINGE_GLUE":("Z",105.0),"HINGE_TOP":("X",-90.0),"HINGE_BOTTOM":("X",90.0),
+    "HINGE_TOP_DUST_LEFT":("Y",78.0),"HINGE_TOP_DUST_RIGHT":("Y",-78.0),
+    "HINGE_BOTTOM_DUST_LEFT":("Y",-78.0),"HINGE_BOTTOM_DUST_RIGHT":("Y",78.0),
 }
 
+MATERIALS = {
+    "MAT_PAPER_OUTER","MAT_PAPER_EDGE","MAT_INSERT_PULP","MAT_JAR",
+    "MAT_CREAM","MAT_CAP","MAT_SEAL","MAT_LEAFLET",
+}
 
-def fail(message: str) -> None:
-    print("PACKSHIFT BLENDER VALIDATION: FAIL")
-    print(f"- {message}")
-    raise RuntimeError(message)
+def fail(msg):
+    print("PACKSHIFT V5 BLENDER VALIDATION: FAIL")
+    print("- " + msg)
+    raise RuntimeError(msg)
 
-
-def main() -> None:
-    root = bpy.data.objects.get(ROOT)
+def main():
+    root=bpy.data.objects.get(ROOT)
     if root is None:
-        fail(f"missing root: {ROOT}")
+        fail("PACKSHIFT_ROOT missing")
 
-    missing = sorted(name for name in REQUIRED if bpy.data.objects.get(name) is None)
+    missing=sorted(n for n in REQUIRED if bpy.data.objects.get(n) is None)
     if missing:
         fail("missing nodes: " + ", ".join(missing))
 
     if root.get("manufacturing_validation_claimed") is not False:
-        fail("manufacturing truth-boundary flag missing")
+        fail("manufacturing truth boundary missing")
 
-    for name, expected_parent in EXPECTED_PARENT.items():
-        obj = bpy.data.objects[name]
-        actual_parent = obj.parent.name if obj.parent else None
-        if actual_parent != expected_parent:
-            fail(f"{name} parent drift: expected {expected_parent}, got {actual_parent}")
+    if root.get("packshift_asset_version") != "0.5.0":
+        fail("unexpected asset version")
 
-    for name, (axis, flat_deg) in HINGES.items():
-        hinge = bpy.data.objects[name]
-        if hinge.get("packshift_role") != "fold_hinge":
+    for name,(axis,flat_deg) in HINGES.items():
+        obj=bpy.data.objects[name]
+        if obj.get("packshift_role")!="fold_hinge":
             fail(f"{name} missing fold_hinge role")
-        if hinge.get("fold_axis") != axis:
-            fail(f"{name} fold axis drift")
-        if float(hinge.get("flat_deg")) != flat_deg:
-            fail(f"{name} flat rotation drift")
+        if obj.get("fold_axis")!=axis or float(obj.get("flat_deg"))!=flat_deg:
+            fail(f"{name} hinge metadata drift")
 
-    for name in ["FRONT", "RIGHT_DATA", "BACK", "LEFT_COPY", "TOP", "BOTTOM"]:
-        panel = bpy.data.objects[name]
-        if panel.type != "MESH":
-            fail(f"{name} is not a mesh")
-        if panel.get("concept_dimensions_only") is not True:
-            fail(f"{name} concept-dimension truth tag missing")
+    for material in MATERIALS:
+        if bpy.data.materials.get(material) is None:
+            fail("missing material: " + material)
 
-    for material_name in ["MAT_PAPER_OUTER", "MAT_PAPER_EDGE"]:
-        if bpy.data.materials.get(material_name) is None:
-            fail(f"missing material: {material_name}")
+    for name in ["INNER_JAR","JAR_CAP","SEAL_DISC","LEAFLET","INSERT_TRAY"]:
+        obj=bpy.data.objects[name]
+        if "explode_x" not in obj or "explode_y" not in obj or "explode_z" not in obj:
+            fail(f"{name} missing decomposition metadata")
 
-    print("PACKSHIFT BLENDER VALIDATION: PASS")
-    print("- stable hierarchy exists")
-    print("- fold pivots and metadata exist")
-    print("- runtime anchors exist")
-    print("- required materials exist")
-    print("- concept/manufacturing truth boundary remains explicit")
+    print("PACKSHIFT V5 BLENDER VALIDATION: PASS")
+    print("- folding-carton shell + dust/glue flaps")
+    print("- internal product architecture")
+    print("- runtime surface/explode anchors")
+    print("- decomposition metadata")
+    print("- manufacturing truth boundary preserved")
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()

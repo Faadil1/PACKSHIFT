@@ -30,9 +30,18 @@ def main() -> None:
     output = repo_root() / "public" / "models" / "packshift-master.glb"
     output.parent.mkdir(parents=True, exist_ok=True)
 
+    collection = bpy.data.collections.get("PACKSHIFT")
+    if collection is None:
+        raise RuntimeError("PACKSHIFT collection missing")
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in collection.objects:
+        obj.select_set(True)
+
     bpy.ops.export_scene.gltf(
         filepath=str(output),
         export_format="GLB",
+        use_selection=True,
         export_apply=False,
         export_yup=True,
         export_materials="EXPORT",

@@ -1,0 +1,52 @@
+name: Blender Runtime Integration
+
+on:
+  push:
+    branches:
+      - feat/blender-master-pipeline
+  pull_request:
+    branches:
+      - feat/threejs-compiler-scene
+    paths:
+      - 'public/models/**'
+      - 'src/**'
+      - 'package.json'
+      - 'vite.config.js'
+      - 'scripts/validate_glb_contract.py'
+      - '.github/workflows/blender-runtime-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate committed GLB contract
+        run: python3 scripts/validate_glb_contract.py
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install
+
+      - name: Build Vite runtime
+        run: npm run build
+
+      - name: Verify GLB copied to dist
+        run: |
+          test -f dist/models/packshift-master.glb
+          sha256sum public/models/packshift-master.glb dist/models/packshift-master.glb
+
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: packshift-blender-runtime
+          path: dist

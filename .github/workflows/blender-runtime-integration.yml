@@ -3,6 +3,7 @@ name: Blender Runtime Integration
 on:
   push:
     branches:
+      - main
       - feat/blender-master-pipeline
       - feat/v5-spatial-negotiation-studio
   pull_request:

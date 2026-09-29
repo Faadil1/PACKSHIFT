@@ -1,43 +1,62 @@
 project: PACKSHIFT
-handover_version: 0.4
-active_branch: "feat/threejs-compiler-scene"
-base_branch: "day19/vertical-slice"
+handover_version: 0.5
+active_branch: "feat/blender-master-pipeline"
+base_branch: "feat/threejs-compiler-scene"
 
-resume_from: "Wait for the latest Cloudflare branch preview to reach the newest V3 head, then visually inspect desktop/mobile before promoting."
+resume_from: >-
+  Connect the local Blender MCP provider, then execute the prepared Blender master pipeline.
+  Do not replace the procedural Three.js V3 baseline until the GLB round-trip is proven.
 
 preserve:
   - V2 production runtime on day19/vertical-slice
+  - V3 procedural Three.js baseline on feat/threejs-compiler-scene
   - north star and compiled-surface thesis
   - anti-dashboard direction
   - editorial ivory visual language
-  - regulatory truth boundary
+  - regulatory and manufacturing truth boundaries
   - Cloudflare as preferred public runtime
 
-v3_visual_truth:
-  - package is now a real six-face hinged object
-  - unfold uses hinge rotations rather than independent exploded translation
-  - package material uses procedural paper texture
-  - constraints enter in 3D space
-  - collision is attached to front-panel territory
-  - camera changes to support causality
-  - flat state exposes reflow routes
-  - master product is now premium skincare so 24H HYDRATION is coherent
+central_system:
+  capability: spatial_asset_and_digital_twin_engineering
+  repository: Faadil1/faadil-agent-system
+  pr: 26
+  provider_state:
+    Blender: REGISTERED_LOCAL_3D_PROVIDER
+    Blender_MCP: CANDIDATE_NOT_PROMOTED
 
-verify_next:
-  - front artwork readability
-  - hinge geometry correctness
-  - back panel orientation
-  - collision framing
-  - unfold camera framing
-  - flat dieline legibility
-  - refold continuity
-  - mobile canvas scale
-  - 15s demo timing
-  - frame rate and memory on mobile
+prepared_project_contract:
+  - blender/README.md
+  - blender/specs/PACKAGING-GEOMETRY.yaml
+  - blender/specs/GLB-CONTRACT.md
+  - blender/scripts/build_master.py
+  - blender/scripts/validate_scene.py
+  - blender/scripts/export_glb.py
+  - public/models/README.md
+
+protected_human_action:
+  status: REQUIRED
+  action: install_or_connect_Blender_and_Blender_MCP_locally
+
+benchmark_sequence:
+  - connect_provider
+  - execute_or_reproduce_build_master
+  - validate_scene
+  - save_PACKSHIFT_MASTER_blend
+  - export_packshift_master_glb
+  - verify_required_nodes_and_pivots
+  - import_GLTF_in_React_Three_Fiber
+  - bind_fold_unfold_refold_to_exported_nodes
+  - test_FR_EN_data_claim_collision
+  - test_desktop_and_mobile
+  - exercise_one_failure_and_recovery_path
+  - record_benchmark_verdict
 
 do_not_promote_if:
-  - 3D is only spectacle
-  - dieline becomes harder to understand than V2
-  - artwork floats or occludes incorrectly
-  - mobile legibility collapses
-  - camera motion causes disorientation
+  - Blender_MCP_is_only_connected_but_not_benchmarked
+  - GLB_exports_but_live_runtime_breaks
+  - node_or_pivot_contract_drifts
+  - asset_is_only_cinematic_and_not_load_bearing
+  - mobile_performance_or_legibility_regresses
+  - concept_geometry_is_misrepresented_as_manufacturing_validated
+
+exact_next_gate: "BLENDER_MCP_CONNECTION -> REAL_BLENDER_RUN -> GLB_ROUNDTRIP -> RUNTIME_QA"

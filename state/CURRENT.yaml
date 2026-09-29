@@ -1,35 +1,28 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: RUNTIME_PROOF_GATE
-north_star: "Packaging is not a file. It is a compiled surface."
+phase: V2_STRUCTURAL_REDIRECTION
+north_star: "You don't watch the rules change. You watch the package make room for them."
+thesis: "Packaging is not a file. It is a compiled surface."
 locked_mechanism: "CONSTRAINT -> PRESSURE -> COLLISION -> REFLOW -> VALID FORM"
-visual_direction: "Industrial Constraint Machine + editorial typography + restrained paper materiality"
-truth_boundary: "Concept prototype; demo rule weights are not regulatory validation."
-current_scope:
-  - one carton master
-  - EU / Canada market switch
-  - bilingual pressure
-  - data carrier pressure
-  - 24H HYDRATION claim collision
-  - compile/reflow
-  - deterministic 15s demo
+visual_direction: "Editorial print lab x industrial dieline system"
+truth_boundary: "Concept prototype; demo constraints are not regulatory validation."
+runtime:
+  cloudflare_url: "https://packshift-awd.pages.dev/"
+  production_branch: "day19/vertical-slice"
+v2_changes:
+  - remove permanent dashboard sidebars
+  - package becomes dominant hero object
+  - warm ivory editorial studio replaces dark SaaS shell
+  - language/data/claim enter as physical surface demands
+  - collision shown as actual competing front-panel territory
+  - compile opens carton into living dieline
+  - content reflows before refold
+  - manual controls retained as bottom operator dock
 status:
   concept: PROVEN_FOR_BUILD
-  visual_direction: LOCKED
-  vertical_slice: IMPLEMENTED
-  local_build: PASSED
-  github_branch_ci: PASSED
-  github_pr_ci: PASSED
-  built_artifact: AVAILABLE
+  v1_runtime: REJECTED_FOR_VISUAL_DIRECTION
+  v2_structure: IMPLEMENTED
   github_pr: DRAFT_DO_NOT_MERGE
-  pages_enablement: NOT_REQUIRED_FOR_VERCEL_PATH
-  vercel_config: READY_BUT_NOT_SELECTED
-  cloudflare_pages_config: READY
-  cloudflare_production_branch: "day19/vertical-slice"
-  cloudflare_runtime_url: "https://packshift-awd.pages.dev/"
-  cloudflare_deploy: LIVE_URL_REPORTED
-  github_branch_ci: PASSED
-  github_pr_ci: PASSED
-  runtime_reachability: PENDING_INDEPENDENT_FETCH
-  runtime_visual: PENDING_VISUAL_QA
-next_gate: "Verify live URL reachability -> desktop/mobile visual QA -> interaction QA -> promotion decision"
+  cloudflare_auto_deploy: EXPECTED_FROM_GIT_PUSH
+  runtime_visual_v2: PENDING_DEPLOY_AND_QA
+next_gate: "CI pass -> Cloudflare auto-deploy -> desktop/mobile V2 visual QA -> motion polish"

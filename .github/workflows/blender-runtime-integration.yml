@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - feat/blender-master-pipeline
+      - feat/v5-spatial-negotiation-studio
   pull_request:
-    branches:
-      - feat/threejs-compiler-scene
     paths:
       - 'public/models/**'
       - 'src/**'
@@ -26,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate committed GLB contract
+      - name: Validate committed V5 GLB contract
         run: python3 scripts/validate_glb_contract.py
 
       - name: Setup Node
@@ -48,5 +47,5 @@ jobs:
       - name: Upload runtime artifact
         uses: actions/upload-artifact@v4
         with:
-          name: packshift-blender-runtime
+          name: packshift-v5-spatial-studio-runtime
           path: dist

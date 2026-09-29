@@ -1,15 +1,28 @@
 project: PACKSHIFT
-handover_version: 0.1
-resume_from: "Run npm install, npm run build, then visually verify desktop/mobile and deterministic demo sequence."
-do_not_change:
-  - central physical package interaction
-  - locked interaction signature
+handover_version: 0.3
+active_branch: "feat/threejs-compiler-scene"
+base_branch: "day19/vertical-slice"
+resume_from: "Verify V3 Three.js CI. If green, inspect a Cloudflare branch preview before adding full constraint logic."
+preserve:
+  - V2 production runtime on day19/vertical-slice
+  - north star and compiled-surface thesis
+  - anti-dashboard direction
+  - editorial ivory visual language
   - truth boundary around regulatory validity
-  - anti-dashboard / anti-chatbot direction
-verify:
-  - desktop composition
-  - 360-430px mobile behavior
-  - collision state visibility
-  - compile state readability
-  - EU -> Canada transition
-  - reduced-motion support
+v3_load_bearing_test:
+  - carton must read as a real spatial object
+  - unfold must expose a coherent dieline
+  - refold must return to the same master object
+  - 3D motion must explain surface geometry, not decorate it
+  - camera must support causal understanding
+do_not_promote_if:
+  - Three.js is only cosmetic
+  - dieline geometry is confusing
+  - mobile performance or legibility collapses
+  - visual quality is weaker than V2
+next_after_spatial_pass:
+  - anchor FR/EN pressure to left/copy face
+  - anchor data carrier to right/data face
+  - create front-panel claim collision
+  - animate content migration during compile
+  - build final deterministic 15s demo

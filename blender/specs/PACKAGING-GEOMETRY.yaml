@@ -1,17 +1,22 @@
-version: 0.1.0
+version: 0.2.0
 status: CONCEPT_DIMENSIONS__NOT_MANUFACTURING_VALIDATED
+asset: PACKSHIFT_MASTER_01
 product: NORD_HYDRA_VEIL_BARRIER_CREAM
 nominal_fill: 50_mL
 
-units: millimeters
+units:
+  source: millimeters
+  blender_geometry: meters
+  runtime_glTF: meters
+  conversion: 0.001
 
 carton:
   width: 56
   depth: 36
   height: 130
   board_thickness: 0.45
-  top_flap_depth: 28
-  bottom_flap_depth: 28
+  top_flap_depth: 36
+  bottom_flap_depth: 36
   glue_flap_width: 12
 
 print:
@@ -19,14 +24,57 @@ print:
   safe_margin: 4
   registration_zone: 5
 
+axes:
+  blender:
+    width: X
+    depth: Y
+    up: Z
+    front_normal: +Y
+  runtime:
+    format: GLB
+    coordinate_conversion: glTF_exporter_managed
+
 nodes:
   root: PACKSHIFT_ROOT
   front: FRONT
+  right_hinge: HINGE_RIGHT
   right: RIGHT_DATA
+  back_hinge: HINGE_BACK
   back: BACK
+  left_hinge: HINGE_LEFT
   left: LEFT_COPY
+  top_hinge: HINGE_TOP
   top: TOP
+  bottom_hinge: HINGE_BOTTOM
   bottom: BOTTOM
+
+runtime_anchors:
+  claim_front: ANCHOR_CLAIM_FRONT
+  copy_left: ANCHOR_COPY_LEFT
+  data_right: ANCHOR_DATA_RIGHT
+  back_reflow: ANCHOR_BACK_REFLOW
+
+fold_contract:
+  HINGE_RIGHT:
+    axis: Z
+    closed_deg: 0
+    flat_deg: 90
+  HINGE_BACK:
+    axis: Z
+    closed_deg: 0
+    flat_deg: 90
+  HINGE_LEFT:
+    axis: Z
+    closed_deg: 0
+    flat_deg: -90
+  HINGE_TOP:
+    axis: X
+    closed_deg: 0
+    flat_deg: -90
+  HINGE_BOTTOM:
+    axis: X
+    closed_deg: 0
+    flat_deg: 90
 
 runtime_semantics:
   FRONT:
@@ -46,3 +94,5 @@ truth_boundary:
   - dimensions_are_conceptual_until_verified_against_real_packaging_engineering
   - safe_area_is_demo_logic_not_regulatory_validation
   - board_thickness_is_visual_physical_assumption
+  - digital_twin_claim_is_forbidden_until_source_dimension_truth_exists
+  - GLB_export_is_not_live_runtime_validation

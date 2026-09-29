@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static PACKSHIFT Blender contract validation; does not require Blender."""
+"""Static PACKSHIFT V5 Blender contract validation; no Blender required."""
 from pathlib import Path
 import sys
 
@@ -7,28 +7,31 @@ ROOT = Path(__file__).resolve().parents[2]
 
 CHECKS = {
     "blender/specs/PACKAGING-GEOMETRY.yaml": [
-        "asset: PACKSHIFT_MASTER_01",
-        "right_hinge: HINGE_RIGHT",
-        "claim_front: ANCHOR_CLAIM_FRONT",
+        "asset: PACKSHIFT_MASTER_V5",
+        "internal_nodes:",
+        "surface_capacity:",
+        "explode_jar: ANCHOR_EXPLODE_JAR",
         "digital_twin_claim_is_forbidden_until_source_dimension_truth_exists",
     ],
     "blender/specs/GLB-CONTRACT.md": [
-        "PACKSHIFT_ROOT",
-        "HINGE_BACK",
-        "ANCHOR_DATA_RIGHT",
+        "INNER_ASSEMBLY",
+        "TOP_DUST_LEFT",
+        "ANCHOR_EXPLODE_INSERT",
         "export_apply=False",
         "A valid GLB is not live runtime proof",
     ],
     "blender/scripts/build_master.py": [
         'ROOT = "PACKSHIFT_ROOT"',
-        '"HINGE_RIGHT"',
-        '"ANCHOR_BACK_REFLOW"',
+        '"INNER_JAR"',
+        '"HINGE_GLUE"',
+        '"ANCHOR_EXPLODE_JAR"',
         'root["manufacturing_validation_claimed"] = False',
     ],
     "blender/scripts/validate_scene.py": [
-        "PACKSHIFT BLENDER VALIDATION: PASS",
+        "PACKSHIFT V5 BLENDER VALIDATION: PASS",
         "fold_hinge",
-        "concept_dimensions_only",
+        "decomposition metadata",
+        "manufacturing truth boundary preserved",
     ],
     "blender/scripts/export_glb.py": [
         "packshift-master.glb",
@@ -38,32 +41,31 @@ CHECKS = {
     ],
 }
 
-
 def main() -> int:
-    errors = []
-    for rel, markers in CHECKS.items():
-        path = ROOT / rel
+    errors=[]
+    for rel,markers in CHECKS.items():
+        path=ROOT/rel
         if not path.is_file():
             errors.append(f"missing file: {rel}")
             continue
-        text = path.read_text(encoding="utf-8")
+        text=path.read_text(encoding="utf-8")
         for marker in markers:
             if marker not in text:
                 errors.append(f"{rel} missing marker: {marker}")
 
     if errors:
-        print("PACKSHIFT BLENDER CONTRACT: FAIL")
+        print("PACKSHIFT V5 BLENDER CONTRACT: FAIL")
         for error in errors:
             print(f"- {error}")
         return 1
 
-    print("PACKSHIFT BLENDER CONTRACT: PASS")
-    print("- geometry/hinge contract present")
-    print("- runtime anchor contract present")
-    print("- deterministic Blender build/validate/export scripts present")
-    print("- GLB/runtime/manufacturing truth boundaries present")
+    print("PACKSHIFT V5 BLENDER CONTRACT: PASS")
+    print("- deep physical decomposition contract present")
+    print("- fold/dust/glue hierarchy present")
+    print("- internal product architecture present")
+    print("- runtime surface and explode anchors present")
+    print("- truth boundaries preserved")
     return 0
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     sys.exit(main())

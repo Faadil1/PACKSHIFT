@@ -26,5 +26,10 @@ status:
   vercel_config: READY_BUT_NOT_SELECTED
   cloudflare_pages_config: READY
   cloudflare_production_branch: "day19/vertical-slice"
-  runtime_visual: PENDING_PUBLIC_RUNTIME
-next_gate: "Cloudflare Pages Git deploy -> verify pages.dev -> desktop/mobile runtime verification"
+  cloudflare_runtime_url: "https://packshift-awd.pages.dev/"
+  cloudflare_deploy: LIVE_URL_REPORTED
+  github_branch_ci: PASSED
+  github_pr_ci: PASSED
+  runtime_reachability: PENDING_INDEPENDENT_FETCH
+  runtime_visual: PENDING_VISUAL_QA
+next_gate: "Verify live URL reachability -> desktop/mobile visual QA -> interaction QA -> promotion decision"

@@ -1,113 +1,136 @@
-# PACKSHIFT GLB Contract
+# PACKSHIFT V5 GLB Contract
 
 ## Purpose
 
-This contract prevents Blender and the Three.js runtime from drifting apart.
+The V5 asset is a **physical packaging system**, not a decorative box.
 
-Blender owns **asset authoring**. React Three Fiber owns **live interaction**.
+Blender owns canonical spatial structure:
+- folding carton shell
+- glue and dust flaps
+- internal product assembly
+- runtime anchors
+- fold metadata
+- material identity
 
-## Format
-
-- Runtime asset: `GLB`
-- Source dimensions: millimeters
-- Blender geometry: meters
-- Up axis in Blender: +Z
-- Front normal: +Y
-- Runtime: Three.js / React Three Fiber
-- Export target: glTF 2.0 / GLB
+React Three Fiber owns:
+- user manipulation
+- surface pressure logic
+- constraint placement
+- camera/orbit behavior
+- decomposition scrubber
+- live compile/reflow
 
 ## Required hierarchy
 
-```text
+```
 PACKSHIFT_ROOT
 ├── FRONT
 ├── HINGE_RIGHT
 │   ├── RIGHT_DATA
-│   └── HINGE_BACK
-│       └── BACK
+│   ├── HINGE_BACK
+│   │   ├── BACK
+│   │   └── HINGE_GLUE
+│   │       └── GLUE_FLAP
+│   ├── HINGE_TOP_DUST_RIGHT
+│   │   └── TOP_DUST_RIGHT
+│   └── HINGE_BOTTOM_DUST_RIGHT
+│       └── BOTTOM_DUST_RIGHT
 ├── HINGE_LEFT
-│   └── LEFT_COPY
+│   ├── LEFT_COPY
+│   ├── HINGE_TOP_DUST_LEFT
+│   │   └── TOP_DUST_LEFT
+│   └── HINGE_BOTTOM_DUST_LEFT
+│       └── BOTTOM_DUST_LEFT
 ├── HINGE_TOP
 │   └── TOP
 ├── HINGE_BOTTOM
 │   └── BOTTOM
-├── ANCHOR_CLAIM_FRONT
-├── ANCHOR_COPY_LEFT
-├── ANCHOR_DATA_RIGHT
-└── ANCHOR_BACK_REFLOW
+├── INNER_ASSEMBLY
+│   ├── INSERT_TRAY
+│   ├── INNER_JAR
+│   │   └── CREAM_CORE
+│   ├── JAR_CAP
+│   ├── SEAL_DISC
+│   └── LEAFLET
+└── runtime anchors
 ```
-
-The hinge empties are **load-bearing runtime nodes**. Do not collapse, apply away, or rename them without a coordinated runtime change.
-
-## Fold contract
-
-| Node | Axis | Closed | Flat |
-| --- | --- | ---: | ---: |
-| `HINGE_RIGHT` | Z | 0° | +90° |
-| `HINGE_BACK` | Z | 0° | +90° |
-| `HINGE_LEFT` | Z | 0° | −90° |
-| `HINGE_TOP` | X | 0° | −90° |
-| `HINGE_BOTTOM` | X | 0° | +90° |
-
-The exported asset is **closed by default**. The browser opens the dieline by animating the hinge transforms.
 
 ## Runtime anchors
 
-- `ANCHOR_CLAIM_FRONT` — 24H HYDRATION entry/collision target
-- `ANCHOR_COPY_LEFT` — FR/EN pressure target
-- `ANCHOR_DATA_RIGHT` — QR/data-carrier target
-- `ANCHOR_BACK_REFLOW` — back-panel content migration target
-
-Anchors are transform nodes, not visible geometry.
+Required:
+- `ANCHOR_CLAIM_FRONT`
+- `ANCHOR_COPY_LEFT`
+- `ANCHOR_DATA_RIGHT`
+- `ANCHOR_BACK_REFLOW`
+- `ANCHOR_SURFACE_FRONT`
+- `ANCHOR_SURFACE_LEFT`
+- `ANCHOR_SURFACE_RIGHT`
+- `ANCHOR_SURFACE_BACK`
+- `ANCHOR_EXPLODE_JAR`
+- `ANCHOR_EXPLODE_CAP`
+- `ANCHOR_EXPLODE_SEAL`
+- `ANCHOR_EXPLODE_INSERT`
+- `ANCHOR_EXPLODE_LEAFLET`
 
 ## Materials
 
-Minimum stable materials:
-
+Required:
 - `MAT_PAPER_OUTER`
 - `MAT_PAPER_EDGE`
+- `MAT_INSERT_PULP`
+- `MAT_JAR`
+- `MAT_CREAM`
+- `MAT_CAP`
+- `MAT_SEAL`
+- `MAT_LEAFLET`
 
-The browser may add temporary collision/reflow materials, but the physical paper master originates in Blender.
+## Fold metadata
 
-## Export requirements
+Every `HINGE_*` runtime hinge must preserve:
+- `packshift_role=fold_hinge`
+- `fold_axis`
+- `closed_deg`
+- `flat_deg`
+
+The browser reads these values from glTF extras.
+
+## Decomposition contract
+
+Internal physical components remain separate runtime nodes.
+
+The browser may move them toward the exported explode anchors but must not flatten them into the carton hierarchy.
+
+## Export
 
 Target:
 
 `public/models/packshift-master.glb`
 
 Requirements:
-
 - binary GLB
+- `export_apply=False`
+- `export_extras=True`
+- no default Camera/Light/Cube
 - stable node names
-- hinge empties/transforms preserved
-- custom properties exported as extras where supported
-- no Blender camera/light dependency
-- no hidden debug geometry
-- `export_apply=False` so hinge transforms survive
-- deterministic project-relative output path
+- hierarchy preserved
+- deterministic project-relative path
 
-## Runtime handoff
+## Proof boundary
 
-The V3 procedural geometry should eventually be replaced by:
+A valid Blender scene proves asset authoring.
 
-```js
-const { nodes, materials } = useGLTF('/models/packshift-master.glb')
-```
+A valid GLB proves asset generation.
 
-The runtime must bind to stable hinge names rather than reconstructing the package topology independently.
+A successful Vite build proves build integration.
 
-## Proof classes
+Only the live browser can prove:
+- drag/drop surface placement
+- pressure response
+- user-controlled decomposition
+- exported hinge behavior
+- X-ray view
+- reflow
+- refold
+- mobile interaction
 
-A Blender scene proves **asset authoring**.
-
-A valid GLB proves **artifact generation**.
-
-A successful `useGLTF()` load proves **runtime import**.
-
-PACKSHIFT is not spatially proven until the live runtime preserves:
-
-`constraint → collision → unfold → reflow → refold → valid form`
-
-## Truth boundary
-
-A valid GLB is not live runtime proof. This is a concept packaging master, not manufacturing CAD or regulatory validation.
+A valid GLB is not live runtime proof and is not manufacturing CAD.

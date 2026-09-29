@@ -37,7 +37,8 @@ out_of_scope_until_spatial_proof_passes:
 status:
   v2_runtime: PRESERVED
   v3_branch: ACTIVE
-  v3_spatial_proof: IMPLEMENTED_AWAITING_CI
-  v3_runtime: NOT_PROMOTED
+  v3_spatial_proof: IMPLEMENTED
+  v3_ci: PASSED
+  v3_runtime: PREVIEW_PENDING_VISUAL_QA
   merge_to_v2: BLOCKED_UNTIL_VISUAL_PROOF
-next_gate: "npm install/build CI -> Cloudflare preview -> visual proof of unfold/refold -> then reconnect constraints"
+next_gate: "Cloudflare/Vercel branch preview -> visual proof of unfold/refold -> then reconnect constraints"

@@ -59,3 +59,25 @@ v5_1_summary: >-
   (build_master.py 0.5.1 + runtime). New closed-pose geometry check prevents regression.
 
 next_gate: "MERGE_V5_1 -> REDEPLOY -> REAL_DEVICE_TOUCH_QA -> GPU_PERF_QA"
+
+
+v7_1_continuity_consequence:
+  branch: feat/v7-1-continuity-consequence
+  exact_next_gate: "CI -> PREVIEW -> JOURNEY_TRACE_QA -> MUSEUM_CONTINUITY_QA -> MOBILE -> FINAL_VIDEO_CAPTURE"
+  preserve:
+    - V7_grand_public_flow
+    - Taille_reelle
+    - Museum_victory
+    - hydraulic_press_level_5
+    - V6_mode_pro
+    - FR_EN_ES
+  inspect:
+    - intro_handoff_overlay
+    - overload_count_only_on_new_collision
+    - pop_and_crack_trace
+    - law_trace
+    - minimum_width_trace
+    - journey_marks_visible_only_in_museum
+    - museum_stage_full_width
+    - share_card_second_cartel_line
+    - loading_placeholder

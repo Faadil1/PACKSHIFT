@@ -56,20 +56,33 @@ export const LEVELS = [
     step: 0,
   },
   {
+    // "Nouvelle loi !": the box is laid out without translation, then a law
+    // makes it mandatory. In 10 of the 14 valid first layouts it fits nowhere
+    // without moving something — the player has to re-compile the box.
     id: 4,
+    market: 'CANADA',
+    kinds: ['claim', 'data', 'warning', 'barcode', 'language'],
+    step: 0,
+    twist: 'language',
+  },
+  {
+    id: 5,
     market: 'EU',
     kinds: ['claim', 'data', 'language', 'warning', 'barcode'],
     step: 0,
     sizing: 'shrink',
   },
   {
-    id: 5,
+    id: 6,
     market: 'CANADA',
     kinds: ['claim', 'data', 'language', 'warning', 'eco', 'barcode'],
     step: 0,
     sizing: 'grow',
   },
 ];
+
+// Stickers on the table at the start (a twist level holds one back).
+export const startKinds = (level) => level.kinds.filter((k) => k !== level.twist);
 
 export const levelById = (id) => LEVELS.find((l) => l.id === Number(id)) || null;
 
@@ -144,7 +157,8 @@ export function starsFor(level, { moves, step, hints = 0 }, opts) {
     const gap = Math.abs(step - (best ?? step));
     stars = gap === 0 ? 3 : gap <= 1 ? 2 : 1;
   } else {
-    const par = level.kinds.length;
+    // A new law usually forces one extra move.
+    const par = level.kinds.length + (level.twist ? 1 : 0);
     stars = moves <= par ? 3 : moves <= par + 3 ? 2 : 1;
   }
   return Math.max(1, stars - hints);

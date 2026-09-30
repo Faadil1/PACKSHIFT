@@ -28,14 +28,14 @@ test('every placement level is solvable at its starting size', () => {
   }
 });
 
-test('level 5 is impossible at the start and becomes possible one step bigger', () => {
-  const level = LEVELS.find((l) => l.id === 5);
+test('level 6 is impossible at the start and becomes possible one step bigger', () => {
+  const level = LEVELS.find((l) => l.id === 6);
   assert.equal(solvePlacements(blank(level), level.market, sizeDims(0)).valid, false);
   assert.equal(minimalStep(level.kinds, level.market), 1);
 });
 
-test('level 4 can shrink below the nominal carton', () => {
-  const level = LEVELS.find((l) => l.id === 4);
+test('level 5 can shrink below the nominal carton', () => {
+  const level = LEVELS.find((l) => l.id === 5);
   assert.ok(minimalStep(level.kinds, level.market) < 0);
 });
 
@@ -70,9 +70,11 @@ test('stars: par moves = 3, hints cost a star; sizing levels reward the size', (
   assert.equal(starsFor(l1, { moves: 6, step: 0 }), 2);
   assert.equal(starsFor(l1, { moves: 12, step: 0 }), 1);
   assert.equal(starsFor(l1, { moves: 3, step: 0, hints: 1 }), 2);
-  const l5 = LEVELS[4];
-  assert.equal(starsFor(l5, { moves: 20, step: 1 }), 3);
-  assert.equal(starsFor(l5, { moves: 6, step: 4 }), 1);
+  const l6 = LEVELS.find((l) => l.id === 6);
+  assert.equal(starsFor(l6, { moves: 20, step: 1 }), 3);
+  assert.equal(starsFor(l6, { moves: 6, step: 4 }), 1);
+  const law = LEVELS.find((l) => l.twist);
+  assert.equal(starsFor(law, { moves: law.kinds.length + 1, step: 0 }), 3, 'a new law allows one extra move');
 });
 
 test('challenge links round-trip level, box and rival score', () => {
@@ -87,4 +89,28 @@ test('challenge links round-trip level, box and rival score', () => {
   assert.equal(decodeGameHash('#jeu=3').level.id, 3);
   assert.equal(decodeGameHash('#jeu=99'), null);
   assert.equal(decodeGameHash('#m=EU&b=claim'), null);
+});
+
+test('the new-law level: the first layout is solvable, and the law usually forces a rearrangement', async () => {
+  const { SURFACES, isValidForm } = await import('../src/model/pressure.js');
+  const { startKinds } = await import('../src/game/levels.js');
+  const law = LEVELS.find((l) => l.twist);
+  const first = startKinds(law);
+  assert.ok(!first.includes(law.twist));
+  assert.equal(solvePlacements(Object.fromEntries(first.map((k) => [k, null])), law.market, sizeDims(law.step)).valid, true);
+  assert.equal(solvePlacements(blank(law), law.market, sizeDims(law.step)).valid, true);
+  let total = 0;
+  let stuck = 0;
+  const d = sizeDims(law.step);
+  const walk = (i, pl) => {
+    if (i === first.length) {
+      if (!isValidForm(pl, law.market, d)) return;
+      total += 1;
+      if (!SURFACES.some((f) => isValidForm({ ...pl, [law.twist]: f }, law.market, d))) stuck += 1;
+      return;
+    }
+    for (const f of SURFACES) walk(i + 1, { ...pl, [first[i]]: f });
+  };
+  walk(0, {});
+  assert.ok(stuck / total > 0.5, `${stuck}/${total} first layouts must be rearranged`);
 });

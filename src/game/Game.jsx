@@ -26,6 +26,7 @@ import {
   minimalStep,
   sizeDims,
   starsFor,
+  startKinds,
   todayKey,
 } from './levels.js';
 import { renderShareCard, shareText } from './shareCard.js';
@@ -71,7 +72,8 @@ const fromLink = (() => {
   }
 })();
 
-const emptyFor = (level) => Object.fromEntries(level.kinds.map((k) => [k, null]));
+const emptyFor = (level) => Object.fromEntries(startKinds(level).map((k) => [k, null]));
+const POP_DELAY = 900; // ms an overfull face holds before the last sticker falls off
 
 export default function Game({ onPro, lang = 'fr', setLang }) {
   const T = STRINGS[lang];
@@ -96,6 +98,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const [toast, setToast] = useState('');
   const [muted, setMutedState] = useState(isMuted);
   const [snapshotReady, setSnapshotReady] = useState(false);
+  const [lawArrived, setLawArrived] = useState(false); // new-law level: the twist happened
+  const [stamp, setStamp] = useState(false); // "NOUVELLE LOI" overlay
+  const [popped, setPopped] = useState(null); // { kind, surface, n }
+  const [pops, setPops] = useState(0);
 
   const boardRef = useRef(null);
   const sceneWrap = useRef(null);
@@ -121,7 +127,8 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const pressures = useMemo(() => buildPressure(placements, level.market, dims, opts), [placements, level.market, dims.width, dims.depth, dims.height, opts?.weights?.claim]); // eslint-disable-line react-hooks/exhaustive-deps
   const overloaded = useMemo(() => overloadedSurfaces(pressures), [pressures]);
   const violations = useMemo(() => ruleViolations(placements, level.market), [placements, level.market]);
-  const unplaced = level.kinds.filter((k) => !placements[k]);
+  const activeKinds = level.kinds.filter((k) => k in placements);
+  const unplaced = activeKinds.filter((k) => !placements[k]);
   const allPlaced = unplaced.length === 0;
   const fits = allPlaced && overloaded.length === 0 && violations.length === 0;
   const best = useMemo(() => minimalStep(level.kinds, level.market, opts), [level, opts?.weights?.claim]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -165,12 +172,43 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     if (window.location.hash !== hash) window.history.replaceState(null, '', hash);
   }, [screen, level, brand, isSandbox, lang]);
 
+  // "Ça ne rentre pas", physically: an overfull face holds for a beat, then
+  // the last sticker put on it falls off and bounces back to the tray.
+  useEffect(() => {
+    if (won || drag || overloaded.length === 0) return undefined;
+    const surface = overloaded[0];
+    const onFace = order.filter((k) => placements[k] === surface);
+    const kind = onFace[onFace.length - 1] || activeKinds.find((k) => placements[k] === surface);
+    if (!kind) return undefined;
+    const id = setTimeout(() => {
+      setPlacements((p) => ({ ...p, [kind]: null }));
+      setOrder((o) => o.filter((k) => k !== kind));
+      setPopped((prev) => ({ kind, surface, n: (prev?.n || 0) + 1 }));
+      setPops((c) => c + 1);
+      play('pop');
+    }, POP_DELAY);
+    return () => clearTimeout(id);
+  }, [overloaded.join(), won, drag]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // New-law level: the moment the first layout works, the law lands.
+  useEffect(() => {
+    if (won || !level.twist || lawArrived || !fits) return undefined;
+    const id = setTimeout(() => {
+      setLawArrived(true);
+      setPlacements((p) => ({ ...p, [level.twist]: null }));
+      setStamp(true);
+      play('stamp');
+      setTimeout(() => setStamp(false), 6000); // long enough to read; a tap dismisses it
+    }, 650);
+    return () => clearTimeout(id);
+  }, [fits, won, level.twist, lawArrived]);
+
   // Placement levels win by themselves the moment everything fits.
   useEffect(() => {
-    if (won || level.sizing || !fits) return undefined;
+    if (won || level.sizing || !fits || (level.twist && !lawArrived)) return undefined;
     const id = setTimeout(() => finish(), 420);
     return () => clearTimeout(id);
-  }, [fits, won, level.sizing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fits, won, level.sizing, lawArrived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ---------------------------- helpers ----------------------------- */
 
@@ -212,6 +250,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     setWon(null);
     setSelectedKind(null);
     setSnapshotReady(false);
+    setLawArrived(false);
+    setStamp(false);
+    setPopped(null);
+    setPops(0);
     if (!keepRival) setRival(null);
     if (nextBrand) setBrand(nextBrand);
     lidAnim.current += 1;
@@ -229,10 +271,12 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     if (won || placements[kind] === surface) return;
     setSelectedKind(null);
     setHint(null);
+    const fill = buildPressure({ ...placements, [kind]: surface }, level.market, dims, opts)[surface];
     setPlacements((p) => ({ ...p, [kind]: surface }));
     setOrder((o) => [...o.filter((k) => k !== kind), kind]);
+    setPopped(null);
     countMove();
-    play('crease', { intensity: 0.7 });
+    play('stick', { intensity: fill }); // the fuller the face, the higher the note
   };
 
   const unplace = (kind) => {
@@ -256,7 +300,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     const result = { moves, ms, step, stars, width: dims.width };
     setWon(result);
     setSelectedKind(null);
-    play('resolve');
+    play('fanfare');
     animateLid(0, 1100);
     setTimeout(() => setSnapshotReady(true), 1250);
     if (!isSandbox) {
@@ -279,7 +323,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
       setHints((h) => h + 1);
       return;
     }
-    const kind = level.kinds.find((k) => solution.placements[k] !== placements[k]);
+    const kind = activeKinds.find((k) => solution.placements[k] !== placements[k]);
     if (!kind) return;
     setHint({ kind, surface: solution.placements[kind] });
     setSelectedKind(kind);
@@ -370,7 +414,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
 
   const detailFor = () => {
     if (isSandbox) return T.card.detailBrand(brand.slogan, brand.slogan.length, cm(dims.width));
-    return T.card.detail(level.kinds.length, cm(dims.width), won ? formatTime(won.ms) : '');
+    return T.card.detail(activeKinds.length, cm(dims.width), won ? formatTime(won.ms) : '');
   };
 
   const kickerFor = () => (level.id === 'daily' ? copy.title : isSandbox ? copy.title : T.card.kickerLevel(level.id, copy.title));
@@ -465,13 +509,18 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     const v = violations[0];
     if (v?.kind === 'claim') return { tone: 'hot', text: S.sloganFront };
     if (v?.kind === 'barcode') return { tone: 'hot', text: S.barcodeFront };
+    if (popped && !overloaded.length) {
+      if (isSandbox && popped.kind === 'claim') return { tone: 'hot', text: best === null ? S.sloganNever : S.sloganLong };
+      if (level.sizing === 'grow' && pops >= 2) return { tone: 'hot', text: T.poppedGrow };
+      return { tone: 'hot', text: T.popped(T.plain[popped.kind].name, T.face[popped.surface]) };
+    }
     if (overloaded.length) {
       const f = overloaded.map((x) => T.face[x]).join(' + ');
       if (level.sizing === 'grow' && allPlaced && moves >= 6) return { tone: 'hot', text: S.growHint(f) };
       if (isSandbox && placements.claim === 'FRONT' && overloaded.includes('FRONT')) return { tone: 'hot', text: best === null ? S.sloganNever : S.sloganLong };
       return { tone: 'hot', text: S.overflow(f) };
     }
-    if (!allPlaced) return { tone: 'ink', text: unplaced.length === level.kinds.length ? S.start : S.remaining(unplaced.length) };
+    if (!allPlaced) return { tone: 'ink', text: unplaced.length === activeKinds.length ? S.start : S.remaining(unplaced.length) };
     if (level.sizing === 'shrink') return { tone: 'ok', text: step > (best ?? step) ? S.shrinkMore : S.shrinkFinal };
     if (level.sizing === 'grow') return { tone: 'ok', text: step > (best ?? step) ? S.growSmaller : S.growFinal };
     if (isSandbox) return { tone: 'ok', text: S.sandboxOk };
@@ -527,7 +576,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     viewMode: 'GAME',
     decomposition: lid,
     placements,
-    brief: level.kinds,
+    brief: activeKinds,
     pressures,
     collisionSurfaces: overloaded,
     compiled: Boolean(won),
@@ -622,6 +671,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
         <p className="g-goal">{copy.goal}</p>
         <ul className="g-rules">
           {copy.rules.map((rule) => <li key={rule}>{rule}</li>)}
+          {lawArrived && <li className="g-rule-new"><b>{T.twist.newTag}</b> {T.rules.bilingual}</li>}
         </ul>
         {rival && !won && (
           <p className="g-rival">{T.rival(rival.moves, level.sizing ? T.rivalSize(cm(sizeDims(rival.step).width)) : T.rivalTime(formatTime(rival.seconds * 1000)))}</p>
@@ -636,7 +686,22 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
           </label>
           <label className="g-slogan">
             <span>{T.yourSlogan} <em className={brand.slogan.length > 22 ? 'hot' : ''}>{brand.slogan.length} / {SLOGAN_MAX}</em></span>
-            <input value={brand.slogan} maxLength={SLOGAN_MAX} disabled={Boolean(won)} onChange={(e) => setBrand((b) => ({ ...b, slogan: e.target.value }))} placeholder={T.sloganPlaceholder} />
+            <span className="g-slogan-row">
+              <input value={brand.slogan} maxLength={SLOGAN_MAX} disabled={Boolean(won)} onChange={(e) => setBrand((b) => ({ ...b, slogan: e.target.value }))} placeholder={T.sloganPlaceholder} />
+              <button
+                type="button"
+                className="g-dice"
+                disabled={Boolean(won)}
+                aria-label={T.dice}
+                title={T.dice}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const pool = T.slogans.filter((x) => x !== brand.slogan);
+                  setBrand((b) => ({ ...b, slogan: pool[Math.floor(Math.random() * pool.length)] }));
+                  play('tick');
+                }}
+              >🎲</button>
+            </span>
           </label>
         </section>
       )}
@@ -655,7 +720,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
             {FACE_ORDER.map((surface) => {
               const load = pressures[surface];
               const p = preview?.surface === surface ? preview.to : null;
-              const who = level.kinds.filter((k) => placements[k] === surface);
+              const who = activeKinds.filter((k) => placements[k] === surface);
               const over = load > 1;
               const cap = capacity[surface];
               const base = MARKETS[level.market].base[surface] / cap;
@@ -684,7 +749,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
                     <i className="g-line" />
                   </div>
                   <div className="g-face-cast">
-                    {who.map((k, i) => renderChar(k, i, 0.5, 'mini' + (over ? ' squeezed' : '')))}
+                    {who.map((k, i) => renderChar(k, i, 0.5, 'mini' + (won ? ' happy' : over ? ' squeezed' : load > 0.85 ? ' worried' : '')))}
                   </div>
                   <small className="g-already">{T.alreadyPrinted} {T.already[level.market][surface]}</small>
                 </div>
@@ -702,7 +767,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
               {!won && <button onClick={(e) => { e.stopPropagation(); giveHint(); }}>{T.hint} {hints ? `(${hints})` : ''}</button>}
             </div>
             <div className="g-tray-cast">
-              {unplaced.map((k, i) => renderChar(k, i, 0.78))}
+              {unplaced.map((k, i) => renderChar(k, i, 0.78, (popped?.kind === k ? `bounced n${popped.n % 2}` : '') + (lawArrived && k === level.twist ? ' arrived' : '')))}
             </div>
             {selectedKind && (
               <p className="g-why"><b>{T.plain[selectedKind].name}</b> — {T.plain[selectedKind].why} <span>{T.tapFace}</span></p>
@@ -769,6 +834,13 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
             <button className="g-link" onClick={() => setWon((w) => ({ ...w, hidden: true }))}>{T.win.seeBox}</button>
           </div>
         </aside>
+      )}
+
+      {stamp && (
+        <div className="g-stamp" role="alert" onClick={() => setStamp(false)}>
+          <b>{T.twist.stamp}</b>
+          <p>{T.twist.body}</p>
+        </div>
       )}
 
       {toast && <div className="toast" role="status">{toast}</div>}

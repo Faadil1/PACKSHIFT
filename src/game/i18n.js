@@ -21,7 +21,7 @@ const fr = {
   hook2: 'Ou presque.',
   hook3: ['Et il n’y a ', 'pas la place.'],
   play: 'Jouer',
-  playSub: '5 niveaux · 2 minutes',
+  playSub: '6 niveaux · 3 minutes',
   daily: 'Défi du jour',
   create: 'Crée ta boîte',
   createSub: 'ton slogan rentre ?',
@@ -65,11 +65,16 @@ const fr = {
       fact: 'Le code-barres est presque toujours au dos : devant, il gâcherait la vitrine.',
     },
     4: {
+      title: 'Nouvelle loi !',
+      goal: 'Au Canada. Colle les 4 étiquettes… et tiens-toi prêt.',
+      fact: 'Les règles d’étiquetage changent souvent : à chaque nouvelle loi, des milliers de boîtes doivent être redessinées.',
+    },
+    5: {
       title: 'La marque veut plus petit',
       goal: 'Moins de carton = moins cher et plus écolo. Rétrécis la boîte au maximum, sans que rien ne déborde.',
       fact: 'Chaque millimètre de carton économisé, multiplié par des millions de boîtes, compte.',
     },
-    5: {
+    6: {
       title: 'Mission impossible ?',
       goal: '6 étiquettes, au Canada. Essaie… puis agrandis la boîte le moins possible.',
       fact: 'Voilà pourquoi certaines boîtes sont plus grandes que le pot : il faut de la place pour tout ce qu’on est obligé d’écrire.',
@@ -136,6 +141,26 @@ const fr = {
     sandboxOk: 'Ça rentre ! Valide ta boîte.',
     ok: 'Ça rentre !',
   },
+  twist: {
+    stamp: 'NOUVELLE LOI',
+    body: 'Au Canada, tout doit maintenant être écrit en français ET en anglais. La traduction arrive : trouve-lui une place.',
+    newTag: 'nouveau',
+  },
+  popped: (name, face) => `Plus de place sur ${face} ! ${name} → retour au bac.`,
+  poppedGrow: 'Ça retombe encore… et si la boîte était plus grande ? ↓',
+  dice: 'Slogan au hasard',
+  slogans: [
+    'Doux.',
+    'Hydrate 24h',
+    'Zéro compromis',
+    'Peau de bébé garantie',
+    'Le nuage qui s’applique',
+    'Testé sous contrôle dermatologique',
+    'La crème que ta grand-mère t’aurait volée',
+    'Fabriqué avec amour et un peu de glycérine',
+    'Nouvelle formule, encore plus nouvelle que l’ancienne',
+    'Hydratation intense, fraîche, profonde et durable toute la journée',
+  ],
   notes: { dragMe: 'glisse-moi devant ↗', notSeen: 'on ne me voit pas !', notHere: 'pas ici !', noRoom: 'je rentre pas !' },
   hintFlash: { sizing: 'Aucun rangement ne marche à cette taille. Change la taille de la boîte.', none: 'Même la meilleure solution déborde ici.' },
 
@@ -189,7 +214,7 @@ const en = {
   hook2: 'Well, almost.',
   hook3: ['And there’s ', 'no room.'],
   play: 'Play',
-  playSub: '5 levels · 2 minutes',
+  playSub: '6 levels · 3 minutes',
   daily: 'Daily challenge',
   create: 'Make your box',
   createSub: 'does your slogan fit?',
@@ -233,11 +258,16 @@ const en = {
       fact: 'The barcode is almost always on the back: on the front it would spoil the shop window.',
     },
     4: {
+      title: 'New law!',
+      goal: 'In Canada. Stick the 4 labels… and brace yourself.',
+      fact: 'Labelling rules change often: every new law means thousands of boxes get redesigned.',
+    },
+    5: {
       title: 'The brand wants it smaller',
       goal: 'Less cardboard = cheaper and greener. Shrink the box as far as you can without anything overflowing.',
       fact: 'Every millimetre of cardboard saved, times millions of boxes, adds up.',
     },
-    5: {
+    6: {
       title: 'Mission impossible?',
       goal: '6 labels, in Canada. Try it… then make the box as little bigger as you can.',
       fact: 'That’s why some boxes are bigger than the jar: they need room for everything they’re required to say.',
@@ -304,6 +334,26 @@ const en = {
     sandboxOk: 'It fits! Confirm your box.',
     ok: 'It fits!',
   },
+  twist: {
+    stamp: 'NEW LAW',
+    body: 'In Canada, everything must now be in French AND English. The translation is here: find it a spot.',
+    newTag: 'new',
+  },
+  popped: (name, face) => `No room on ${face}! ${name} bounced back.`,
+  poppedGrow: 'It keeps falling off… what if the box were bigger? ↓',
+  dice: 'Random slogan',
+  slogans: [
+    'Soft.',
+    '24h hydration',
+    'Zero compromise',
+    'Baby-soft skin, guaranteed',
+    'A cloud you can apply',
+    'Dermatologically tested',
+    'The cream your grandma would steal',
+    'Made with love and a little glycerin',
+    'New formula, even newer than the old one',
+    'Intense, fresh, deep and long-lasting hydration all day long',
+  ],
   notes: { dragMe: 'drag me to the front ↗', notSeen: 'nobody can see me!', notHere: 'not here!', noRoom: 'I don’t fit!' },
   hintFlash: { sizing: 'No layout works at this size. Change the box size.', none: 'Even the best layout overflows here.' },
 
@@ -357,7 +407,7 @@ const es = {
   hook2: 'Bueno, casi.',
   hook3: ['Y no hay ', 'sitio.'],
   play: 'Jugar',
-  playSub: '5 niveles · 2 minutos',
+  playSub: '6 niveles · 3 minutos',
   daily: 'Reto del día',
   create: 'Crea tu caja',
   createSub: '¿cabe tu eslogan?',
@@ -401,11 +451,16 @@ const es = {
       fact: 'El código de barras casi siempre va detrás: delante estropearía el escaparate.',
     },
     4: {
+      title: '¡Nueva ley!',
+      goal: 'En Canadá. Pega las 4 etiquetas… y prepárate.',
+      fact: 'Las normas de etiquetado cambian a menudo: con cada ley nueva, miles de cajas se rediseñan.',
+    },
+    5: {
       title: 'La marca la quiere más pequeña',
       goal: 'Menos cartón = más barato y más ecológico. Encoge la caja al máximo sin que nada se desborde.',
       fact: 'Cada milímetro de cartón ahorrado, multiplicado por millones de cajas, cuenta.',
     },
-    5: {
+    6: {
       title: '¿Misión imposible?',
       goal: '6 etiquetas, en Canadá. Inténtalo… y luego agranda la caja lo menos posible.',
       fact: 'Por eso algunas cajas son más grandes que el tarro: hace falta sitio para todo lo que es obligatorio escribir.',
@@ -472,6 +527,26 @@ const es = {
     sandboxOk: '¡Cabe! Confirma tu caja.',
     ok: '¡Cabe!',
   },
+  twist: {
+    stamp: 'NUEVA LEY',
+    body: 'En Canadá, ahora todo debe estar en francés Y en inglés. Llega la traducción: búscale un sitio.',
+    newTag: 'nuevo',
+  },
+  popped: (name, face) => `¡No hay sitio en ${face}! ${name} vuelve a la bandeja.`,
+  poppedGrow: 'Se sigue cayendo… ¿y si la caja fuera más grande? ↓',
+  dice: 'Eslogan al azar',
+  slogans: [
+    'Suave.',
+    'Hidrata 24h',
+    'Cero compromisos',
+    'Piel de bebé garantizada',
+    'Una nube que se aplica',
+    'Testado dermatológicamente',
+    'La crema que tu abuela te robaría',
+    'Hecha con amor y un poco de glicerina',
+    'Nueva fórmula, aún más nueva que la anterior',
+    'Hidratación intensa, fresca, profunda y duradera todo el día',
+  ],
   notes: { dragMe: 'llévame delante ↗', notSeen: '¡nadie me ve!', notHere: '¡aquí no!', noRoom: '¡no quepo!' },
   hintFlash: { sizing: 'Ninguna colocación funciona con este tamaño. Cambia el tamaño de la caja.', none: 'Aquí hasta la mejor solución se desborda.' },
 
@@ -560,7 +635,7 @@ export function levelText(level, lang = 'fr') {
   const rules = [];
   if (level.kinds.includes('claim')) rules.push(T.rules.sloganFront);
   if (level.kinds.includes('barcode')) rules.push(T.rules.noBarcodeFront);
-  if (level.market === 'CANADA') rules.push(T.rules.bilingual);
+  if (level.market === 'CANADA' && level.twist !== 'language') rules.push(T.rules.bilingual);
   if (level.id === 'daily') {
     const date = new Date(Number(level.key.slice(0, 4)), Number(level.key.slice(4, 6)) - 1, Number(level.key.slice(6, 8)));
     const pretty = date.toLocaleDateString(LOCALE[lang], { day: 'numeric', month: 'short' });

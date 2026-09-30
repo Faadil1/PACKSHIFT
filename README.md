@@ -408,10 +408,10 @@ understands in under ten seconds.
   Code-barres*; faces are *Devant, Gauche, Droite, Dos*. Tap a sticker to read
   why it has to be there. Each face shows a fill gauge with what is *déjà
   imprimé* (ingredients, instructions…) so the lack of room is visible.
-- **5 levels** — 1 Le premier pot (EU, 3 stickers) · 2 Direction le Canada
+- **6 levels** — 1 Le premier pot (EU, 3 stickers) · 2 Direction le Canada
   (bilingual: the left is already full) · 3 Tout le monde veut être vu
-  (6 stickers) · 4 La marque veut plus petit (shrink the box) · 5 Mission
-  impossible ? (does not fit — grow the box as little as possible). Every level
+  (6 stickers) · 4 Nouvelle loi ! (a law arrives mid-level) · 5 La marque
+  veut plus petit (shrink the box) · 6 Mission impossible ? (does not fit — grow the box as little as possible). Every level
   ends on a one-line real-world fact.
 - **Score** — moves, time, stars (par = number of stickers; hints cost a star;
   size levels are scored against the smallest box the solver can prove).
@@ -432,7 +432,23 @@ understands in under ten seconds.
   layout while a valid one existed (Canada, 60×38×134). Any overflow now carries
   a flat penalty; regression test added, and fit is now monotonic in box size.
 
-- **Multilingual (FR · EN · ES)** — the whole site, game and mode pro:
+- **Fun, in scope** — every playful element makes the one idea (mandatory
+  information fighting for limited room on a real box) more physical:
+  an overfull face holds for a beat, then the last sticker **pops off** and
+  bounces back to the tray (*boing*); stickers get **worried** (sweat drop)
+  as their face passes 85 %, **squashed** when over, **happy** and hopping on
+  a win; the stick sound **rises in pitch** as a face fills; a new level,
+  **« Nouvelle loi ! »** (Canada), lands a rubber stamp once your first layout
+  works — translation becomes mandatory and, in 10 of the 14 valid first
+  layouts, it fits nowhere without re-arranging the box (tested); and a
+  **slogan die** in *Ta boîte* rolls real-sounding claims of every length.
+  Now 6 levels.
+- **Scope guardrail** — a new "fun" idea ships only if it (1) makes the
+  space-vs-mandatory-information tension more felt, (2) runs on the real
+  carton, pressure model and solver, and (3) stays honest (demo rules, no
+  fake regulation). Out of scope on purpose: accounts, global leaderboards,
+  power-ups, mini-games or mascots unrelated to packaging.
+ — the whole site, game and mode pro:
   *Est-ce que ça rentre ?* / *Does it fit?* / *¿Cabe o no cabe?*. Language is
   picked from `?lang=`, then the visitor's saved choice, then their browser
   language, then the language of the link they were sent, then English; a

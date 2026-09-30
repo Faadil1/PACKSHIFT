@@ -42,7 +42,7 @@ def main() -> None:
         filepath=str(output),
         export_format="GLB",
         use_selection=True,
-        export_apply=False,
+        export_apply=True,
         export_yup=True,
         export_materials="EXPORT",
         export_extras=True,

@@ -106,7 +106,7 @@ def add_bevel(obj, width=0.00065, segments=3):
     mod.limit_method = "ANGLE"
 
 
-def make_box(name, collection, parent, dimensions, location, material, bevel=0.0005):
+def make_box(name, collection, parent, dimensions, location, material, bevel=0.0005, segments=3):
     bpy.ops.mesh.primitive_cube_add(size=1.0)
     obj = bpy.context.active_object
     obj.name = name
@@ -118,18 +118,19 @@ def make_box(name, collection, parent, dimensions, location, material, bevel=0.0
     obj["concept_dimensions_only"] = True
     obj.data.materials.append(material)
     if bevel:
-        add_bevel(obj, min(bevel, min(dimensions) * 0.35), 3)
+        add_bevel(obj, min(bevel, min(dimensions) * 0.35), segments)
     relink(obj, collection)
     return obj
 
 
 def make_panel(name, collection, parent, dimensions, location, material):
-    obj = make_box(name, collection, parent, dimensions, location, material, bevel=0.00022)
+    # One bevel segment: board edges read as soft without bloating the GLB.
+    obj = make_box(name, collection, parent, dimensions, location, material, bevel=0.00022, segments=1)
     obj["packshift_role"] = "panel"
     return obj
 
 
-def make_cylinder(name, collection, parent, radius, depth, location, material, vertices=64):
+def make_cylinder(name, collection, parent, radius, depth, location, material, vertices=48):
     bpy.ops.mesh.primitive_cylinder_add(vertices=vertices, radius=radius, depth=depth)
     obj = bpy.context.active_object
     obj.name = name
@@ -138,7 +139,7 @@ def make_cylinder(name, collection, parent, radius, depth, location, material, v
     obj.data.materials.append(material)
     obj["packshift_role"] = "internal_product"
     obj["concept_dimensions_only"] = True
-    add_bevel(obj, 0.0007, 4)
+    add_bevel(obj, 0.0007, 3)
     relink(obj, collection)
     return obj
 
@@ -170,7 +171,7 @@ def build():
     leaflet_mat = principled_material("MAT_LEAFLET", (0.96, 0.95, 0.91), 0.82)
 
     root = make_empty(ROOT, collection)
-    root["packshift_asset_version"] = "0.5.0"
+    root["packshift_asset_version"] = "0.5.1"
     root["geometry_truth"] = "CONCEPT_DIMENSIONS_NOT_MANUFACTURING_VALIDATED"
     root["manufacturing_validation_claimed"] = False
     root["width_mm"] = 56.0
@@ -193,9 +194,11 @@ def build():
     mark_hinge(hinge_left, "Z", -90)
     left = make_panel("LEFT_COPY", collection, hinge_left, (THICKNESS, DEPTH, HEIGHT), (0, -DEPTH/2, 0), paper)
 
+    # Glue flap. Closed pose = folded 90 deg inside the carton, glued against the
+    # inner face of LEFT_COPY. flat_deg swings it back into the BACK plane.
     hinge_glue = make_empty("HINGE_GLUE", collection, hinge_back, (-WIDTH, 0, 0))
-    mark_hinge(hinge_glue, "Z", 105)
-    glue = make_panel("GLUE_FLAP", collection, hinge_glue, (GLUE, THICKNESS, HEIGHT), (-GLUE/2, 0, 0), edge)
+    mark_hinge(hinge_glue, "Z", 90)
+    glue = make_panel("GLUE_FLAP", collection, hinge_glue, (THICKNESS, GLUE, HEIGHT - 4 * THICKNESS), (1.5 * THICKNESS, GLUE/2 + THICKNESS, 0), edge)
     set_explode(glue, -0.012, 0.0, 0.0)
 
     hinge_top = make_empty("HINGE_TOP", collection, root, (0, DEPTH/2, HEIGHT/2))
@@ -206,24 +209,32 @@ def build():
     mark_hinge(hinge_bottom, "X", 90)
     bottom = make_panel("BOTTOM", collection, hinge_bottom, (WIDTH, DEPTH, THICKNESS), (0, -DEPTH/2, 0), paper)
 
-    # Dust flaps: visible only when the package opens.
+    # Dust flaps. Closed pose = folded inward, horizontal, tucked just under the
+    # TOP/BOTTOM panel. Hinge sits on the side panel's top/bottom edge; the flap
+    # extends inward (toward the carton centre) along X and spans the depth.
+    # flat_deg rotates each flap up/down into the side panel's plane (dieline).
+    dust_dims = (DUST, DEPTH - 2 * THICKNESS, THICKNESS)
+    dust_z = 1.5 * THICKNESS
+
     hinge_tdl = make_empty("HINGE_TOP_DUST_LEFT", collection, hinge_left, (0, -DEPTH/2, HEIGHT/2))
-    mark_hinge(hinge_tdl, "Y", 78)
-    top_dust_left = make_panel("TOP_DUST_LEFT", collection, hinge_tdl, (THICKNESS, DUST, DEPTH), (0, -DUST/2, 0), paper)
+    mark_hinge(hinge_tdl, "Y", -90)
+    top_dust_left = make_panel("TOP_DUST_LEFT", collection, hinge_tdl, dust_dims, (DUST/2 + THICKNESS, 0, -dust_z), paper)
 
     hinge_tdr = make_empty("HINGE_TOP_DUST_RIGHT", collection, hinge_right, (0, -DEPTH/2, HEIGHT/2))
-    mark_hinge(hinge_tdr, "Y", -78)
-    top_dust_right = make_panel("TOP_DUST_RIGHT", collection, hinge_tdr, (THICKNESS, DUST, DEPTH), (0, -DUST/2, 0), paper)
+    mark_hinge(hinge_tdr, "Y", 90)
+    top_dust_right = make_panel("TOP_DUST_RIGHT", collection, hinge_tdr, dust_dims, (-DUST/2 - THICKNESS, 0, -dust_z), paper)
 
     hinge_bdl = make_empty("HINGE_BOTTOM_DUST_LEFT", collection, hinge_left, (0, -DEPTH/2, -HEIGHT/2))
-    mark_hinge(hinge_bdl, "Y", -78)
-    bottom_dust_left = make_panel("BOTTOM_DUST_LEFT", collection, hinge_bdl, (THICKNESS, DUST, DEPTH), (0, -DUST/2, 0), paper)
+    mark_hinge(hinge_bdl, "Y", 90)
+    bottom_dust_left = make_panel("BOTTOM_DUST_LEFT", collection, hinge_bdl, dust_dims, (DUST/2 + THICKNESS, 0, dust_z), paper)
 
     hinge_bdr = make_empty("HINGE_BOTTOM_DUST_RIGHT", collection, hinge_right, (0, -DEPTH/2, -HEIGHT/2))
-    mark_hinge(hinge_bdr, "Y", 78)
-    bottom_dust_right = make_panel("BOTTOM_DUST_RIGHT", collection, hinge_bdr, (THICKNESS, DUST, DEPTH), (0, -DUST/2, 0), paper)
+    mark_hinge(hinge_bdr, "Y", -90)
+    bottom_dust_right = make_panel("BOTTOM_DUST_RIGHT", collection, hinge_bdr, dust_dims, (-DUST/2 - THICKNESS, 0, dust_z), paper)
 
-    # Internal product architecture.
+    # Internal product architecture. Concept sizes chosen so every component
+    # fits inside the closed shell (jar 31 mm < 36 mm depth; leaflet stands
+    # against the inner LEFT_COPY wall). validate_glb_contract.py enforces it.
     inner = make_empty("INNER_ASSEMBLY", collection, root, (0, 0, 0))
     set_explode(inner, 0.0, -0.035, 0.0)
 
@@ -236,36 +247,36 @@ def build():
 
     jar_body = make_cylinder(
         "INNER_JAR", collection, inner,
-        radius=19*MM, depth=44*MM,
+        radius=15.5*MM, depth=44*MM,
         location=(0, 0, -HEIGHT*0.07), material=jar
     )
     set_explode(jar_body, 0.065, -0.035, 0.018)
 
     cream_core = make_cylinder(
         "CREAM_CORE", collection, jar_body,
-        radius=17.2*MM, depth=38*MM,
+        radius=14.2*MM, depth=38*MM,
         location=(0, 0, 0), material=cream
     )
     set_explode(cream_core, 0.0, 0.0, 0.0)
 
     jar_cap = make_cylinder(
         "JAR_CAP", collection, inner,
-        radius=19.5*MM, depth=12*MM,
-        location=(0, 0, 21*MM), material=cap
+        radius=16*MM, depth=12*MM,
+        location=(0, 0, 19.6*MM), material=cap
     )
     set_explode(jar_cap, 0.067, -0.034, 0.072)
 
     seal = make_cylinder(
         "SEAL_DISC", collection, inner,
-        radius=17.8*MM, depth=0.55*MM,
-        location=(0, 0, 15.2*MM), material=foil
+        radius=14.8*MM, depth=0.55*MM,
+        location=(0, 0, 13.3*MM), material=foil
     )
     set_explode(seal, 0.066, -0.034, 0.048)
 
     leaflet = make_box(
         "LEAFLET", collection, inner,
-        (34*MM, 0.7*MM, 58*MM),
-        (-WIDTH*0.31, 0, HEIGHT*0.12), leaflet_mat, bevel=0.00012
+        (0.7*MM, 30*MM, 58*MM),
+        (-WIDTH/2 + 1.4*MM, 0, HEIGHT*0.12), leaflet_mat, bevel=0.00012
     )
     set_explode(leaflet, -0.074, -0.012, 0.038)
 
@@ -279,11 +290,14 @@ def build():
         "ANCHOR_SURFACE_LEFT": (-WIDTH/2 - THICKNESS, 0, 0),
         "ANCHOR_SURFACE_RIGHT": (WIDTH/2 + THICKNESS, 0, 0),
         "ANCHOR_SURFACE_BACK": (0, -DEPTH/2 - THICKNESS, 0),
-        "ANCHOR_EXPLODE_JAR": (WIDTH*1.3, -DEPTH*0.8, HEIGHT*0.05),
-        "ANCHOR_EXPLODE_CAP": (WIDTH*1.18, -DEPTH*0.75, HEIGHT*0.46),
-        "ANCHOR_EXPLODE_SEAL": (WIDTH*1.05, -DEPTH*0.72, HEIGHT*0.32),
-        "ANCHOR_EXPLODE_INSERT": (0, -DEPTH*1.6, -HEIGHT*0.34),
-        "ANCHOR_EXPLODE_LEAFLET": (-WIDTH*1.35, -DEPTH*0.35, HEIGHT*0.18),
+        # Explode anchors sit in FRONT of the package (+Y = front normal) so the
+        # separated product reads toward the viewer instead of hiding behind
+        # the shell; they stay clear of the unfolding dieline plane.
+        "ANCHOR_EXPLODE_JAR": (WIDTH*1.35, DEPTH*1.15, -HEIGHT*0.05),
+        "ANCHOR_EXPLODE_CAP": (WIDTH*1.35, DEPTH*1.15, HEIGHT*0.36),
+        "ANCHOR_EXPLODE_SEAL": (WIDTH*1.35, DEPTH*1.15, HEIGHT*0.22),
+        "ANCHOR_EXPLODE_INSERT": (WIDTH*1.35, DEPTH*1.15, -HEIGHT*0.36),
+        "ANCHOR_EXPLODE_LEAFLET": (-WIDTH*1.3, DEPTH*1.0, HEIGHT*0.06),
     }
     for name, loc in anchors.items():
         anchor = make_empty(name, collection, root, loc)

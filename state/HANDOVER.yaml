@@ -1,5 +1,5 @@
 project: PACKSHIFT
-handover_version: 0.7
+handover_version: 0.8
 active_branch: main
 baseline: V5_SPATIAL_NEGOTIATION_STUDIO
 main_merge_pr: 4
@@ -44,9 +44,16 @@ evidence_to_review_next:
 do_not_regress:
   - remote_Blender_worker_proof
   - 42_node_8_material_GLTF_contract
+  - closed_pose_geometry_contract
+  - compile_solver_unit_tests
   - build_green_baseline
   - direct_spatial_manipulation
   - truth_boundary
   - main_history
 
-next_gate: "MAIN_CI_HARDENING -> VIDEO_GAP_REVIEW -> V5_1_DEPTH_LOCK -> IMPLEMENT -> LIVE_QA"
+v5_1_summary: >-
+  Audit found the V5 closed carton was geometrically open (dust/glue flaps protruding, cap and
+  leaflet through the shell) and live drag-and-drop never placed anything. Both fixed at source
+  (build_master.py 0.5.1 + runtime). New closed-pose geometry check prevents regression.
+
+next_gate: "MERGE_V5_1 -> REDEPLOY -> REAL_DEVICE_TOUCH_QA -> GPU_PERF_QA"

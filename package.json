@@ -1,12 +1,20 @@
 {
-  "name": "packshift-threejs-v3",
+  "name": "packshift",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.5.1",
+  "description": "PACKSHIFT — a spatial packaging constraint compiler (Blender master + React Three Fiber).",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.mjs",
+    "validate:glb": "python3 scripts/validate_glb_contract.py",
+    "validate:blender": "python3 blender/scripts/validate_contract.py",
+    "check": "npm test && npm run validate:glb && npm run validate:blender && npm run build"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.7",

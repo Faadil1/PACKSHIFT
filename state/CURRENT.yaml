@@ -1,6 +1,6 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V5_1_AUDIT_AND_DEPTH_PASS
+phase: V5_2_SIGNATURE_CONTROL_MATERIAL_JURY
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
@@ -55,16 +55,32 @@ v5_1:
   headless_qa: "desktop 1440x900 + mobile 390x844 (software WebGL): drag, pressure, compile EU/CA, x-ray, dieline, fallback"
   not_yet_proven: [real_device_touch_QA, GPU_frame_rate]
 
+v5_2:
+  branch: feat/v5-2-signature
+  stacked_on: feat/v5-1-audit-depth (PR 7)
+  status: PR_PENDING_LIVE_QA
+  added:
+    - flying_requirement_blocks_and_scripted_compile_camera
+    - webaudio_sound_design_with_mute
+    - editable_brief_6_kinds_and_US_market
+    - carton_size_sliders_with_procedural_twin_and_size_suggestion
+    - modelled_tuck_flap_blender_0_6_0
+    - glass_foil_emboss_fibre_materials_and_lightformer_env
+    - guided_tour_share_link_svg_dieline_export
+  fixed:
+    - xray_opaque_shell_shader_OPAQUE_define
+  tests: 16
+
 blender_master:
-  version: "0.5.1"
-  previous_version: "0.5.0"
+  version: "0.6.0"
+  previous_version: "0.5.1"
   remote_headless_result: PASS
   glb_contract: PASS
-  nodes: 42
+  nodes: 44
   materials: 8
   blend_size: "1.2M"
-  glb_size: "271K (55K gzip; bevels baked)"
-  glb_sha256: "3e548c9eb81be880b356dee28296b7fa5d9e4f7725054657b0584a7807a5d0bb"
+  glb_size: "275K (bevels baked)"
+  glb_sha256: "657993ad83070522bb04c0786bc8eafd462b86b4ccb387cf9e1cc9b5cbc61bd7"
   closed_pose_geometry: PASS
   evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
 
@@ -100,4 +116,4 @@ status:
   blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
   v5_1_depth_review: NEXT
 
-next_gate: "Merge V5.1 PR -> Cloudflare production redeploy -> real-device touch + GPU frame-rate QA"
+next_gate: "Merge PR 7 then V5.2 PR -> redeploy -> real-device touch, audio and GPU frame-rate QA -> record demo video from the guided tour"

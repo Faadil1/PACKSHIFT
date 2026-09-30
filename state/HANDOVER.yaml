@@ -1,5 +1,5 @@
 project: PACKSHIFT
-handover_version: 0.8
+handover_version: 0.9
 active_branch: main
 baseline: V5_SPATIAL_NEGOTIATION_STUDIO
 main_merge_pr: 4
@@ -43,9 +43,11 @@ evidence_to_review_next:
 
 do_not_regress:
   - remote_Blender_worker_proof
-  - 42_node_8_material_GLTF_contract
+  - 44_node_8_material_GLTF_contract (0.6.0; was 42 before the tuck flap)
   - closed_pose_geometry_contract
   - compile_solver_unit_tests
+  - procedural_twin_GLB_parity_test
+  - url_state_and_dieline_export_tests
   - build_green_baseline
   - direct_spatial_manipulation
   - truth_boundary

@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ALL_KINDS,
   IMPOSSIBLE_FRONT,
+  NOMINAL_DIMS,
+  capacityFor,
+  clampDims,
+  suggestDims,
   KINDS,
   MARKETS,
   SURFACES,
@@ -65,4 +70,33 @@ test('claim away from the principal display is a rule violation', () => {
     ruleViolations({ language: null, data: null, claim: 'BACK' }, 'EU'),
     [{ kind: 'claim', surface: 'BACK' }],
   );
+});
+
+const fullBrief = () => Object.fromEntries(ALL_KINDS.map((k) => [k, null]));
+
+test('the full six-requirement brief fits the nominal carton in the EU', () => {
+  const result = solvePlacements(fullBrief(), 'EU');
+  assert.equal(result.valid, true);
+  assert.equal(result.placements.claim, 'FRONT');
+  assert.notEqual(result.placements.barcode, 'FRONT');
+});
+
+test('the full brief does NOT fit the nominal carton in Canada — and a bigger carton fixes it', () => {
+  assert.equal(solvePlacements(fullBrief(), 'CANADA').valid, false);
+  const bigger = suggestDims(fullBrief(), 'CANADA', NOMINAL_DIMS);
+  assert.ok(bigger, 'a larger carton within limits should resolve it');
+  assert.ok(bigger.width > NOMINAL_DIMS.width || bigger.height > NOMINAL_DIMS.height);
+  assert.equal(solvePlacements(fullBrief(), 'CANADA', bigger).valid, true);
+});
+
+test('capacity scales with panel area and dimensions are clamped', () => {
+  const nominal = capacityFor('EU', NOMINAL_DIMS);
+  const wide = capacityFor('EU', { width: 70, depth: 36, height: 130 });
+  assert.ok(wide.FRONT > nominal.FRONT);
+  assert.equal(wide.LEFT_COPY, nominal.LEFT_COPY);
+  assert.deepEqual(clampDims({ width: 10, depth: 99, height: 130 }), { width: 44, depth: 48, height: 130 });
+});
+
+test('US market resolves the core brief to a valid form', () => {
+  assert.equal(solvePlacements(IMPOSSIBLE_FRONT, 'US').valid, true);
 });

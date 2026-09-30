@@ -36,6 +36,9 @@ jobs:
       - name: Validate GLB contract
         run: python3 blender/scripts/validate_glb.py
 
+      - name: Validate closed-pose geometry
+        run: python3 scripts/glb_geometry.py
+
       - name: Inspect generated assets
         run: |
           test -f blender/PACKSHIFT_MASTER.blend

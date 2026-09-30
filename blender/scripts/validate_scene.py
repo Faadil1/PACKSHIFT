@@ -17,9 +17,9 @@ REQUIRED = {
 
 HINGES = {
     "HINGE_RIGHT":("Z",90.0),"HINGE_BACK":("Z",90.0),"HINGE_LEFT":("Z",-90.0),
-    "HINGE_GLUE":("Z",105.0),"HINGE_TOP":("X",-90.0),"HINGE_BOTTOM":("X",90.0),
-    "HINGE_TOP_DUST_LEFT":("Y",78.0),"HINGE_TOP_DUST_RIGHT":("Y",-78.0),
-    "HINGE_BOTTOM_DUST_LEFT":("Y",-78.0),"HINGE_BOTTOM_DUST_RIGHT":("Y",78.0),
+    "HINGE_GLUE":("Z",90.0),"HINGE_TOP":("X",-90.0),"HINGE_BOTTOM":("X",90.0),
+    "HINGE_TOP_DUST_LEFT":("Y",-90.0),"HINGE_TOP_DUST_RIGHT":("Y",90.0),
+    "HINGE_BOTTOM_DUST_LEFT":("Y",90.0),"HINGE_BOTTOM_DUST_RIGHT":("Y",-90.0),
 }
 
 MATERIALS = {
@@ -44,7 +44,7 @@ def main():
     if root.get("manufacturing_validation_claimed") is not False:
         fail("manufacturing truth boundary missing")
 
-    if root.get("packshift_asset_version") != "0.5.0":
+    if root.get("packshift_asset_version") != "0.5.1":
         fail("unexpected asset version")
 
     for name,(axis,flat_deg) in HINGES.items():

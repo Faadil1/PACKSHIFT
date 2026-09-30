@@ -20,13 +20,19 @@ jobs:
       - name: Checkout PR head
         uses: actions/checkout@v4
 
+      - name: Validate GLB contract + closed-pose geometry
+        run: python3 scripts/validate_glb_contract.py
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Install
-        run: npm install
+        run: npm ci
+
+      - name: Unit tests (pressure model + compile solver)
+        run: npm test
 
       - name: Build
         run: npm run build

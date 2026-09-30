@@ -1,4 +1,4 @@
-version: 0.5.0
+version: 0.5.1
 status: CONCEPT_DIMENSIONS__NOT_MANUFACTURING_VALIDATED
 asset: PACKSHIFT_MASTER_V5
 product: NORD_HYDRA_VEIL_BARRIER_CREAM
@@ -99,13 +99,13 @@ fold_contract:
   HINGE_RIGHT: {axis: Z, closed_deg: 0, flat_deg: 90}
   HINGE_BACK: {axis: Z, closed_deg: 0, flat_deg: 90}
   HINGE_LEFT: {axis: Z, closed_deg: 0, flat_deg: -90}
-  HINGE_GLUE: {axis: Z, closed_deg: 0, flat_deg: 105}
+  HINGE_GLUE: {axis: Z, closed_deg: 0, flat_deg: 90}
   HINGE_TOP: {axis: X, closed_deg: 0, flat_deg: -90}
   HINGE_BOTTOM: {axis: X, closed_deg: 0, flat_deg: 90}
-  HINGE_TOP_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: 78}
-  HINGE_TOP_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: -78}
-  HINGE_BOTTOM_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: -78}
-  HINGE_BOTTOM_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: 78}
+  HINGE_TOP_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: -90}
+  HINGE_TOP_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: 90}
+  HINGE_BOTTOM_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: 90}
+  HINGE_BOTTOM_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: -90}
 
 truth_boundary:
   - dimensions_are_conceptual_until_verified_against_real_packaging_engineering

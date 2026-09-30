@@ -94,6 +94,22 @@ Every `HINGE_*` runtime hinge must preserve:
 
 The browser reads these values from glTF extras.
 
+Closed pose (`closed_deg = 0`) is the authored mesh pose and must be a closed
+carton: dust flaps fold inward under TOP/BOTTOM, the glue flap sits inside
+against LEFT_COPY. Sign convention for `flat_deg` is Blender's right-hand rule
+about the named local axis.
+
+## Closed-pose geometry contract (since 0.5.1)
+
+`scripts/glb_geometry.py` composes node transforms into world space and fails
+if, in the closed pose:
+- the shell envelope deviates from 56 x 130 x 36 mm;
+- any flap or internal component (jar, cap, seal, cream, insert, leaflet)
+  protrudes outside the shell.
+
+0.5.0 failed this check (dust flaps +17.8 mm, glue flap 11.8 mm, cap 1.3 mm,
+leaflet 6.1 mm outside the carton); 0.5.1 fixes the Blender source.
+
 ## Decomposition contract
 
 Internal physical components remain separate runtime nodes.
@@ -108,7 +124,7 @@ Target:
 
 Requirements:
 - binary GLB
-- `export_apply=False`
+- `export_apply=True` — bevel modifiers are baked so the browser shows the same softened board edges and jar/cap radii Blender renders (transforms and hierarchy are unaffected)
 - `export_extras=True`
 - no default Camera/Light/Cube
 - stable node names

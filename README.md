@@ -119,7 +119,7 @@ Current master:
 
 - **42 GLB nodes**
 - **8 materials**
-- Blender asset version **0.5.0**
+- Blender asset version **0.5.1** (closed pose verified: flaps and internals contained in the shell)
 
 ---
 
@@ -209,11 +209,19 @@ PACKSHIFT/
 ├── public/
 │   └── models/
 │       └── packshift-master.glb
+├── scripts/
+│   ├── validate_glb_contract.py
+│   └── glb_geometry.py
 ├── src/
 │   ├── App.jsx
+│   ├── model/
+│   │   └── pressure.js        # demo capacity model + compile solver
 │   └── scene/
-│       ├── PackageScene.jsx
-│       └── PackageSceneProcedural.jsx
+│       ├── PackageScene.jsx   # R3F runtime over the Blender hierarchy
+│       ├── panelArt.js        # printed artwork as CanvasTextures
+│       └── proceduralMaster.js
+├── tests/
+│   └── pressure.test.mjs
 ├── state/
 │   ├── CURRENT.yaml
 │   └── HANDOVER.yaml
@@ -253,10 +261,29 @@ The committed Blender GLB is served from:
 /public/models/packshift-master.glb
 ```
 
-A procedural fallback can be used for comparison/debugging with:
+A procedural twin of the Blender master (same node names, hinges and fold
+metadata, built in Three.js) can be used for comparison/debugging with:
 
 ```
 ?procedural=1
+```
+
+The same twin is used automatically if the GLB fails to load, so the studio
+never renders blank.
+
+Full local verification (unit tests, GLB contract + closed-pose geometry,
+Blender static contract, production build):
+
+```bash
+npm run check
+```
+
+Rebuild the GLB from source without a Blender install (uses the `bpy` wheel):
+
+```bash
+pip install bpy==4.2.0
+python3 blender/scripts/ci_build_export.py
+python3 scripts/validate_glb_contract.py
 ```
 
 ---
@@ -286,6 +313,18 @@ Checks the real remote Blender path:
 - GLB export;
 - GLB contract validation;
 - artifact generation.
+
+### Closed-pose geometry (since 0.5.1)
+
+`scripts/glb_geometry.py` composes every node transform into world space and
+fails if any flap or internal component protrudes from the 56 × 130 × 36 mm
+shell in the authored closed pose. It runs inside the GLB contract check.
+
+### Unit tests
+
+`npm test` covers the pressure model and the compile solver (Impossible Front
+overloads only the front, compile resolves it in every market, Canada routes
+bilingual copy to the back, valid user layouts are kept).
 
 ### Blender Runtime Integration
 
@@ -348,9 +387,46 @@ A visually plausible package is not automatically a digital twin.
 
 ---
 
-## Next — V5.1 Depth Pass
+## V5.1 — audit fixes and depth pass
 
-V5 is now the stable baseline, not the finish line.
+What was wrong in V5 and what changed:
+
+**Blender master (0.5.0 → 0.5.1)**
+- the "closed" carton was not closed: dust flaps were authored vertical and
+  stood 18 mm above the top; the glue flap stuck 12 mm out of the side;
+- the jar cap was wider than the carton depth and pierced the front and back
+  (the dark rectangle over "HYDRA VEIL"); the leaflet poked 6 mm out of the
+  left panel;
+- explode anchors sat behind the shell, so the separated product was hidden;
+- bevel modifiers were never exported (`export_apply=False`).
+
+**Runtime**
+- drag-and-drop never placed anything on the live build: `event.raycaster` is
+  undefined on captured R3F v9 pointer events, and OrbitControls stayed
+  enabled, so dragging a card spun the camera instead;
+- COMPILE animated from a stale React closure, so the refold snapped shut;
+- `?procedural=1` passed V5 props to a V3 component and rendered a dead scene;
+- printed artwork was a DOM overlay that showed through the box from behind;
+- two of three requirement cards sat off-screen / under the console;
+- most UI text was 5–7 px.
+
+**New**
+- real compile solver (exhaustive, deterministic) with market-specific demo
+  rules — EU and Canada now produce different layouts for the same brief;
+- printed artwork on every panel as textures: it follows every fold into the
+  dieline, shows the overloaded zones hatched, and changes with market;
+- physically honest decomposition: lid opens, product lifts out through the
+  opening, carton unfolds panel by panel, parts line up beside the dieline;
+- tap-to-place (card or console chip, then a face or surface cell) for touch
+  and keyboard users; undo; keyboard shortcuts (1–5, C, R, Z, Esc);
+- camera framing fitted to the viewport aspect; mobile layout; reduced motion;
+- loading state, error boundary with automatic procedural fallback;
+- unit tests, closed-pose geometry check, `npm ci` + tests in CI;
+  Cloudflare `_headers` (immutable assets, GLB caching), code-split bundle.
+
+## Next
+
+V5.1 is the stable baseline, not the finish line.
 
 The next pass focuses on what still prevents the experience from becoming genuinely memorable:
 

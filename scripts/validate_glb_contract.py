@@ -10,6 +10,9 @@ import struct
 from pathlib import Path
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from glb_geometry import check_closed_pose  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 GLB = ROOT / "public" / "models" / "packshift-master.glb"
 
@@ -74,12 +77,17 @@ def main() -> int:
     if missing_materials:
         return fail("missing materials: "+", ".join(missing_materials))
 
+    geometry=check_closed_pose(GLB)
+    if geometry:
+        return fail("closed-pose geometry: " + "; ".join(geometry))
+
     print("PACKSHIFT V5 GLB CONTRACT: PASS")
     print(f"- bytes: {len(raw)}")
     print(f"- nodes: {len(nodes)}")
     print(f"- materials: {len(materials)}")
     print("- folding shell and internal product architecture present")
     print("- surface and explode anchors present")
+    print("- closed pose: flaps and internals contained in the 56 x 130 x 36 mm shell")
     print("- browser behavior not asserted by this check")
     return 0
 

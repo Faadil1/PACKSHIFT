@@ -1,6 +1,6 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V5_SPATIAL_NEGOTIATION_STUDIO_BASELINE
+phase: V5_1_AUDIT_AND_DEPTH_PASS
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
@@ -33,15 +33,39 @@ promotion_scope:
     - manufacturing_validation
     - Blender_MCP_provider_promotion
 
+v5_1:
+  branch: feat/v5-1-audit-depth
+  status: PR_OPEN_PENDING_LIVE_QA
+  fixed:
+    - closed_pose_geometry_dust_glue_jar_cap_leaflet
+    - drag_drop_raycaster_and_orbit_conflict
+    - stale_closure_compile_animation
+    - procedural_fallback_prop_mismatch
+    - dom_artwork_bleeding_through_shell
+    - offscreen_requirement_cards
+    - illegible_5_to_7px_type
+  added:
+    - compile_solver_market_specific
+    - printed_panel_textures
+    - lid_first_decomposition_choreography
+    - tap_to_place_undo_keyboard
+    - aspect_fitted_camera_and_mobile_layout
+    - error_boundary_procedural_twin
+    - unit_tests_and_closed_pose_ci_check
+  headless_qa: "desktop 1440x900 + mobile 390x844 (software WebGL): drag, pressure, compile EU/CA, x-ray, dieline, fallback"
+  not_yet_proven: [real_device_touch_QA, GPU_frame_rate]
+
 blender_master:
-  version: "0.5.0"
+  version: "0.5.1"
+  previous_version: "0.5.0"
   remote_headless_result: PASS
   glb_contract: PASS
   nodes: 42
   materials: 8
   blend_size: "1.2M"
-  glb_size: "80K"
-  glb_sha256: "840fbdf82124fd3aca11d1da134ef0f509b8fe53610a29b26f609e269936ebdf"
+  glb_size: "271K (55K gzip; bevels baked)"
+  glb_sha256: "3e548c9eb81be880b356dee28296b7fa5d9e4f7725054657b0584a7807a5d0bb"
+  closed_pose_geometry: PASS
   evidence: blender/evidence/V5-DEEP-BLENDER-MASTER-001.yaml
 
 latest_proven_branch_evidence:
@@ -76,4 +100,4 @@ status:
   blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
   v5_1_depth_review: NEXT
 
-next_gate: "Harden main CI -> review uploaded V5 runtime capture -> identify missing depth -> V5.1 concept/gap lock -> implement without regressing main baseline"
+next_gate: "Merge V5.1 PR -> Cloudflare production redeploy -> real-device touch + GPU frame-rate QA"

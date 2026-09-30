@@ -17,7 +17,8 @@ CHECKS = {
         "INNER_ASSEMBLY",
         "TOP_DUST_LEFT",
         "ANCHOR_EXPLODE_INSERT",
-        "export_apply=False",
+        "export_apply=True",
+        "Closed-pose geometry contract",
         "A valid GLB is not live runtime proof",
     ],
     "blender/scripts/build_master.py": [
@@ -36,7 +37,7 @@ CHECKS = {
     "blender/scripts/export_glb.py": [
         "packshift-master.glb",
         'export_format="GLB"',
-        "export_apply=False",
+        "export_apply=True",
         "export_extras=True",
     ],
 }

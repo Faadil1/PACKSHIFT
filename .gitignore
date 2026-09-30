@@ -1,3 +1,7 @@
 dist/
-.DS_Store
 node_modules/
+.DS_Store
+# Blender outputs are CI artifacts, not source
+blender/*.blend
+blender/*.blend1
+__pycache__/

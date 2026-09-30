@@ -1,6 +1,7 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V5_3_PROOF_ROOM_UI
+phase: V7_PUBLIC_GAME
+public_face: "Est-ce que ça rentre ? — 5-level puzzle, daily challenge, 'Ta boîte', share card + challenge links; V6 studio kept as mode pro (#pro); whole site in FR/EN/ES"
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
@@ -54,6 +55,14 @@ v5_1:
     - unit_tests_and_closed_pose_ci_check
   headless_qa: "desktop 1440x900 + mobile 390x844 (software WebGL): drag, pressure, compile EU/CA, x-ray, dieline, fallback"
   not_yet_proven: [real_device_touch_QA, GPU_frame_rate]
+
+v6:
+  branch: feat/v6-negotiated-report
+  status: PR_PENDING_LIVE_QA
+  direction: annual_report_spread_plus_character_negotiation
+  design_exploration: "Claude design canvas, directions 01-06; 06 (= 04 + 05) chosen by user"
+  added: [editorial_spread_layout, requirement_characters_with_flip_walks, column_as_front_panel_headline, ejection_on_overload, red_pen_editor_compile, fig2_face_slots_as_load_strip, french_ui]
+  removed: [proof_room_tickets, ink_strip_rail]
 
 v5_3:
   branch: feat/v5-3-proof-room
@@ -123,4 +132,4 @@ status:
   blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
   v5_1_depth_review: NEXT
 
-next_gate: "Merge PR 7 then V5.2 PR -> redeploy -> real-device touch, audio and GPU frame-rate QA -> record demo video from the guided tour"
+next_gate: "Merge PR 10 (V6) then V7 PR -> redeploy -> real-device QA of the game (touch drag, native share sheet, clipboard on Safari, GPU frame rate) -> hallway test: can a stranger play level 1 without help in <10 s?"

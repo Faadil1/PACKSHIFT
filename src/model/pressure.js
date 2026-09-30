@@ -103,23 +103,38 @@ function kindsOf(placements) {
   return ALL_KINDS.filter((kind) => Object.prototype.hasOwnProperty.call(placements, kind));
 }
 
-export function surfaceLoads(placements, market = 'EU') {
+// Optional per-call overrides, e.g. { weights: { claim: 0.9 } } when a player's
+// own slogan is longer than the default one.
+function weightsOf(rules, opts) {
+  return opts?.weights ? { ...rules.weight, ...opts.weights } : rules.weight;
+}
+
+// Weight of a marketing slogan grows with its length: the default
+// '24H HYDRATION' (<= 16 characters) keeps the market weight.
+export function sloganWeight(slogan, market = 'EU') {
+  const base = (MARKETS[market] || MARKETS.EU).weight.claim;
+  const n = String(slogan || '').trim().length;
+  return base * Math.min(2.4, Math.max(1, n / 16));
+}
+
+export function surfaceLoads(placements, market = 'EU', opts) {
   const rules = MARKETS[market] || MARKETS.EU;
+  const weight = weightsOf(rules, opts);
   const loads = {};
   for (const surface of SURFACES) loads[surface] = { base: rules.base[surface] || 0, placed: 0, kinds: [] };
   for (const kind of kindsOf(placements)) {
     const surface = placements[kind];
     if (surface && loads[surface]) {
-      loads[surface].placed += rules.weight[kind] || 0;
+      loads[surface].placed += weight[kind] || 0;
       loads[surface].kinds.push(kind);
     }
   }
   return loads;
 }
 
-export function buildPressure(placements, market = 'EU', dims = NOMINAL_DIMS) {
+export function buildPressure(placements, market = 'EU', dims = NOMINAL_DIMS, opts) {
   const capacity = capacityFor(market, dims);
-  const loads = surfaceLoads(placements, market);
+  const loads = surfaceLoads(placements, market, opts);
   const out = {};
   for (const surface of SURFACES) out[surface] = (loads[surface].base + loads[surface].placed) / capacity[surface];
   return out;
@@ -139,11 +154,11 @@ export function ruleViolations(placements, market = 'EU') {
   return out;
 }
 
-export function isValidForm(placements, market = 'EU', dims = NOMINAL_DIMS) {
+export function isValidForm(placements, market = 'EU', dims = NOMINAL_DIMS, opts) {
   const kinds = kindsOf(placements);
   return (
     kinds.every((kind) => placements[kind])
-    && overloadedSurfaces(buildPressure(placements, market, dims)).length === 0
+    && overloadedSurfaces(buildPressure(placements, market, dims, opts)).length === 0
     && ruleViolations(placements, market).length === 0
   );
 }
@@ -153,14 +168,14 @@ export function isValidForm(placements, market = 'EU', dims = NOMINAL_DIMS) {
 // surfaces, then balanced headroom. Unplaced requirements are placed too —
 // compile always tries to resolve the whole brief, and says so honestly when
 // no layout exists.
-export function solvePlacements(current, market = 'EU', dims = NOMINAL_DIMS) {
+export function solvePlacements(current, market = 'EU', dims = NOMINAL_DIMS, opts) {
   const rules = MARKETS[market] || MARKETS.EU;
   const kinds = kindsOf(current);
   let best = null;
 
   const assign = (index, draft) => {
     if (index === kinds.length) {
-      const pressures = buildPressure(draft, market, dims);
+      const pressures = buildPressure(draft, market, dims, opts);
       const overflow = SURFACES.reduce((sum, s) => sum + Math.max(0, pressures[s] - 1), 0);
       const violations = ruleViolations(draft, market).length;
       let moves = 0;
@@ -170,7 +185,10 @@ export function solvePlacements(current, market = 'EU', dims = NOMINAL_DIMS) {
         if (draft[kind] !== REQUIREMENTS[kind].preferred) preference += 1;
       }
       const peak = Math.max(...SURFACES.map((s) => pressures[s]));
-      const cost = overflow * 1000 + violations * 500 + moves * 10 + preference * 3 + peak;
+      // Any overflow at all must outrank every soft preference: a flat
+      // penalty on top of the proportional one, so a 0.02 % spill can never
+      // be traded for keeping a requirement on its preferred face.
+      const cost = (overflow > 1e-9 ? 10000 : 0) + overflow * 1000 + violations * 500 + moves * 10 + preference * 3 + peak;
       if (!best || cost < best.cost) best = { cost, placements: { ...draft }, overflow, violations };
       return;
     }
@@ -188,7 +206,7 @@ export function solvePlacements(current, market = 'EU', dims = NOMINAL_DIMS) {
     .filter((kind) => best.placements[kind] !== current[kind])
     .map((kind) => ({ kind, from: current[kind] || null, to: best.placements[kind] }));
 
-  const pressures = buildPressure(best.placements, market, dims);
+  const pressures = buildPressure(best.placements, market, dims, opts);
   return {
     placements: best.placements,
     moves,
@@ -201,7 +219,7 @@ export function solvePlacements(current, market = 'EU', dims = NOMINAL_DIMS) {
 
 // Smallest uniform carton growth (in 2 mm steps) that makes the brief
 // solvable — used to tell the user *how much bigger* the pack would need to be.
-export function suggestDims(current, market = 'EU', dims = NOMINAL_DIMS) {
+export function suggestDims(current, market = 'EU', dims = NOMINAL_DIMS, opts) {
   const start = clampDims(dims);
   for (let step = 0; step <= 14; step += 1) {
     const candidate = clampDims({
@@ -209,7 +227,7 @@ export function suggestDims(current, market = 'EU', dims = NOMINAL_DIMS) {
       depth: start.depth + step,
       height: start.height + step * 2,
     });
-    if (solvePlacements(current, market, candidate).valid) return candidate;
+    if (solvePlacements(current, market, candidate, opts).valid) return candidate;
   }
   return null;
 }

@@ -5,6 +5,10 @@
 // collide  — low muted thud (a surface going over capacity)
 // resolve  — soft two-note chime (valid form)
 // tick     — tiny UI click
+// stick    — squishy plop; its pitch rises with how full the face is
+// pop      — cartoon boing (a sticker that doesn't fit falls off)
+// stamp    — heavy rubber-stamp thunk (a new law arrives)
+// fanfare  — short rising arpeggio (the box closes on a win)
 //
 // Audio only starts after a user gesture (browser autoplay policy) and can be
 // muted; the choice is remembered per viewer.
@@ -126,6 +130,63 @@ const recipes = {
       osc.connect(g).connect(master);
       osc.start(t + i * 0.11);
       osc.stop(t + i * 0.11 + 1.1);
+    });
+  },
+  // `intensity` = face fill (0 → 1.3): the fuller the face, the higher the note.
+  stick(ac, t, fill = 0.5) {
+    const f = 180 + Math.min(1.3, Math.max(0, fill)) * 520;
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f * 1.6, t);
+    osc.frequency.exponentialRampToValueAtTime(f, t + 0.07);
+    const g = ac.createGain();
+    envelope(g, t, 0.004, 0.22, 0.14);
+    osc.connect(g).connect(master);
+    osc.start(t);
+    osc.stop(t + 0.2);
+    recipes.crease(ac, t, 0.35);
+  },
+  pop(ac, t) {
+    const osc = ac.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(260, t);
+    osc.frequency.exponentialRampToValueAtTime(820, t + 0.09);
+    osc.frequency.exponentialRampToValueAtTime(140, t + 0.38);
+    const vib = ac.createOscillator();
+    vib.frequency.value = 22;
+    const vg = ac.createGain();
+    vg.gain.value = 30;
+    vib.connect(vg).connect(osc.frequency);
+    const g = ac.createGain();
+    envelope(g, t, 0.005, 0.28, 0.36);
+    osc.connect(g).connect(master);
+    osc.start(t);
+    vib.start(t);
+    osc.stop(t + 0.45);
+    vib.stop(t + 0.45);
+  },
+  stamp(ac, t) {
+    recipes.collide(ac, t);
+    const src = ac.createBufferSource();
+    src.buffer = noiseBuffer(ac, 0.12);
+    const lp = ac.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 900;
+    const g = ac.createGain();
+    envelope(g, t, 0.002, 0.5, 0.1);
+    src.connect(lp).connect(g).connect(master);
+    src.start(t);
+  },
+  fanfare(ac, t) {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      const osc = ac.createOscillator();
+      osc.type = i === 3 ? 'triangle' : 'sine';
+      osc.frequency.value = f;
+      const g = ac.createGain();
+      envelope(g, t + i * 0.09, 0.008, i === 3 ? 0.2 : 0.14, i === 3 ? 0.9 : 0.25);
+      osc.connect(g).connect(master);
+      osc.start(t + i * 0.09);
+      osc.stop(t + i * 0.09 + 1.1);
     });
   },
   tick(ac, t) {

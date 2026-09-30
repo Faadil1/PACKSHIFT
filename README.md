@@ -2,6 +2,11 @@
 
 > **Packaging is not a file. It is a compiled surface.**
 
+**Public face: _Est-ce que ça rentre ?_** — open the site and you land on a
+two-minute puzzle, not a studio. One sentence explains it: *everything written
+on a box is mandatory, and there is no room.* The full studio (V6) is one click
+away as **mode pro** (`#pro`), and every old studio link (`#m=…`) still opens it.
+
 PACKSHIFT is an interactive packaging concept that treats market, language, data and claim requirements as **spatial forces acting on a physical package**.
 
 Instead of showing packaging variants as separate static files, PACKSHIFT lets the user place requirements directly onto a live 3D package, overload a surface, decompose the object, inspect its physical structure, and recompile the same master into a resolved form.
@@ -387,6 +392,111 @@ A visually plausible package is not automatically a digital twin.
 - Blender MCP provider promotion — still benchmark-gated.
 
 ---
+
+---
+
+## V7 — « Est-ce que ça rentre ? » (grand public + viral)
+
+The front door is now a puzzle that someone who has never heard of packaging
+understands in under ten seconds.
+
+- **Hook in one sentence** — intro: *« Tout ce qui est écrit sur une boîte est
+  obligatoire. Ou presque. Et il n'y a pas la place. »*, stickers with eyes
+  jumping out of a 5,6 cm box, one question, one button (*Jouer · 5 niveaux ·
+  2 minutes*). The intro is 15 kB gz; three.js loads only when you play.
+- **Plain words** — *Slogan, Traduction, QR de tri, Attention, Écolo,
+  Code-barres*; faces are *Devant, Gauche, Droite, Dos*. Tap a sticker to read
+  why it has to be there. Each face shows a fill gauge with what is *déjà
+  imprimé* (ingredients, instructions…) so the lack of room is visible.
+- **6 levels** — 1 Le premier pot (EU, 3 stickers) · 2 Direction le Canada
+  (bilingual: the left is already full) · 3 Tout le monde veut être vu
+  (6 stickers) · 4 Nouvelle loi ! (a law arrives mid-level) · 5 La marque
+  veut plus petit (shrink the box) · 6 Mission impossible ? (does not fit — grow the box as little as possible). Every level
+  ends on a one-line real-world fact.
+- **Score** — moves, time, stars (par = number of stickers; hints cost a star;
+  size levels are scored against the smallest box the solver can prove).
+- **Défi du jour** — deterministic from the date (Fisher–Yates on a seeded
+  PRNG, same on every engine): same market, stickers and tightest solvable box
+  for everyone.
+- **Ta boîte** — type your product name and slogan; they are printed on the 3D
+  carton. Slogan weight grows with its length: short fits, ~25 characters needs
+  a bigger box, 40+ fits no box at all (*« Raccourcis-le ! »*).
+- **Share** — a 1080×1350 card (box snapshot, handwritten verdict, stars, face
+  gauges, *À toi de jouer →*) plus a spoiler-free emoji grid à la Wordle. Phones
+  get the native share sheet; desktop downloads the card and copies text + link.
+  **Défier quelqu'un** copies a link (`#jeu=3&vs=7.42.0`) that opens the same
+  puzzle with *« Ton ami·e a réussi en 7 coups… À toi. »* and tells you if you
+  beat them. `og.png` + `summary_large_image` for link previews.
+- **Solver fix** — a tiny overflow (0.02 %) used to cost less than keeping a
+  requirement on its preferred face, so the solver could return an invalid
+  layout while a valid one existed (Canada, 60×38×134). Any overflow now carries
+  a flat penalty; regression test added, and fit is now monotonic in box size.
+
+- **Fun, in scope** — every playful element makes the one idea (mandatory
+  information fighting for limited room on a real box) more physical:
+  an overfull face holds for a beat, then the last sticker **pops off** and
+  bounces back to the tray (*boing*); stickers get **worried** (sweat drop)
+  as their face passes 85 %, **squashed** when over, **happy** and hopping on
+  a win; the stick sound **rises in pitch** as a face fills; a new level,
+  **« Nouvelle loi ! »** (Canada), lands a rubber stamp once your first layout
+  works — translation becomes mandatory and, in 10 of the 14 valid first
+  layouts, it fits nowhere without re-arranging the box (tested); and a
+  **slogan die** in *Ta boîte* rolls real-sounding claims of every length.
+  Now 6 levels.
+- **V8 staging — the challenge on a pedestal** (chosen from the design
+  canvas): **Taille réelle** opens the site — the front panel drawn at
+  (roughly) real size, 56 × 130 mm in CSS millimetres scaled per device
+  (phones: ~68 mm screen width heuristic; a bank-card outline and a scale
+  slider let anyone calibrate, remembered per viewer); a beat later every
+  mandatory mention, in every language, prints on it and runs off the bottom.
+  **Le Musée** is the win: the closed carton rises onto a 3D pedestal under a
+  spotlight, the score becomes a gallery label (*Toi — Boîte n° 4, « Nouvelle
+  loi »… Œuvre validée ●*) and the share image is the same museum piece.
+  **La Presse** stages level 5: a 3D hydraulic press whose ram rests on the
+  carton and follows it down as you shrink it (fixed framing, so the shrink is
+  visible), a giant cm readout, and a *CRAC !* when a sticker pops.
+ — a new "fun" idea ships only if it (1) makes the
+  space-vs-mandatory-information tension more felt, (2) runs on the real
+  carton, pressure model and solver, and (3) stays honest (demo rules, no
+  fake regulation). Out of scope on purpose: accounts, global leaderboards,
+  power-ups, mini-games or mascots unrelated to packaging.
+ — the whole site, game and mode pro:
+  *Est-ce que ça rentre ?* / *Does it fit?* / *¿Cabe o no cabe?*. Language is
+  picked from `?lang=`, then the visitor's saved choice, then their browser
+  language, then the language of the link they were sent, then English; a
+  FR/EN/ES switch sits in every header. Share cards, the emoji text, challenge
+  links (`&l=`), 3D labels, the guided tour and the date/centimetre formats
+  follow it. All copy lives in `src/game/i18n.js` and `src/app/proStrings.js`;
+  a test fails if a language is missing a key. Adding a language = one object
+  per file. Long words (Spanish, German…) shrink the pro headline until they
+  fit inside the dashed face edge.
+
+Code: `src/game/` (`levels.js` pure rules + links, `Game.jsx`, `GameScene.jsx`
+lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
+`tests/game.test.mjs`.
+
+## V6 — Rapport négocié (mode pro)
+
+The studio is now an annual-report spread — directions 04 (living annual
+report) + 05 (negotiation) from the design exploration, combined.
+
+- **The right-hand column is the front panel.** Its headline sits on the
+  Archivo width axis and narrows as the front fills; when the front is over
+  capacity the last words are pushed out past the dashed face edge.
+- **Requirements are characters** (bold modular shapes, ink outline, eyes that
+  follow the pointer). They stand on the column's baseline, wait "en coulisse",
+  or live in Fig. 2's face slots. Drag one onto the column, a slot or a face of
+  the 3D carton — or tap it, then tap a destination.
+- **The last one in gets shoved out.** On overload the most recent arrival is
+  ejected into the margin with a handwritten "pas de place !".
+- **The editor settles it in red pen.** "L'éditeur tranche" runs the solver:
+  the Blender carton (Fig. 1) opens, flattens and refolds while the characters
+  walk (FLIP) to their faces and annotate the move ("gauche, ok").
+- **Fig. 2 — où vit chaque exigence** doubles as the load strip (per-face
+  load, predicted load while dragging).
+- Chapters (01 Le brief → 05 La forme valide) follow the state; the guided tour
+  is written as editor's notes. French UI throughout; self-hosted Archivo,
+  JetBrains Mono, Newsreader and Caveat.
 
 ## V5.3 — Proof Room (UI/UX direction)
 

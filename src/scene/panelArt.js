@@ -77,6 +77,22 @@ function text(ctx, value, x, y, { size = 3, weight = 400, font = 'Inter, Arial, 
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 }
 
+function wrap(ctx, value, maxWidth, size, weight = 400, font = 'Inter, Arial, sans-serif') {
+  ctx.font = `${weight} ${mm(size)}px ${font}`;
+  const words = String(value).split(/\s+/).filter(Boolean);
+  const out = [];
+  let line = '';
+  for (const word of words) {
+    const next = line ? line + ' ' + word : word;
+    if (line && ctx.measureText(next).width > mm(maxWidth)) {
+      out.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) out.push(line);
+  return out.length ? out : [''];
+}
+
 function lines(ctx, list, x, y, lead, opts) {
   list.forEach((line, index) => text(ctx, line, x, y + index * lead, opts));
   return list.length * lead;
@@ -177,7 +193,15 @@ const BLOCKS = {
     recycleMark(ctx, x + size + 7, y + 13.5, 2.4, BLUE);
     return size + 4;
   },
-  claim(ctx, x, y, w) {
+  claim(ctx, x, y, w, s) {
+    const slogan = s?.brand?.slogan?.trim();
+    if (slogan) {
+      // A player's own slogan: wrapped, and it takes the room it needs —
+      // which is exactly what makes a long one overflow the face.
+      const rows = wrap(ctx, slogan.toUpperCase(), w, 3.2, 900);
+      lines(ctx, rows, x, y + 4, 3.9, { size: 3.2, weight: 900, color: RED });
+      return rows.length * 3.9 + 2;
+    }
     if (w >= 30) {
       text(ctx, '24H', x, y + 9, { size: 10, weight: 900, color: RED, spacing: -0.5 });
       text(ctx, 'HYDRATION', x, y + 14, { size: 3.1, weight: 900, color: RED, spacing: 0.2 });
@@ -238,14 +262,22 @@ function drawBlocks(ctx, kinds, x, y, w, s) {
 function drawFront(ctx, s, w, h, orm, bump) {
   const onFront = s.kindsOn.FRONT;
   const over = s.overloaded.includes('FRONT');
-  const titleSize = Math.min(12.5, w * 0.22);
+  // Product name: the default HYDRA VEIL, or the player's own (two lines max,
+  // shrunk until the longest line fits the panel).
+  const name = (s.brand?.name || 'HYDRA VEIL').trim().toUpperCase();
+  const cut = name.indexOf(' ');
+  const title = cut > 0 ? [name.slice(0, cut), name.slice(cut + 1)] : [name, ''];
+  let titleSize = Math.min(12.5, w * 0.22);
+  ctx.font = `800 ${mm(titleSize)}px Inter, Arial, sans-serif`;
+  const widest = Math.max(...title.map((t) => ctx.measureText(t).width));
+  if (widest > mm(w - 10)) titleSize *= mm(w - 10) / widest;
 
   text(ctx, 'NORD', 5, 13, { size: 5, font: 'Georgia, serif', color: GOLD });
   tag(ctx, 'FRONT', w - 5, 7.5, 'right');
-  text(ctx, 'HYDRA', 5, 22 + titleSize, { size: titleSize, weight: 800, spacing: -0.7 });
-  text(ctx, 'VEIL', 5, 22 + titleSize * 1.9, { size: titleSize, weight: 800, spacing: -0.7 });
+  text(ctx, title[0], 5, 22 + titleSize, { size: titleSize, weight: 800, spacing: -0.7 });
+  text(ctx, title[1], 5, 22 + titleSize * 1.9, { size: titleSize, weight: 800, spacing: -0.7 });
   const afterTitle = 22 + titleSize * 1.9;
-  text(ctx, 'BARRIER CREAM', 5, afterTitle + 7, { size: 2.7, weight: 800, spacing: 0.25 });
+  text(ctx, s.brand?.name ? (s.brand.tagline || 'CRÈME · 50 mL') : 'BARRIER CREAM', 5, afterTitle + 7, { size: 2.7, weight: 800, spacing: 0.25 });
   rule(ctx, 5, afterTitle + 11, 12);
 
   // Foil: logo is hot-stamped (low roughness, full metalness) + gold ink.
@@ -261,8 +293,8 @@ function drawFront(ctx, s, w, h, orm, bump) {
     bump.textBaseline = 'alphabetic';
     bump.font = `800 ${mm(titleSize)}px Inter, Arial, sans-serif`;
     if ('letterSpacing' in bump) bump.letterSpacing = `${mm(-0.7)}px`;
-    bump.fillText('HYDRA', mm(5), mm(22 + titleSize));
-    bump.fillText('VEIL', mm(5), mm(22 + titleSize * 1.9));
+    bump.fillText(title[0], mm(5), mm(22 + titleSize));
+    bump.fillText(title[1], mm(5), mm(22 + titleSize * 1.9));
   }
 
   let y = afterTitle + 17;

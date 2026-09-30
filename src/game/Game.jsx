@@ -85,6 +85,15 @@ const readScale = () => {
 };
 const POP_DELAY = 900; // ms an overfull face holds before the last sticker falls off
 
+const freshTrace = (level) => ({
+  overloads: 0,
+  pops: 0,
+  cracks: 0,
+  law: false,
+  minWidth: sizeDims(level?.step || 0).width,
+  resized: false,
+});
+
 export default function Game({ onPro, lang = 'fr', setLang }) {
   const T = STRINGS[lang];
   const cm = (mm) => formatCm(mm, lang);
@@ -116,11 +125,22 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const [faceK, setFaceK] = useState(() => readScale() ?? guessScale());
   const [scaling, setScaling] = useState(false);
   const [crack, setCrack] = useState(0); // press level: burst on a pop
+  const [trace, setTrace] = useState(() => freshTrace(fromLink?.level || LEVELS[0]));
+  const [carry, setCarry] = useState(false); // the real-size face physically hands off into level 1
 
   const boardRef = useRef(null);
   const sceneWrap = useRef(null);
   const pickRef = useRef(null);
   const lidAnim = useRef(0);
+  const traceRef = useRef(trace);
+
+  const updateTrace = (nextOrFn) => {
+    setTrace((current) => {
+      const next = typeof nextOrFn === 'function' ? nextOrFn(current) : { ...current, ...nextOrFn };
+      traceRef.current = next;
+      return next;
+    });
+  };
 
   const isSandbox = level.id === 'boite';
   const copy = useMemo(() => levelText(level, lang), [level, lang]);
@@ -192,7 +212,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const wasOver = useRef(false);
   useEffect(() => {
     const over = overloaded.length > 0;
-    if (over && !wasOver.current) play('collide');
+    if (over && !wasOver.current) {
+      play('collide');
+      updateTrace((t) => ({ ...t, overloads: t.overloads + 1 }));
+    }
     wasOver.current = over;
   }, [overloaded.length]);
 
@@ -216,6 +239,11 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
       setOrder((o) => o.filter((k) => k !== kind));
       setPopped((prev) => ({ kind, surface, n: (prev?.n || 0) + 1 }));
       setPops((c) => c + 1);
+      updateTrace((t) => ({
+        ...t,
+        pops: t.pops + 1,
+        cracks: t.cracks + (level.sizing === 'shrink' ? 1 : 0),
+      }));
       play('pop');
       if (level.sizing === 'shrink') {
         setCrack(Date.now());
@@ -230,6 +258,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     if (won || !level.twist || lawArrived || !fits) return undefined;
     const id = setTimeout(() => {
       setLawArrived(true);
+      updateTrace({ law: true });
       setPlacements((p) => ({ ...p, [level.twist]: null }));
       setStamp(true);
       play('stamp');
@@ -274,6 +303,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   }, []);
 
   const startLevel = (next, { keepRival = false, nextBrand } = {}) => {
+    const fromRealSize = screen === 'intro';
     setLevel(next);
     setPlacements(emptyFor(next));
     setOrder([]);
@@ -289,11 +319,18 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     setStamp(false);
     setPopped(null);
     setPops(0);
+    const nextTrace = freshTrace(next);
+    traceRef.current = nextTrace;
+    setTrace(nextTrace);
     if (!keepRival) setRival(null);
     if (nextBrand) setBrand(nextBrand);
     lidAnim.current += 1;
     setLid(next.sizing === 'shrink' ? 0 : OPEN_LID); // under the press the lid stays shut
     setScreen('play');
+    if (fromRealSize) {
+      setCarry(true);
+      setTimeout(() => setCarry(false), reducedMotion() ? 350 : 1250);
+    }
     play('tick');
   };
 
@@ -326,13 +363,20 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     if (won) return;
     setHint(null);
     setStep(value);
+    const width = sizeDims(value).width;
+    updateTrace((t) => ({ ...t, minWidth: Math.min(t.minWidth, width), resized: true }));
     if (!startAt) setStartAt(Date.now());
   };
 
   const finish = () => {
     const ms = startAt ? Date.now() - startAt : 0;
     const stars = isSandbox ? 0 : starsFor(level, { moves, step, hints }, opts);
-    const result = { moves, ms, step, stars, width: dims.width };
+    const finalTrace = {
+      ...traceRef.current,
+      minWidth: Math.min(traceRef.current.minWidth, dims.width),
+      finalWidth: dims.width,
+    };
+    const result = { moves, ms, step, stars, width: dims.width, trace: finalTrace };
     setWon(result);
     setSelectedKind(null);
     play('fanfare');
@@ -495,7 +539,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
           house: T.museum.house,
           artist: isSandbox ? (brand.name || T.museum.artist) : T.museum.artist,
           work: isSandbox ? T.museum.workBrand(brand.slogan) : T.museum.work(level.id === 'daily' ? level.key.slice(4) : level.id, copy.title),
-          lines: [T.museum.medium(activeKinds.length), T.museum.front(cm(dims.width))],
+          lines: [T.museum.medium(activeKinds.length), traceSummary],
           acquired: won ? T.museum.acquired : '',
         },
         faces: T.face,
@@ -634,12 +678,22 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     onPickerReady: (fn) => { pickRef.current = fn; },
     brand: isSandbox ? { name: brand.name, slogan: brand.slogan, tagline: T.boxTagline } : null,
     labels: PRO[lang].scene,
+    story: won?.trace || trace,
   };
 
   const levelKey = (l) => (l.id === 'daily' ? 'daily-' + l.key : String(l.id));
   const daily = useMemo(() => dailyLevel(todayKey()), []);
   const nextLevel = typeof level.id === 'number' ? levelById(level.id + 1) : null;
   const beatRival = won && rival ? (level.sizing ? won.step < rival.step || (won.step === rival.step && won.moves < rival.moves) : won.moves < rival.moves || (won.moves === rival.moves && won.ms / 1000 < rival.seconds)) : null;
+
+  const traceForMuseum = won?.trace || trace;
+  const traceParts = [];
+  if (traceForMuseum.overloads) traceParts.push(T.museum.overloads(traceForMuseum.overloads));
+  if (traceForMuseum.pops) traceParts.push(T.museum.pops(traceForMuseum.pops));
+  if (traceForMuseum.cracks) traceParts.push(T.museum.cracks(traceForMuseum.cracks));
+  if (traceForMuseum.law) traceParts.push(T.museum.lawTrace);
+  if (traceForMuseum.resized && traceForMuseum.minWidth < 56) traceParts.push(T.museum.minWidth(cm(traceForMuseum.minWidth)));
+  const traceSummary = traceParts.length ? traceParts.join(' · ') : T.museum.cleanTrace;
 
   /* ------------------------------ intro ----------------------------- */
 
@@ -707,7 +761,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   /* ------------------------------ play ------------------------------ */
 
   return (
-    <main className={`game play${selectedKind ? ' is-selecting' : ''}${drag ? ' is-dragging-char' : ''}${won ? ' is-won' : ''}`} ref={boardRef}>
+    <main className={`game play${selectedKind ? ' is-selecting' : ''}${drag ? ' is-dragging-char' : ''}${won ? ' is-won' : ''}${won && !won.hidden ? ' museum-open' : ''}`} ref={boardRef}>
       <header className="g-top">
         <button className="g-back" onClick={() => { setScreen('intro'); window.history.replaceState(null, '', window.location.pathname); }} aria-label={T.back}>←</button>
         <nav className="g-levels" aria-label={T.levelsNav}>
@@ -731,6 +785,14 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
             </nav>
         </div>
       </header>
+
+      {carry && (
+        <div className="g-carry" aria-hidden="true">
+          <span>56 MM</span>
+          <i>→</i>
+          <b>{T.real.carry}</b>
+        </div>
+      )}
 
       <section className="g-mission">
         <p className="g-kicker">{typeof level.id === 'number' ? T.kickerLevel(level.id, LEVELS.length) : copy.title} · {T.market[level.market]}</p>
@@ -902,6 +964,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
               <span className="g-reddot" title={T.museum.dot} />
             </div>
             <span className="g-score-line">{T.win.score(won.moves, formatTime(won.ms), cm(won.width))}</span>
+            <div className="g-provenance">
+              <small>{T.museum.traceTitle}</small>
+              <span>{traceSummary}</span>
+            </div>
             {level.sizing && best !== null && won.step > best && <em className="g-record">{T.win.record(cm(sizeDims(best).width))}</em>}
           </div>
           {beatRival !== null && <p className="g-vs">{beatRival ? T.win.beat : T.win.lost}</p>}

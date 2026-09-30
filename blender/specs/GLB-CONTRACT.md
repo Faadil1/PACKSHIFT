@@ -42,7 +42,9 @@ PACKSHIFT_ROOT
 │   └── HINGE_BOTTOM_DUST_LEFT
 │       └── BOTTOM_DUST_LEFT
 ├── HINGE_TOP
-│   └── TOP
+│   ├── TOP
+│   └── HINGE_TOP_TUCK
+│       └── TOP_TUCK
 ├── HINGE_BOTTOM
 │   └── BOTTOM
 ├── INNER_ASSEMBLY
@@ -96,7 +98,7 @@ The browser reads these values from glTF extras.
 
 Closed pose (`closed_deg = 0`) is the authored mesh pose and must be a closed
 carton: dust flaps fold inward under TOP/BOTTOM, the glue flap sits inside
-against LEFT_COPY. Sign convention for `flat_deg` is Blender's right-hand rule
+against LEFT_COPY, and (since 0.6.0) the TOP_TUCK flap is tucked down inside BACK. Sign convention for `flat_deg` is Blender's right-hand rule
 about the named local axis.
 
 ## Closed-pose geometry contract (since 0.5.1)

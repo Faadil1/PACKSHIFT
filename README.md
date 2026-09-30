@@ -117,9 +117,9 @@ The GLB also contains anchors for:
 
 Current master:
 
-- **42 GLB nodes**
+- **44 GLB nodes** (0.6.0 adds a modelled tuck flap)
 - **8 materials**
-- Blender asset version **0.5.1** (closed pose verified: flaps and internals contained in the shell)
+- Blender asset version **0.6.0** (closed pose verified: flaps and internals contained in the shell)
 
 ---
 
@@ -322,9 +322,10 @@ shell in the authored closed pose. It runs inside the GLB contract check.
 
 ### Unit tests
 
-`npm test` covers the pressure model and the compile solver (Impossible Front
-overloads only the front, compile resolves it in every market, Canada routes
-bilingual copy to the back, valid user layouts are kept).
+`npm test` (16 tests) covers the pressure model and solver (Impossible Front,
+market-specific layouts, the unsolvable full Canadian brief and its carton
+suggestion), dieline geometry (creases vs cuts), URL state round-trips, and
+node-for-node parity between the procedural twin and the Blender GLB.
 
 ### Blender Runtime Integration
 
@@ -386,6 +387,48 @@ A visually plausible package is not automatically a digital twin.
 - Blender MCP provider promotion — still benchmark-gated.
 
 ---
+
+## V5.2 — signature, control, material, jury kit
+
+**Signature moment**
+- during COMPILE each moved requirement leaves its panel as a printed block,
+  arcs over the open dieline with a trail and lands on its new panel — the
+  artwork only changes when the block lands;
+- scripted camera: low push-in while the lid opens, dolly over the dieline,
+  sweeping orbit while the carton refolds;
+- synthesised sound (Web Audio, no files): paper creases on every fold,
+  whoosh per travelling block, thud on overload, chime on valid form; mute
+  toggle, remembered per viewer;
+- a diff of what moved (`FR / EN  Front → Left copy`) after each compile.
+
+**User control**
+- editable brief: add warnings, an eco claim and an EAN-13 barcode to the
+  three core requirements (6 kinds, exhaustive 4⁶ solver);
+- a third market (US) with its own demo rules;
+- carton size sliders (width 44–72, depth 34–48, height 110–150 mm): capacity
+  scales with panel area; non-nominal sizes rebuild the exact same hierarchy
+  as a procedural twin (a parity test proves node-for-node equality with the
+  GLB at nominal size);
+- when no layout exists the studio says so and computes the smallest carton
+  that fits (e.g. the full brief in Canada needs 58 × 37 × 132 mm).
+
+**Material**
+- Blender 0.6.0: modelled tuck flap (the part that actually closes a
+  reverse-tuck carton), included in the closed-pose containment check;
+- runtime material pass: glass jar with transmission and clearcoat, glossy
+  cap, metallic foil seal, paper-fibre normal map, foil-stamped logo
+  (roughness/metalness map) and embossed product name (bump map);
+- procedural studio environment (Lightformers — nothing downloaded).
+
+**Jury / demo kit**
+- ~50 s narrated guided tour (T, or the header button; Esc skips);
+- shareable link: the URL hash keeps market, brief, placements, size and view;
+- concept dieline export (SVG, mm): cut / crease / bleed / safe lines, panels
+  labelled with requirements and loads — explicitly not a production dieline.
+
+Fixed on the way: X-ray showed an opaque shell because three.js bakes
+`OPAQUE` into the shader program; materials now recompile when transparency
+toggles.
 
 ## V5.1 — audit fixes and depth pass
 

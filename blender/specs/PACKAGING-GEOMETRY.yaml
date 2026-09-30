@@ -1,4 +1,4 @@
-version: 0.5.1
+version: 0.6.0
 status: CONCEPT_DIMENSIONS__NOT_MANUFACTURING_VALIDATED
 asset: PACKSHIFT_MASTER_V5
 product: NORD_HYDRA_VEIL_BARRIER_CREAM
@@ -17,6 +17,7 @@ carton:
   board_thickness: 0.45
   glue_flap_width: 12
   dust_flap_depth: 16
+  tuck_flap_depth: 15
 
 product_architecture:
   insert_tray: true
@@ -54,6 +55,8 @@ nodes:
   glue_flap: GLUE_FLAP
   top_hinge: HINGE_TOP
   top: TOP
+  top_tuck_hinge: HINGE_TOP_TUCK
+  top_tuck: TOP_TUCK
   bottom_hinge: HINGE_BOTTOM
   bottom: BOTTOM
   top_dust_left_hinge: HINGE_TOP_DUST_LEFT
@@ -101,6 +104,7 @@ fold_contract:
   HINGE_LEFT: {axis: Z, closed_deg: 0, flat_deg: -90}
   HINGE_GLUE: {axis: Z, closed_deg: 0, flat_deg: 90}
   HINGE_TOP: {axis: X, closed_deg: 0, flat_deg: -90}
+  HINGE_TOP_TUCK: {axis: X, closed_deg: 0, flat_deg: -90}
   HINGE_BOTTOM: {axis: X, closed_deg: 0, flat_deg: 90}
   HINGE_TOP_DUST_LEFT: {axis: Y, closed_deg: 0, flat_deg: -90}
   HINGE_TOP_DUST_RIGHT: {axis: Y, closed_deg: 0, flat_deg: 90}

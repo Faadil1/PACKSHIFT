@@ -22,6 +22,7 @@ HEIGHT = 130 * MM
 THICKNESS = 0.45 * MM
 GLUE = 12 * MM
 DUST = 16 * MM
+TUCK = 15 * MM
 
 COLLECTION = "PACKSHIFT"
 ROOT = "PACKSHIFT_ROOT"
@@ -171,7 +172,7 @@ def build():
     leaflet_mat = principled_material("MAT_LEAFLET", (0.96, 0.95, 0.91), 0.82)
 
     root = make_empty(ROOT, collection)
-    root["packshift_asset_version"] = "0.5.1"
+    root["packshift_asset_version"] = "0.6.0"
     root["geometry_truth"] = "CONCEPT_DIMENSIONS_NOT_MANUFACTURING_VALIDATED"
     root["manufacturing_validation_claimed"] = False
     root["width_mm"] = 56.0
@@ -204,6 +205,13 @@ def build():
     hinge_top = make_empty("HINGE_TOP", collection, root, (0, DEPTH/2, HEIGHT/2))
     mark_hinge(hinge_top, "X", -90)
     top = make_panel("TOP", collection, hinge_top, (WIDTH, DEPTH, THICKNESS), (0, -DEPTH/2, 0), paper)
+
+    # Tuck flap: hinged on the TOP panel's back edge. Closed pose = folded down
+    # and tucked inside the BACK wall, which is what actually holds a
+    # reverse-tuck carton shut. flat_deg continues it past TOP in the dieline.
+    hinge_tuck = make_empty("HINGE_TOP_TUCK", collection, hinge_top, (0, -DEPTH, 0))
+    mark_hinge(hinge_tuck, "X", -90)
+    top_tuck = make_panel("TOP_TUCK", collection, hinge_tuck, (WIDTH - 6 * THICKNESS, THICKNESS, TUCK), (0, 1.5 * THICKNESS, -TUCK/2 - 2 * THICKNESS), paper)
 
     hinge_bottom = make_empty("HINGE_BOTTOM", collection, root, (0, DEPTH/2, -HEIGHT/2))
     mark_hinge(hinge_bottom, "X", 90)
@@ -303,7 +311,7 @@ def build():
         anchor = make_empty(name, collection, root, loc)
         anchor["packshift_role"] = "runtime_anchor"
 
-    for obj in [front, right, back, left, top, bottom, top_dust_left, top_dust_right, bottom_dust_left, bottom_dust_right]:
+    for obj in [front, right, back, left, top, top_tuck, bottom, top_dust_left, top_dust_right, bottom_dust_left, bottom_dust_right]:
         obj["surface_capacity"] = {
             "FRONT": 0.72, "RIGHT_DATA": 0.64, "BACK": 0.88, "LEFT_COPY": 0.68,
             "TOP": 0.22, "BOTTOM": 0.20,

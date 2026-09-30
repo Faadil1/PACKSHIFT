@@ -6,7 +6,7 @@ ROOT = "PACKSHIFT_ROOT"
 
 REQUIRED = {
     "FRONT","HINGE_RIGHT","RIGHT_DATA","HINGE_BACK","BACK","HINGE_LEFT","LEFT_COPY",
-    "HINGE_GLUE","GLUE_FLAP","HINGE_TOP","TOP","HINGE_BOTTOM","BOTTOM",
+    "HINGE_GLUE","GLUE_FLAP","HINGE_TOP","TOP","HINGE_TOP_TUCK","TOP_TUCK","HINGE_BOTTOM","BOTTOM",
     "HINGE_TOP_DUST_LEFT","TOP_DUST_LEFT","HINGE_TOP_DUST_RIGHT","TOP_DUST_RIGHT",
     "HINGE_BOTTOM_DUST_LEFT","BOTTOM_DUST_LEFT","HINGE_BOTTOM_DUST_RIGHT","BOTTOM_DUST_RIGHT",
     "INNER_ASSEMBLY","INSERT_TRAY","INNER_JAR","CREAM_CORE","JAR_CAP","SEAL_DISC","LEAFLET",
@@ -17,7 +17,7 @@ REQUIRED = {
 
 HINGES = {
     "HINGE_RIGHT":("Z",90.0),"HINGE_BACK":("Z",90.0),"HINGE_LEFT":("Z",-90.0),
-    "HINGE_GLUE":("Z",90.0),"HINGE_TOP":("X",-90.0),"HINGE_BOTTOM":("X",90.0),
+    "HINGE_GLUE":("Z",90.0),"HINGE_TOP":("X",-90.0),"HINGE_TOP_TUCK":("X",-90.0),"HINGE_BOTTOM":("X",90.0),
     "HINGE_TOP_DUST_LEFT":("Y",-90.0),"HINGE_TOP_DUST_RIGHT":("Y",90.0),
     "HINGE_BOTTOM_DUST_LEFT":("Y",90.0),"HINGE_BOTTOM_DUST_RIGHT":("Y",-90.0),
 }
@@ -44,7 +44,7 @@ def main():
     if root.get("manufacturing_validation_claimed") is not False:
         fail("manufacturing truth boundary missing")
 
-    if root.get("packshift_asset_version") != "0.5.1":
+    if root.get("packshift_asset_version") != "0.6.0":
         fail("unexpected asset version")
 
     for name,(axis,flat_deg) in HINGES.items():
@@ -64,7 +64,7 @@ def main():
             fail(f"{name} missing decomposition metadata")
 
     print("PACKSHIFT V5 BLENDER VALIDATION: PASS")
-    print("- folding-carton shell + dust/glue flaps")
+    print("- folding-carton shell + dust/glue/tuck flaps")
     print("- internal product architecture")
     print("- runtime surface/explode anchors")
     print("- decomposition metadata")

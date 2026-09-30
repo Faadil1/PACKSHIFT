@@ -17,6 +17,8 @@
     "check": "npm test && npm run validate:glb && npm run validate:blender && npm run build"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@react-three/drei": "^10.0.7",
     "@react-three/fiber": "^9.1.2",
     "gsap": "^3.13.0",

@@ -1,6 +1,6 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V5_2_SIGNATURE_CONTROL_MATERIAL_JURY
+phase: V5_3_PROOF_ROOM_UI
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
@@ -54,6 +54,13 @@ v5_1:
     - unit_tests_and_closed_pose_ci_check
   headless_qa: "desktop 1440x900 + mobile 390x844 (software WebGL): drag, pressure, compile EU/CA, x-ray, dieline, fallback"
   not_yet_proven: [real_device_touch_QA, GPU_frame_rate]
+
+v5_3:
+  branch: feat/v5-3-proof-room
+  status: PR_PENDING_LIVE_QA
+  direction: prepress_proof_room_process_inks
+  added: [job_tickets_dom_drag, predictive_load_preview, ink_strip, load_sensitive_variable_headline, cmy_misregistration_states, press_control_with_phase_ring, timeline_deck, slug_status_line, self_hosted_variable_fonts]
+  removed: [floating_3d_requirement_cards, duplicate_status_surfaces]
 
 v5_2:
   branch: feat/v5-2-signature

@@ -19,28 +19,34 @@ import {
   overloadedSurfaces,
   solvePlacements,
   suggestDims,
-  surfaceLoads,
 } from './model/pressure.js';
 import { decodeState, encodeState } from './app/urlState.js';
 import { dielineSVG } from './export/dieline.js';
 import { isMuted, play, setMuted, unlockAudio } from './audio/sound.js';
+import { Headline, PrepressMarks } from './ui/Headline.jsx';
+import { InkStrip, Ticket, TicketGhost } from './ui/Ticket.jsx';
 
 const VIEWS = [
-  ['PACK', '01'],
-  ['EXPLODED', '02'],
-  ['DIELINE', '03'],
-  ['XRAY', '04'],
-  ['PRESSURE', '05'],
+  ['PACK', 'Pack'],
+  ['EXPLODED', 'Open'],
+  ['DIELINE', 'Dieline'],
+  ['XRAY', 'X-ray'],
+  ['PRESSURE', 'Ink'],
 ];
 const VIEW_PRESET = { PACK: 0, EXPLODED: 44, DIELINE: 100, XRAY: 0, PRESSURE: 0 };
+const STOPS = [
+  [0, 'Closed'],
+  [12, 'Lid'],
+  [36, 'Product'],
+  [70, 'Shell'],
+  [100, 'Dieline'],
+];
+const PHASES = ['opening', 'dieline', 'reflow', 'closing'];
 
 const reducedMotion = () => typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-// Pauses are reading time, so they are kept under reduced motion; only the
-// animation itself is removed.
+// Pauses are reading time, kept under reduced motion; only animation is removed.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const forceProcedural = () => typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('procedural') === '1';
 
@@ -71,7 +77,7 @@ function Loader() {
   if (!active && progress >= 100) return null;
   return (
     <div className="loader" role="status" aria-live="polite">
-      <span>Loading Blender master</span>
+      <span>Loading the Blender master</span>
       <i><b style={{ width: Math.round(progress) + '%' }} /></i>
     </div>
   );
@@ -98,34 +104,48 @@ export default function App() {
   const [reflowMoves, setReflowMoves] = useState([]);
   const [lastDiff, setLastDiff] = useState(null);
   const [running, setRunning] = useState(false);
-  const [tour, setTour] = useState(null); // { step, total, title, body }
+  const [tour, setTour] = useState(null);
   const [selectedKind, setSelectedKind] = useState(null);
   const [usingFallback, setUsingFallback] = useState(forceProcedural);
   const [announcement, setAnnouncement] = useState('');
   const [toast, setToast] = useState('');
-  const [sizeOpen, setSizeOpen] = useState(false);
   const [muted, setMutedState] = useState(isMuted);
+  const [drag, setDrag] = useState(null); // { kind, x, y, vx, surface, over }
+  const [resetArmed, setResetArmed] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const animationToken = useRef(0);
   const decompositionRef = useRef(decomposition);
   const runningRef = useRef(false);
   const tourToken = useRef(0);
-  const placementsRef = useRef(placements);
-  placementsRef.current = placements;
+  const pickRef = useRef(null);
+  const stageRef = useRef(null);
 
   const brief = useMemo(() => ALL_KINDS.filter((k) => Object.prototype.hasOwnProperty.call(placements, k)), [placements]);
   const pressures = useMemo(() => buildPressure(placements, market, dims), [placements, market, dims]);
-  const loads = useMemo(() => surfaceLoads(placements, market), [placements, market]);
   const capacity = useMemo(() => capacityFor(market, dims), [market, dims]);
+  const basePressures = useMemo(
+    () => Object.fromEntries(SURFACES.map((s) => [s, MARKETS[market].base[s] / capacity[s]])),
+    [market, capacity],
+  );
   const collisionSurfaces = useMemo(() => overloadedSurfaces(pressures), [pressures]);
   const placedCount = brief.filter((kind) => placements[kind]).length;
   const collision = collisionSurfaces.length > 0;
+  const maxLoad = Math.max(...SURFACES.map((s) => pressures[s]));
   const suggestion = useMemo(
     () => (compilePhase === 'unsolved' ? suggestDims(placements, market, dims) : null),
     [compilePhase, placements, market, dims],
   );
 
-  // Sound: unlock on first gesture (autoplay policy); collision thud on edge.
+  // Live preview of what a placement would do, before it happens.
+  const preview = useMemo(() => {
+    if (!drag?.kind || !drag.surface) return null;
+    const next = buildPressure({ ...placements, [drag.kind]: drag.surface }, market, dims);
+    return { kind: drag.kind, surface: drag.surface, from: pressures[drag.surface], to: next[drag.surface] };
+  }, [drag?.kind, drag?.surface, placements, market, dims, pressures]);
+
+  /* ----------------------------- effects ---------------------------- */
+
   useEffect(() => {
     const unlock = () => unlockAudio();
     window.addEventListener('pointerdown', unlock, { once: true });
@@ -135,13 +155,13 @@ export default function App() {
       window.removeEventListener('keydown', unlock);
     };
   }, []);
+
   const wasColliding = useRef(false);
   useEffect(() => {
     if (collision && !wasColliding.current) play('collide');
     wasColliding.current = collision;
   }, [collision]);
 
-  // Shareable link: keep the URL hash in sync with the studio (not mid-run).
   useEffect(() => {
     if (running) return undefined;
     const id = setTimeout(() => {
@@ -151,12 +171,30 @@ export default function App() {
     return () => clearTimeout(id);
   }, [market, brief, placements, dims, viewMode, running]);
 
+  // Halftone parallax (subtle, pointer-driven, skipped under reduced motion).
+  useEffect(() => {
+    if (reducedMotion()) return undefined;
+    let raf = 0;
+    const onMove = (e) => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const x = e.clientX / window.innerWidth - 0.5;
+        const y = e.clientY / window.innerHeight - 0.5;
+        document.documentElement.style.setProperty('--px', x.toFixed(3));
+        document.documentElement.style.setProperty('--py', y.toFixed(3));
+      });
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
+
+  /* ----------------------------- helpers ---------------------------- */
+
   const setDecomp = useCallback((value) => {
     decompositionRef.current = value;
     setDecomposition(value);
   }, []);
 
-  // Always animates from the *live* value (ref), never from a stale render.
   const animateDecomposition = useCallback((target, duration = 1200) => {
     const token = ++animationToken.current;
     const from = decompositionRef.current;
@@ -185,11 +223,12 @@ export default function App() {
 
   const flash = (message) => {
     setToast(message);
-    setTimeout(() => setToast(''), 2200);
+    setTimeout(() => setToast(''), 2400);
   };
 
+  const snapshot = () => ({ placements, dims });
   const commitPlacements = (next) => {
-    setHistory((h) => [...h.slice(-29), { placements, dims }]);
+    setHistory((h) => [...h.slice(-29), snapshot()]);
     setPlacements(next);
     setLastDiff(null);
   };
@@ -223,7 +262,8 @@ export default function App() {
     commitPlacements({ ...placements, [kind]: null });
     setCompiled(false);
     setCompilePhase('idle');
-    setAnnouncement(`${REQUIREMENTS[kind].label} added to the brief.`);
+    play('tick');
+    setAnnouncement(`${REQUIREMENTS[kind].label} added to the job.`);
   };
 
   const removeFromBrief = (kind) => {
@@ -237,9 +277,8 @@ export default function App() {
   };
 
   const changeDims = (next) => {
-    const clamped = clampDims(next);
-    setHistory((h) => [...h.slice(-29), { placements, dims }]);
-    setDims(clamped);
+    setHistory((h) => [...h.slice(-29), snapshot()]);
+    setDims(clampDims(next));
     setCompiled(false);
     setCompilePhase((p) => (p === 'unsolved' ? 'idle' : p));
     setLastDiff(null);
@@ -256,6 +295,49 @@ export default function App() {
     setLastDiff(null);
     setAnnouncement('Undid last change.');
   };
+
+  /* --------------------------- ticket drag --------------------------- */
+
+  const startTicketDrag = (kind) => (event) => {
+    if (runningRef.current || event.button > 0) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let lastX = startX;
+    let moved = false;
+    let current = null;
+    const move = (e) => {
+      const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+      if (!moved && dist < 6) return;
+      if (!moved) {
+        moved = true;
+        document.body.classList.add('is-dragging-ticket');
+        setSheetOpen(false);
+      }
+      const surface = pickRef.current?.(e.clientX, e.clientY) || null;
+      const next = buildPressure({ ...placements, [kind]: surface || 'FRONT' }, market, dims);
+      current = { kind, x: e.clientX, y: e.clientY, vx: e.clientX - lastX, surface, over: surface ? next[surface] > 1 : false };
+      lastX = e.clientX;
+      setDrag(current);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      document.body.classList.remove('is-dragging-ticket');
+      setDrag(null);
+      if (!moved) {
+        setSelectedKind((c) => (c === kind ? null : kind));
+        play('tick');
+      } else if (current?.surface) {
+        placeConstraint(kind, current.surface);
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
+  /* ----------------------------- compile ----------------------------- */
 
   const runCompile = async (from, targetMarket, targetDims, guard = () => {}) => {
     const solution = solvePlacements(from, targetMarket, targetDims);
@@ -276,7 +358,6 @@ export default function App() {
 
     setCompilePhase('reflow');
     setReflowMoves(solution.moves);
-    // Placements change only when the flying blocks land.
     await sleep(Math.max(700, flightDuration(solution.moves.length) * 1000));
     setPlacements(solution.placements);
     await sleep(450);
@@ -291,11 +372,10 @@ export default function App() {
     setCompiled(solution.valid);
     setCompilePhase(solution.valid ? 'valid' : 'unsolved');
     setLastDiff({ moves: solution.moves, market: targetMarket, valid: solution.valid });
-    if (solution.valid) play('resolve');
-    else play('collide');
+    play(solution.valid ? 'resolve' : 'collide');
     setAnnouncement(solution.valid
       ? `Compiled. Valid form for ${MARKETS[targetMarket].label}. ${solution.moves.length} requirement(s) moved.`
-      : 'No valid layout exists for this brief at this carton size.');
+      : 'No valid layout exists for this job at this carton size.');
     return solution;
   };
 
@@ -303,14 +383,14 @@ export default function App() {
     if (runningRef.current || brief.length === 0) return;
     unlockAudio();
     lock(true);
-    setHistory((h) => [...h.slice(-29), { placements, dims }]);
+    setHistory((h) => [...h.slice(-29), snapshot()]);
     await runCompile(placements, market, dims);
     await sleep(600);
     setCompilePhase((phase) => (phase === 'valid' ? 'idle' : phase));
     lock(false);
   };
 
-  /* -------------------------- guided tour -------------------------- */
+  /* ---------------------------- guided tour --------------------------- */
 
   const TOUR_STEPS = 8;
   const runTour = async () => {
@@ -330,7 +410,7 @@ export default function App() {
     };
 
     lock(true);
-    setHistory((h) => [...h.slice(-29), { placements, dims }]);
+    setHistory((h) => [...h.slice(-29), snapshot()]);
     try {
       animationToken.current += 1;
       setCompiled(false);
@@ -343,7 +423,7 @@ export default function App() {
       setPlacements(emptyPlacements());
       setLastDiff(null);
 
-      caption(1, 'A real Blender master', 'Folding carton, hinges, jar, cap, seal, insert and leaflet — exported from Blender, driven live in the browser.');
+      caption(1, 'A real Blender master', 'Folding carton, tuck flap, hinges, jar, cap, seal, insert and leaflet — exported from Blender, driven live in the browser.');
       await wait(900);
       setViewMode('XRAY');
       await wait(2600);
@@ -359,11 +439,11 @@ export default function App() {
       await wait(750);
       setPlacements(IMPOSSIBLE_FRONT);
 
-      caption(3, 'The front refuses the brief', 'Demand exceeds the panel’s printable capacity. The surface turns red instead of silently shrinking type.');
+      caption(3, 'The front is over-inked', 'Demand exceeds the panel’s printable capacity. The proof drifts out of register instead of silently shrinking type.');
       setViewMode('PRESSURE');
       await wait(2600);
 
-      caption(4, 'Compile: open, reflow, refold', 'The lid opens, the product lifts out, the carton unfolds, and each requirement flies to the panel that can hold it.');
+      caption(4, 'Press: open, reflow, refold', 'The lid opens, the product lifts out, the carton unfolds, and each requirement flies to the panel that can hold it.');
       const eu = await runCompile(IMPOSSIBLE_FRONT, 'EU', NOMINAL_DIMS, guard);
       await wait(1400);
 
@@ -374,7 +454,7 @@ export default function App() {
       const ca = await runCompile(eu.placements, 'CANADA', NOMINAL_DIMS, guard);
       await wait(1200);
 
-      caption(6, 'Grow the brief', 'Add warnings, an eco claim and a retail barcode. Nothing fits any more — and the studio says so.');
+      caption(6, 'Grow the job', 'Add warnings, an eco claim and a retail barcode. Nothing fits any more — and the proof says so.');
       const grown = { ...ca.placements, warning: null, eco: null, barcode: null };
       setPlacements(grown);
       await wait(1300);
@@ -388,7 +468,7 @@ export default function App() {
       await runCompile(grown, 'CANADA', bigger, guard);
       await wait(1300);
 
-      caption(8, 'Your turn', 'Drag requirements, scrub the object apart, change the size — then share the link or export the dieline.');
+      caption(8, 'Your turn', 'Drag a ticket onto a face, scrub the object apart, change the stock — then share the proof or export the dieline.');
       await wait(3600);
     } catch (error) {
       if (!(error instanceof Cancelled)) throw error;
@@ -410,8 +490,15 @@ export default function App() {
 
   const resetStudio = () => {
     if (runningRef.current) return;
+    if (!resetArmed) {
+      // Destructive: ask for a second press instead of a modal.
+      setResetArmed(true);
+      setTimeout(() => setResetArmed(false), 2200);
+      return;
+    }
+    setResetArmed(false);
     animationToken.current += 1;
-    setHistory((h) => [...h.slice(-29), { placements, dims }]);
+    setHistory((h) => [...h.slice(-29), snapshot()]);
     setPlacements(emptyPlacements());
     setDims(NOMINAL_DIMS);
     setDecomp(0);
@@ -421,6 +508,7 @@ export default function App() {
     setSelectedKind(null);
     setReflowMoves([]);
     setLastDiff(null);
+    flash('Fresh proof. Undo (Z) brings the last one back.');
   };
 
   const changeMarket = (value) => {
@@ -433,13 +521,11 @@ export default function App() {
     setAnnouncement(`Market set to ${MARKETS[value].label}. ${MARKETS[value].note}`);
   };
 
-  /* ---------------------------- tools ---------------------------- */
-
   const shareLink = async () => {
     const url = window.location.origin + window.location.pathname + '#' + encodeState({ market, brief, placements, dims, viewMode });
     try {
       await navigator.clipboard.writeText(url);
-      flash('Link copied — it reopens this exact studio state.');
+      flash('Proof link copied — it reopens this exact state.');
     } catch {
       window.prompt('Copy this link', url);
     }
@@ -456,7 +542,7 @@ export default function App() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    flash('Concept dieline exported (SVG, mm).');
+    flash('Concept dieline exported · SVG · mm');
   };
 
   const toggleSound = () => {
@@ -467,7 +553,6 @@ export default function App() {
     if (!next) play('tick');
   };
 
-  // Keyboard: 1-5 views, C compile, R reset, Z undo, T tour, Esc deselect/skip.
   useEffect(() => {
     const onKey = (event) => {
       if (event.target.closest?.('input, select, textarea') || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -475,9 +560,10 @@ export default function App() {
       if (key === 'escape') {
         if (tour) skipTour();
         setSelectedKind(null);
-        setSizeOpen(false);
+        setSheetOpen(false);
         return;
       }
+      if (event.target.closest?.('button') && (key === 'enter' || key === ' ')) return;
       if (key >= '1' && key <= '5') setMode(VIEWS[Number(key) - 1][0]);
       else if (key === 'c') compileSurface();
       else if (key === 'r') resetStudio();
@@ -488,32 +574,59 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  /* ------------------------------ copy ------------------------------ */
+
   const marketLabel = MARKETS[market].label;
   const sceneCopy = (() => {
-    if (compilePhase === 'opening') return ['Open the object', 'Tuck out, lid up. The product lifts out through the opening.'];
-    if (compilePhase === 'dieline') return ['Dieline field', 'Every printable surface is now part of the conversation.'];
-    if (compilePhase === 'reflow') return ['Spatial reflow', 'Each requirement travels to the panel that can hold it.'];
-    if (compilePhase === 'closing') return ['Refold', 'The same master closes around a new hierarchy.'];
-    if (compilePhase === 'unsolved') return ['No valid form', 'No layout fits this brief on this carton. Shrink the brief or grow the pack.'];
+    if (compilePhase === 'opening') return ['Pressing · 1/4', 'Tuck out. Lid up. Product out.'];
+    if (compilePhase === 'dieline') return ['Pressing · 2/4', 'Every surface is on the table.'];
+    if (compilePhase === 'reflow') return ['Pressing · 3/4', 'Requirements find their panel.'];
+    if (compilePhase === 'closing') return ['Pressing · 4/4', 'Same master. New hierarchy.'];
+    if (compilePhase === 'unsolved') return ['Proof rejected', 'Nothing fits this stock.'];
     if (collision) {
       const which = collisionSurfaces.map((s) => SURFACE_LABEL[s].toLowerCase()).join(' + ');
-      return [collisionSurfaces.includes('FRONT') ? 'Impossible front' : 'Over capacity', `The ${which} is refusing the brief.`];
+      return [collisionSurfaces.includes('FRONT') ? 'Impossible front' : 'Over-inked', `The ${which} refuses the brief.`];
     }
-    if (viewMode === 'EXPLODED') return ['Open the object', 'Lid, product, insert and leaflet come apart as one system.'];
-    if (viewMode === 'DIELINE') return ['Dieline field', 'Every printable surface is now part of the conversation.'];
-    if (viewMode === 'XRAY') return ['X-ray', 'The package is more than its skin.'];
-    if (viewMode === 'PRESSURE') return ['Pressure map', 'Surface demand becomes visible before it becomes a problem.'];
-    if (compiled) return ['Valid form', `The same master closes with a new hierarchy for ${marketLabel}.`];
-    return ['Spatial negotiation studio', 'Drag requirements onto the pack. Open it. Break it. Recompile it.'];
+    if (viewMode === 'EXPLODED') return ['Open', 'One object. Nine parts.'];
+    if (viewMode === 'DIELINE') return ['Dieline', 'Flat, printed, negotiable.'];
+    if (viewMode === 'XRAY') return ['X-ray', 'More than its skin.'];
+    if (viewMode === 'PRESSURE') return ['Ink load', 'Demand, made visible.'];
+    if (compiled) return [`In register · ${marketLabel}`, 'The package made room.'];
+    if (placedCount === 0) return ['Proof room', 'Packaging is a compiled surface.'];
+    return ['Proof live', 'Place. Overload. Press.'];
   })();
 
-  const hint = selectedKind
-    ? `${REQUIREMENTS[selectedKind].label} selected — tap a face on the pack or a surface below.`
-    : placedCount === 0
-      ? 'Drag a requirement card onto a package face — or tap a card, then tap a face.'
-      : collision
-        ? 'Move a requirement yourself — or let COMPILE solve the surface.'
-        : 'Orbit freely. Scrub the object apart. Inspect the physical and informational system.';
+  const headlineState = compilePhase === 'unsolved' || (collision && !running)
+    ? 'misregistered'
+    : compiled
+      ? 'registered'
+      : 'idle';
+
+  const hint = drag
+    ? (drag.surface ? `Release to print on ${SURFACE_LABEL[drag.surface]}.` : 'Move over a face of the pack.')
+    : selectedKind
+      ? `${REQUIREMENTS[selectedKind].label} lifted — tap a face on the pack or an ink column.`
+      : placedCount === 0
+        ? 'Drag a ticket onto a face of the pack.'
+        : collision
+          ? 'Move a ticket yourself, or hit PRESS and let the solver negotiate.'
+          : 'Orbit, scrub the timeline, or press to compile.';
+
+  const statusTone = compilePhase === 'unsolved' || collision ? 'hot' : compiled ? 'ok' : placedCount ? 'live' : 'idle';
+  const statusWord = compilePhase === 'unsolved'
+    ? 'REJECTED'
+    : collision
+      ? 'OVER-INKED'
+      : compiled
+        ? 'IN REGISTER'
+        : placedCount
+          ? 'LIVE'
+          : 'AWAITING';
+
+  const nominal = isNominal(dims);
+  const geometrySource = usingFallback || !nominal ? 'PROCEDURAL TWIN' : 'BLENDER MASTER 0.6.0';
+  const wdth = Math.round(125 - Math.min(1.4, Math.max(0, maxLoad)) / 1.4 * 55);
+  const phaseIndex = PHASES.indexOf(compilePhase);
 
   const sceneProps = {
     dims,
@@ -527,74 +640,124 @@ export default function App() {
     compiled,
     compilePhase,
     reflowMoves,
-    interactionLocked: running,
+    interactionLocked: running || Boolean(drag),
     onPlaceConstraint: placeConstraint,
     selectedKind,
-    onSelectKind: (kind) => setSelectedKind((current) => (current === kind ? null : kind)),
+    hoverSurface: drag?.surface || null,
+    preview,
+    onPickerReady: (fn) => { pickRef.current = fn; },
   };
 
-  const statusLabel = compilePhase === 'unsolved'
-    ? 'NO VALID FORM'
-    : collision
-      ? 'OVER CAPACITY'
-      : compiled
-        ? 'VALID FORM / ' + marketLabel.toUpperCase()
-        : placedCount === 0
-          ? 'AWAITING INPUT'
-          : 'SURFACE LIVE';
-
-  const nominal = isNominal(dims);
-  const geometrySource = usingFallback || !nominal ? 'procedural twin' : 'Blender master';
+  const pressClass = running ? 'running' : collision ? 'hot' : placedCount ? 'ready' : 'idle';
 
   return (
-    <main className={'shell mode-' + viewMode.toLowerCase() + (selectedKind ? ' is-selecting' : '') + (tour ? ' is-touring' : '')}>
-      <header className="topbar">
-        <div className="identity">
-          <span>DAY 19 / V5.2</span>
-          <strong>PACKSHIFT</strong>
+    <main
+      className={`room tone-${statusTone} mode-${viewMode.toLowerCase()}${selectedKind ? ' is-selecting' : ''}${tour ? ' is-touring' : ''}${running ? ' is-running' : ''}`}
+      style={{ '--wdth': wdth, '--load': Math.min(1.4, maxLoad).toFixed(3) }}
+    >
+      <div className="halftone" aria-hidden="true" />
+
+      <header className="masthead">
+        <div className="wordmark">
+          <strong>PACK<span>SHIFT</span></strong>
+          <small>Proof room · Day 19 · v5.3</small>
         </div>
 
-        <p className="thesis">
-          Packaging is not a file.<br />
-          <em>It is a compiled surface.</em>
-        </p>
+        <div className="plates" role="group" aria-label="Market plate">
+          {Object.keys(MARKETS).map((value, i) => (
+            <button
+              key={value}
+              className={'plate plate-' + i + (market === value ? ' active' : '')}
+              aria-pressed={market === value}
+              disabled={running}
+              onClick={() => changeMarket(value)}
+              title={MARKETS[value].note}
+            >
+              <i aria-hidden="true" />
+              {value === 'CANADA' ? 'CA' : value}
+            </button>
+          ))}
+        </div>
 
-        <div className="actions">
-          <div className="market" role="group" aria-label="Market">
-            {Object.keys(MARKETS).map((value) => (
-              <button
-                key={value}
-                className={market === value ? 'active' : ''}
-                aria-pressed={market === value}
-                disabled={running}
-                onClick={() => changeMarket(value)}
-                title={MARKETS[value].note}
-              >
-                {value === 'CANADA' ? 'CA' : value}
+        <nav className="tools" aria-label="Tools">
+          <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">
+            {tour ? 'Skip tour' : 'Guided tour'}<kbd>T</kbd>
+          </button>
+          <button onClick={shareLink} disabled={running} title="Copy a link to this exact proof">Share</button>
+          <button onClick={exportDieline} disabled={running} title="Export the concept dieline (SVG, mm)">Dieline ⤓</button>
+          <button onClick={toggleSound} aria-pressed={!muted} title="Sound" className="tool-sound">
+            <span className={'bars' + (muted ? ' off' : '')} aria-hidden="true"><i /><i /><i /></span>
+            <span className="sr-only">{muted ? 'Sound off' : 'Sound on'}</span>
+          </button>
+        </nav>
+      </header>
+
+      <aside className={'job' + (sheetOpen ? ' open' : '')} aria-label="Job ticket">
+        <button className="job-handle" onClick={() => setSheetOpen((o) => !o)} aria-expanded={sheetOpen}>
+          <span />Job · {placedCount}/{brief.length} placed
+        </button>
+        <div className="job-head">
+          <span>JOB TICKET</span>
+          <b>{brief.length} req · {marketLabel}</b>
+        </div>
+        <ul className="tickets">
+          {brief.map((kind, i) => (
+            <Ticket
+              key={kind}
+              index={i}
+              kind={kind}
+              weight={MARKETS[market].weight[kind] / capacity[placements[kind] || REQUIREMENTS[kind].preferred]}
+              placed={placements[kind]}
+              selected={selectedKind === kind}
+              dragging={drag?.kind === kind}
+              disabled={running}
+              onPointerDown={startTicketDrag(kind)}
+              onKeySelect={() => setSelectedKind((c) => (c === kind ? null : kind))}
+              onUnplace={() => unplace(kind)}
+              onRemove={() => removeFromBrief(kind)}
+            />
+          ))}
+        </ul>
+        {ALL_KINDS.some((k) => !brief.includes(k)) && (
+          <div className="add">
+            <span>ADD TO JOB</span>
+            {ALL_KINDS.filter((k) => !brief.includes(k)).map((kind) => (
+              <button key={kind} onClick={() => addToBrief(kind)} disabled={running} style={{ '--ink': REQUIREMENTS[kind].color }}>
+                + {REQUIREMENTS[kind].label}
               </button>
             ))}
           </div>
-          <div className="tools" role="group" aria-label="Tools">
-            <button onClick={toggleSound} aria-pressed={!muted} title={muted ? 'Sound off' : 'Sound on'}>
-              <span aria-hidden="true">{muted ? '◌' : '◉'}</span><em>{muted ? 'SOUND OFF' : 'SOUND'}</em>
-            </button>
-            <button onClick={shareLink} disabled={running} title="Copy a link to this exact state">
-              <span aria-hidden="true">↗</span><em>SHARE</em>
-            </button>
-            <button onClick={exportDieline} disabled={running} title="Export the concept dieline (SVG, mm)">
-              <span aria-hidden="true">⤓</span><em>DIELINE</em>
-            </button>
+        )}
+        <div className="stock">
+          <div className="job-head">
+            <span>STOCK</span>
+            <b>{nominal ? 'Blender master' : 'Custom · twin'}</b>
           </div>
-          <button className="run-demo" onClick={tour ? skipTour : runTour} disabled={running && !tour}>
-            {tour ? 'SKIP TOUR' : running ? 'COMPILING…' : 'GUIDED TOUR'}
-          </button>
+          {['width', 'depth', 'height'].map((key) => (
+            <label key={key} className="stock-row">
+              <span>{key[0].toUpperCase()}</span>
+              <input
+                type="range"
+                min={DIM_LIMITS[key][0]}
+                max={DIM_LIMITS[key][1]}
+                value={dims[key]}
+                disabled={running}
+                onChange={(e) => changeDims({ ...dims, [key]: Number(e.target.value) })}
+                aria-label={`Carton ${key} in millimetres`}
+              />
+              <output>{dims[key]}</output>
+            </label>
+          ))}
+          {!nominal && <button className="stock-reset" onClick={() => changeDims(NOMINAL_DIMS)} disabled={running}>Back to 56 × 36 × 130</button>}
         </div>
-      </header>
+      </aside>
 
-      <section className={'hero ' + (collision ? 'has-collision' : '')}>
+      <section className={'stage' + (collision ? ' has-collision' : '')} ref={stageRef}>
+        <PrepressMarks state={headlineState} />
+
         <div className="scene-copy">
           <span className="eyebrow">{sceneCopy[0]}</span>
-          <h1>{sceneCopy[1]}</h1>
+          <Headline text={sceneCopy[1]} state={headlineState} />
           <p>{hint}</p>
         </div>
 
@@ -605,7 +768,7 @@ export default function App() {
             dpr={[1, 1.75]}
             camera={{ position: [4.6, 2.6, 7.3], fov: 34, near: 0.1, far: 80 }}
             gl={{ antialias: true, alpha: true }}
-            aria-label="3D package. Drag requirement cards onto package faces."
+            aria-label="3D package. Drag job tickets onto its faces."
           >
             <Suspense fallback={null}>
               {usingFallback ? (
@@ -620,53 +783,31 @@ export default function App() {
           <Loader />
         </div>
 
-        <aside className="view-rail" aria-label="View modes">
-          {VIEWS.map(([mode, index]) => (
-            <button
-              key={mode}
-              className={viewMode === mode ? 'active' : ''}
-              aria-pressed={viewMode === mode}
-              onClick={() => setMode(mode)}
-              disabled={running}
-              title={`${mode} (${Number(index)})`}
-            >
-              <span>{index}</span>{mode === 'XRAY' ? 'X-RAY' : mode}
-            </button>
-          ))}
-        </aside>
-
-        <div className="runtime-truth" aria-live="polite">
-          <span className={'runtime-dot ' + (collision || compilePhase === 'unsolved' ? 'collision' : compiled ? 'valid' : '')}></span>
-          <div>
-            <b>{statusLabel}</b>
-            <small>
-              {collision
-                ? collisionSurfaces.map((s) => SURFACE_LABEL[s]).join(' + ')
-                : `${placedCount}/${brief.length} requirements placed`}
-              {' · '}{geometrySource}
-            </small>
-            {lastDiff && lastDiff.moves.length > 0 && !running && (
-              <ul className="diff">
-                {lastDiff.moves.map((m) => (
-                  <li key={m.kind}>
-                    <i style={{ background: REQUIREMENTS[m.kind].color }} />
-                    <b>{REQUIREMENTS[m.kind].label}</b>
-                    <span>{m.from ? SURFACE_LABEL[m.from] : 'unplaced'} → {SURFACE_LABEL[m.to]}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+        {lastDiff && lastDiff.moves.length > 0 && !running && (
+          <div className="report" role="status">
+            <span>REGISTER REPORT · {lastDiff.moves.length} moved</span>
+            <ul>
+              {lastDiff.moves.map((m, i) => (
+                <li key={m.kind} style={{ '--ink': REQUIREMENTS[m.kind].color, '--i': i }}>
+                  <b>{REQUIREMENTS[m.kind].label}</b>
+                  <em>{m.from ? SURFACE_LABEL[m.from] : '—'}</em>
+                  <i aria-hidden="true">→</i>
+                  <strong>{SURFACE_LABEL[m.to]}</strong>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        )}
 
         {compilePhase === 'unsolved' && !running && (
-          <div className="unsolved" role="alert">
-            <b>No layout fits {brief.length} requirements on {dims.width} × {dims.depth} × {dims.height} mm in {marketLabel}.</b>
+          <div className="rejected" role="alert">
+            <span>PROOF REJECTED</span>
+            <b>{brief.length} requirements · {dims.width} × {dims.depth} × {dims.height} mm · {marketLabel}</b>
             {suggestion ? (
               <button onClick={() => changeDims(suggestion)}>
-                Grow carton to {suggestion.width} × {suggestion.depth} × {suggestion.height} mm
+                Grow stock to {suggestion.width} × {suggestion.depth} × {suggestion.height} mm
               </button>
-            ) : <span>Remove a requirement — no carton within limits can hold this brief.</span>}
+            ) : <em>No stock within limits holds this job — remove a requirement.</em>}
           </div>
         )}
 
@@ -675,9 +816,10 @@ export default function App() {
             <div className="tour-dots" aria-hidden="true">
               {Array.from({ length: tour.total }, (_, i) => <i key={i} className={i < tour.step ? 'on' : ''} />)}
             </div>
-            <b>{tour.title}</b>
-            <p>{tour.body}</p>
-            <button onClick={skipTour}>Skip tour (Esc)</button>
+            <span>{String(tour.step).padStart(2, '0')} / {String(tour.total).padStart(2, '0')}</span>
+            <b key={tour.title}>{tour.title}</b>
+            <p key={tour.body}>{tour.body}</p>
+            <button onClick={skipTour}>Skip · Esc</button>
           </div>
         )}
 
@@ -685,142 +827,83 @@ export default function App() {
         <div className="sr-only" aria-live="assertive">{announcement}</div>
       </section>
 
-      {sizeOpen && (
-        <div className="size-panel" role="dialog" aria-label="Carton size">
-          <div className="control-heading">
-            <span>CARTON SIZE (mm)</span>
-            <button onClick={() => setSizeOpen(false)} aria-label="Close carton size">×</button>
-          </div>
-          {['width', 'depth', 'height'].map((key) => (
-            <label key={key}>
-              <span>{key}</span>
-              <input
-                type="range"
-                min={DIM_LIMITS[key][0]}
-                max={DIM_LIMITS[key][1]}
-                value={dims[key]}
-                disabled={running}
-                onChange={(e) => changeDims({ ...dims, [key]: Number(e.target.value) })}
-              />
-              <strong>{dims[key]}</strong>
-            </label>
-          ))}
-          <p>
-            Capacity scales with panel area. The Blender master is authored at 56 × 36 × 130; other sizes rebuild the
-            same hierarchy as a procedural twin.
-          </p>
-          <button className="size-reset" disabled={running || nominal} onClick={() => changeDims(NOMINAL_DIMS)}>Back to Blender master size</button>
-        </div>
-      )}
+      <aside className="inks" aria-label="Ink load">
+        <div className="job-head"><span>INK LOAD</span><b>{Math.round(maxLoad * 100)}% peak</b></div>
+        <InkStrip
+          pressures={pressures}
+          basePressures={basePressures}
+          preview={preview}
+          target={Boolean(selectedKind)}
+          disabled={running}
+          onPick={(surface) => selectedKind && placeConstraint(selectedKind, surface)}
+        />
+        <p className="inks-legend"><i className="k" />base <i className="c" />placed <i className="m" />over</p>
+      </aside>
 
-      <section className="studio-console">
-        <div className="requirements" aria-label="Brief">
-          <div className="control-heading"><span>BRIEF</span><small>tap · then pick a surface</small></div>
-          <div className="chips">
-            {brief.map((kind) => (
-              <div key={kind} className={'chip' + (selectedKind === kind ? ' selected' : '') + (placements[kind] ? ' placed' : '')} style={{ '--chip': REQUIREMENTS[kind].color }}>
-                <button
-                  onClick={() => setSelectedKind((c) => (c === kind ? null : kind))}
-                  disabled={running}
-                  aria-pressed={selectedKind === kind}
-                >
-                  <b>{REQUIREMENTS[kind].label}</b>
-                  <small>{placements[kind] ? SURFACE_LABEL[placements[kind]] : 'unplaced'}</small>
-                </button>
-                {!running && (placements[kind] || !REQUIREMENTS[kind].core) && (
-                  <button
-                    className="chip-remove"
-                    onClick={() => (placements[kind] ? unplace(kind) : removeFromBrief(kind))}
-                    aria-label={placements[kind] ? `Unplace ${REQUIREMENTS[kind].label}` : `Remove ${REQUIREMENTS[kind].label} from brief`}
-                    title={placements[kind] ? 'Unplace' : 'Remove from brief'}
-                  >
-                    {placements[kind] ? '×' : '−'}
-                  </button>
-                )}
-              </div>
+      <footer className="deck">
+        <div className="timeline">
+          <div className="views" role="group" aria-label="Views">
+            {VIEWS.map(([mode, label], i) => (
+              <button key={mode} className={viewMode === mode ? 'active' : ''} aria-pressed={viewMode === mode} onClick={() => setMode(mode)} disabled={running}>
+                <kbd>{i + 1}</kbd>{label}
+              </button>
             ))}
           </div>
-          {ALL_KINDS.some((k) => !brief.includes(k)) && (
-            <div className="add-row">
-              <span>ADD</span>
-              {ALL_KINDS.filter((k) => !brief.includes(k)).map((kind) => (
-                <button key={kind} onClick={() => addToBrief(kind)} disabled={running} style={{ '--chip': REQUIREMENTS[kind].color }}>
-                  + {REQUIREMENTS[kind].label}
-                </button>
-              ))}
+          <div className="ruler">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round(decomposition)}
+              disabled={running}
+              onChange={(event) => {
+                animationToken.current += 1;
+                setDecomp(Number(event.target.value));
+                if (!['XRAY', 'PRESSURE'].includes(viewMode)) setViewMode('CUSTOM');
+              }}
+              aria-label="Decompose the package"
+              aria-valuetext={`${Math.round(decomposition)}%`}
+              style={{ '--v': decomposition }}
+            />
+            <div className="ticks" aria-hidden="true">
+              {Array.from({ length: 41 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} />)}
             </div>
-          )}
+            <div className="stops" aria-hidden="true">
+              {STOPS.map(([at, label]) => <span key={label} style={{ left: at + '%' }} className={decomposition >= at - 1 ? 'passed' : ''}>{label}</span>)}
+            </div>
+          </div>
         </div>
 
-        <div className="decompose-control">
-          <div className="control-heading">
-            <span>DECOMPOSE OBJECT</span>
-            <strong>{Math.round(decomposition)}%</strong>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={Math.round(decomposition)}
-            disabled={running}
-            onChange={(event) => {
-              animationToken.current += 1;
-              setDecomp(Number(event.target.value));
-              if (!['XRAY', 'PRESSURE'].includes(viewMode)) setViewMode('CUSTOM');
-            }}
-            aria-label="Package decomposition"
-            aria-valuetext={`${Math.round(decomposition)}%`}
-          />
-          <div className="range-labels">
-            <span>CLOSED</span>
-            <span>LID</span>
-            <span>PRODUCT</span>
-            <span>SHELL</span>
-            <span>DIELINE</span>
-          </div>
-          <button className="size-toggle" onClick={() => setSizeOpen((o) => !o)} aria-expanded={sizeOpen} disabled={running}>
-            CARTON {dims.width} × {dims.depth} × {dims.height} mm <em>{nominal ? 'Blender master' : 'custom'}</em>
+        <div className="press-cluster">
+          <button className="ghost" onClick={undo} disabled={running || history.length === 0} title="Undo (Z)">Undo</button>
+          <button className={'ghost' + (resetArmed ? ' armed' : '')} onClick={resetStudio} disabled={running} title="Reset (R)">
+            {resetArmed ? 'Sure?' : 'Reset'}
+          </button>
+          <button
+            className={'press ' + pressClass}
+            onClick={compileSurface}
+            disabled={running || brief.length === 0}
+            aria-label="Press: compile the surface (C)"
+            style={{ '--phase': phaseIndex < 0 ? 0 : (phaseIndex + 1) / PHASES.length }}
+          >
+            <span className="press-ring" aria-hidden="true" />
+            <b>{running ? (phaseIndex >= 0 ? `${phaseIndex + 1}/4` : '···') : 'PRESS'}</b>
+            <small>{running ? 'compiling' : 'compile · C'}</small>
           </button>
         </div>
-
-        <div className="pressure-strip">
-          {SURFACES.map((surface) => {
-            const ratio = pressures[surface] || 0;
-            const baseShare = Math.min(100, (loads[surface].base / capacity[surface]) * 100);
-            const target = Boolean(selectedKind);
-            return (
-              <button
-                key={surface}
-                className={'pressure-cell ' + (ratio > 1 ? 'over' : '') + (target ? ' target' : '')}
-                disabled={running || !target}
-                onClick={() => target && placeConstraint(selectedKind, surface)}
-                aria-label={`${SURFACE_LABEL[surface]}: ${Math.round(ratio * 100)} percent load${target ? '. Place selected requirement here.' : ''}`}
-              >
-                <span>{SURFACE_LABEL[surface]}</span>
-                <i>
-                  <em style={{ width: baseShare + '%' }} />
-                  <b style={{ width: Math.min(100, ratio * 100) + '%' }} />
-                </i>
-                <small>{Math.round(ratio * 100)}%</small>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="compile-actions">
-          <button className="reset" onClick={undo} disabled={running || history.length === 0} title="Undo (Z)">UNDO</button>
-          <button className="reset" onClick={resetStudio} disabled={running} title="Reset (R)">RESET</button>
-          <button className="compile" onClick={compileSurface} disabled={running || brief.length === 0} title="Compile (C)">
-            <span>COMPILE SURFACE</span>
-            <small>OPEN → REFLOW → REFOLD</small>
-          </button>
-        </div>
-      </section>
-
-      <footer>
-        <span>DRAG OR TAP · ORBIT · 1–5 VIEWS · C COMPILE · Z UNDO · T TOUR</span>
-        <span>CONCEPT PROTOTYPE · DEMO CAPACITIES · NOT REGULATORY OR MANUFACTURING VALIDATION</span>
       </footer>
+
+      <div className={'slug tone-' + statusTone} aria-live="polite">
+        <b>{statusWord}</b>
+        <span>{marketLabel.toUpperCase()}</span>
+        <span>{dims.width}×{dims.depth}×{dims.height} MM</span>
+        <span>{placedCount}/{brief.length} PLACED</span>
+        {collision && <span className="hot">{collisionSurfaces.map((s) => `${SURFACE_LABEL[s].toUpperCase()} ${Math.round(pressures[s] * 100)}%`).join(' · ')}</span>}
+        <span className="dim">{geometrySource}</span>
+        <span className="dim grow">CONCEPT · DEMO CAPACITIES · NOT REGULATORY OR MANUFACTURING VALIDATION</span>
+      </div>
+
+      <TicketGhost drag={drag} />
     </main>
   );
 }

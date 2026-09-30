@@ -1,0 +1,70 @@
+name: Record V7.1 Live Journey
+
+on:
+  push:
+    branches:
+      - feat/v7-1-continuity-consequence
+    paths:
+      - 'scripts/record-live-journey.mjs'
+      - '.github/workflows/record-live-journey.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install app
+        run: npm install
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start PACKSHIFT
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/packshift-vite.log 2>&1 &
+          echo $! > /tmp/packshift-vite.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/packshift-vite.log
+          exit 1
+
+      - name: Record real browser journey
+        env:
+          PACKSHIFT_BASE_URL: http://127.0.0.1:4173
+          PACKSHIFT_RECORD_DIR: artifacts/live-journey
+        run: node scripts/record-live-journey.mjs
+
+      - name: Convert to MP4
+        run: |
+          ffmpeg -y -i artifacts/live-journey/packshift-live-journey.webm             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart             artifacts/live-journey/packshift-live-journey.mp4
+
+      - name: Show recording outputs
+        run: |
+          ls -lh artifacts/live-journey
+          test -s artifacts/live-journey/packshift-live-journey.mp4
+          test -s artifacts/live-journey/museum-final.png
+
+      - name: Upload live recording
+        uses: actions/upload-artifact@v4
+        with:
+          name: packshift-v7-1-live-journey
+          path: artifacts/live-journey
+          retention-days: 30

@@ -2,6 +2,11 @@
 
 > **Packaging is not a file. It is a compiled surface.**
 
+**Public face: _Est-ce que ça rentre ?_** — open the site and you land on a
+two-minute puzzle, not a studio. One sentence explains it: *everything written
+on a box is mandatory, and there is no room.* The full studio (V6) is one click
+away as **mode pro** (`#pro`), and every old studio link (`#m=…`) still opens it.
+
 PACKSHIFT is an interactive packaging concept that treats market, language, data and claim requirements as **spatial forces acting on a physical package**.
 
 Instead of showing packaging variants as separate static files, PACKSHIFT lets the user place requirements directly onto a live 3D package, overload a surface, decompose the object, inspect its physical structure, and recompile the same master into a resolved form.
@@ -388,7 +393,50 @@ A visually plausible package is not automatically a digital twin.
 
 ---
 
-## V6 — Rapport négocié (current UI)
+---
+
+## V7 — « Est-ce que ça rentre ? » (grand public + viral)
+
+The front door is now a puzzle that someone who has never heard of packaging
+understands in under ten seconds.
+
+- **Hook in one sentence** — intro: *« Tout ce qui est écrit sur une boîte est
+  obligatoire. Ou presque. Et il n'y a pas la place. »*, stickers with eyes
+  jumping out of a 5,6 cm box, one question, one button (*Jouer · 5 niveaux ·
+  2 minutes*). The intro is 15 kB gz; three.js loads only when you play.
+- **Plain words** — *Slogan, Traduction, QR de tri, Attention, Écolo,
+  Code-barres*; faces are *Devant, Gauche, Droite, Dos*. Tap a sticker to read
+  why it has to be there. Each face shows a fill gauge with what is *déjà
+  imprimé* (ingredients, instructions…) so the lack of room is visible.
+- **5 levels** — 1 Le premier pot (EU, 3 stickers) · 2 Direction le Canada
+  (bilingual: the left is already full) · 3 Tout le monde veut être vu
+  (6 stickers) · 4 La marque veut plus petit (shrink the box) · 5 Mission
+  impossible ? (does not fit — grow the box as little as possible). Every level
+  ends on a one-line real-world fact.
+- **Score** — moves, time, stars (par = number of stickers; hints cost a star;
+  size levels are scored against the smallest box the solver can prove).
+- **Défi du jour** — deterministic from the date (Fisher–Yates on a seeded
+  PRNG, same on every engine): same market, stickers and tightest solvable box
+  for everyone.
+- **Ta boîte** — type your product name and slogan; they are printed on the 3D
+  carton. Slogan weight grows with its length: short fits, ~25 characters needs
+  a bigger box, 40+ fits no box at all (*« Raccourcis-le ! »*).
+- **Share** — a 1080×1350 card (box snapshot, handwritten verdict, stars, face
+  gauges, *À toi de jouer →*) plus a spoiler-free emoji grid à la Wordle. Phones
+  get the native share sheet; desktop downloads the card and copies text + link.
+  **Défier quelqu'un** copies a link (`#jeu=3&vs=7.42.0`) that opens the same
+  puzzle with *« Ton ami·e a réussi en 7 coups… À toi. »* and tells you if you
+  beat them. `og.png` + `summary_large_image` for link previews.
+- **Solver fix** — a tiny overflow (0.02 %) used to cost less than keeping a
+  requirement on its preferred face, so the solver could return an invalid
+  layout while a valid one existed (Canada, 60×38×134). Any overflow now carries
+  a flat penalty; regression test added, and fit is now monotonic in box size.
+
+Code: `src/game/` (`levels.js` pure rules + links, `Game.jsx`, `GameScene.jsx`
+lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
+`tests/game.test.mjs`.
+
+## V6 — Rapport négocié (mode pro)
 
 The studio is now an annual-report spread — directions 04 (living annual
 report) + 05 (negotiation) from the design exploration, combined.

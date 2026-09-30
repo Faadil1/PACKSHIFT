@@ -100,3 +100,10 @@ test('capacity scales with panel area and dimensions are clamped', () => {
 test('US market resolves the core brief to a valid form', () => {
   assert.equal(solvePlacements(IMPOSSIBLE_FRONT, 'US').valid, true);
 });
+
+test('regression: a tiny overflow is never preferred over a valid layout', () => {
+  // Canada, 60 x 38 x 134: the old cost let a 0.02 % spill on the left beat a
+  // valid layout because it kept language on its preferred face.
+  const r = solvePlacements({ language: null, data: null, claim: null }, 'CANADA', { width: 60, depth: 38, height: 134 });
+  assert.equal(r.valid, true);
+});

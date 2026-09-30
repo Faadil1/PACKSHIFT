@@ -90,7 +90,7 @@ const initial = (() => {
   }
 })();
 
-export default function App() {
+export default function App({ onExit }) {
   const [market, setMarket] = useState(initial?.market || 'EU');
   const [viewMode, setViewMode] = useState(initial?.viewMode || 'PACK');
   const [decomposition, setDecomposition] = useState(initial ? VIEW_PRESET[initial.viewMode] || 0 : 0);
@@ -694,6 +694,7 @@ export default function App() {
           ))}
         </nav>
         <nav className="tools" aria-label="Outils">
+          {onExit && <button onClick={onExit} className="tool-game">← le jeu</button>}
           <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">{tour ? 'Passer' : 'Visite guidée'}</button>
           <button onClick={shareLink} disabled={running}>Partager</button>
           <button onClick={exportDieline} disabled={running}>Dieline ⤓</button>

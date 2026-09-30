@@ -62,6 +62,8 @@ const CAMERA_VIEWS = {
   DIELINE: { dir: [0.02, 0.06, 1], target: [0.3, 0, 0], half: [4.1, 2.6] },
   XRAY: { dir: [0.55, 0.28, 0.78], target: [0, 0, 0], half: [1.6, 2.25] },
   PRESSURE: { dir: [0.45, 0.22, 0.86], target: [0, -0.1, 0], half: [2.3, 2.3] },
+  // Public game: the whole closed carton plus its open lid, with air around it.
+  GAME: { dir: [0.55, 0.44, 0.72], target: [0, 0.62, 0], half: [2.1, 3.2] },
 };
 
 
@@ -409,7 +411,7 @@ function PreviewTag({ node, root, surface, from, to }) {
 function SpatialStudioScene({
   source, dims = NOMINAL_DIMS, market, viewMode, decomposition, placements, brief, pressures, collisionSurfaces,
   compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind,
-  hoverSurface = null, preview = null, onPickerReady,
+  hoverSurface = null, preview = null, onPickerReady, brand = null,
 }) {
   const scene = source;
   const { camera, size } = useThree();
@@ -467,8 +469,8 @@ function SpatialStudioScene({
   const artState = useMemo(() => {
     const kindsOn = Object.fromEntries(SURFACES.map((s) => [s, []]));
     Object.entries(placements).forEach(([kind, surface]) => { if (surface) kindsOn[surface].push(kind); });
-    return { market, kindsOn, overloaded: collisionSurfaces, compiled };
-  }, [market, placements, collisionSurfaces, compiled]);
+    return { market, kindsOn, overloaded: collisionSurfaces, compiled, brand };
+  }, [market, placements, collisionSurfaces, compiled, brand]);
 
   const scratch = useMemo(() => ({
     color: new THREE.Color(),

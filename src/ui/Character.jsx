@@ -31,10 +31,11 @@ export const CALM = {
 };
 
 export function Character({
-  kind, size = 1, note, noteTone = 'ink', state = '', selected, dragging, disabled, onPointerDown, onKeySelect, onRemove, index = 0, look,
+  kind, size = 1, note, noteTone = 'ink', state = '', selected, dragging, disabled, onPointerDown, onKeySelect, onRemove, index = 0, look, label,
 }) {
   const c = CAST[kind];
   const meta = REQUIREMENTS[kind];
+  const name = label || meta.label;
   const w = Math.round(c.w * size);
   const h = Math.round(c.h * size);
   const lx = look ? Math.max(-2.5, Math.min(2.5, look[0])) : 0;
@@ -53,16 +54,16 @@ export function Character({
         onPointerDown={onPointerDown}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onKeySelect?.(); } }}
         aria-pressed={selected}
-        aria-label={`${meta.label}. Drag to a face, or press Enter then choose a face.`}
+        aria-label={`${name}. Glisse-le sur une face, ou appuie sur Entrée puis choisis une face.`}
       >
         <span className="eyes" aria-hidden="true">
           <i><b style={{ transform: `translate(${lx}px, ${ly}px)` }} /></i>
           <i><b style={{ transform: `translate(${lx}px, ${ly}px)` }} /></i>
         </span>
       </button>
-      <span className="char-label">{meta.label}</span>
+      <span className="char-label">{name}</span>
       {onRemove && !disabled && (
-        <button className="char-x" onClick={onRemove} aria-label={`Remove ${meta.label} from the brief`}>×</button>
+        <button className="char-x" onClick={onRemove} aria-label={`Retirer ${name}`}>×</button>
       )}
     </div>
   );

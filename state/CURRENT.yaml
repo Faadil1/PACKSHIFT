@@ -1,6 +1,7 @@
 project: PACKSHIFT
 challenge: Day 19
-phase: V6_NEGOTIATED_REPORT_UI
+phase: V7_PUBLIC_GAME
+public_face: "Est-ce que ça rentre ? — 5-level puzzle, daily challenge, 'Ta boîte', share card + challenge links; V6 studio kept as mode pro (#pro)"
 north_star: "You don't watch the rules change. You watch the package make room for them."
 thesis: "Packaging is not a file. It is a compiled surface."
 signature_moment: IMPOSSIBLE_FRONT_TO_COMPILED_FORM
@@ -131,4 +132,4 @@ status:
   blender_mcp_promotion: BLOCKED_UNTIL_PROVIDER_SPECIFIC_BENCHMARK
   v5_1_depth_review: NEXT
 
-next_gate: "Merge PR 7 then V5.2 PR -> redeploy -> real-device touch, audio and GPU frame-rate QA -> record demo video from the guided tour"
+next_gate: "Merge PR 10 (V6) then V7 PR -> redeploy -> real-device QA of the game (touch drag, native share sheet, clipboard on Safari, GPU frame rate) -> hallway test: can a stranger play level 1 without help in <10 s?"

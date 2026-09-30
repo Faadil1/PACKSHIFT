@@ -475,6 +475,23 @@ Code: `src/game/` (`levels.js` pure rules + links, `Game.jsx`, `GameScene.jsx`
 lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
 `tests/game.test.mjs`.
 
+## V7.1 — Continuity & Consequence
+
+V7 made the public experience memorable in separate moments. V7.1 connects those moments into **one object's history**.
+
+- leaving **Taille réelle** now hands the same 56 mm object into the game instead of feeling like a hard page change;
+- each run records new overloads, rejected labels, press cracks, mid-run rule changes and the smallest width reached;
+- the museum cartel exposes those **journey marks** as provenance rather than showing only a score;
+- the final 3D carton can retain subtle physical witness marks (repair strip / acquisition mark / rule mark) so the object on the pedestal is visibly the one the player negotiated with;
+- the museum becomes a stage takeover while the result is open, instead of competing with the dashboard UI;
+- the 3D loading state now shows an object silhouette rather than an empty black frame.
+
+These traces are experiential storytelling. They are **not claims of simulated physical damage or manufacturing validation**.
+
+The video narrative is locked in `docs/VIDEO-V7-DEPTH-TRAILER.md` around:
+
+`LIMIT → PRESSURE → CONSEQUENCE → COMPILATION → MEMORY`.
+
 ## V6 — Rapport négocié (mode pro)
 
 The studio is now an annual-report spread — directions 04 (living annual

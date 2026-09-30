@@ -5,6 +5,8 @@ import gsap from 'gsap';
 import * as THREE from 'three';
 import { NOMINAL_DIMS, REQUIREMENTS, SURFACES, SURFACE_LABEL, clampDims, isNominal } from '../model/pressure.js';
 import { buildProceduralMaster } from './proceduralMaster.js';
+
+const FACE_FR = { FRONT: 'Avant', LEFT_COPY: 'Gauche', RIGHT_DATA: 'Droite', BACK: 'Dos' };
 import {
   createBlockTexture, createPanelSet, paintPanelSet, panelMM, paperFibreNormal,
 } from './panelArt.js';
@@ -55,11 +57,11 @@ const ART_FACE = {
 // Camera framing: half-extents (world units, nominal carton) of what each view
 // must show. Distance is fitted to the live aspect ratio and carton size.
 const CAMERA_VIEWS = {
-  PACK: { dir: [0.52, 0.3, 0.8], target: [-1.6, 0, 0], half: [3.1, 2.4] },
-  EXPLODED: { dir: [0.42, 0.3, 0.86], target: [-1.5, 0.75, 0], half: [4.2, 3.6] },
-  DIELINE: { dir: [0.02, 0.06, 1], target: [-1.2, 0, 0], half: [5.2, 2.7] },
-  XRAY: { dir: [0.55, 0.28, 0.78], target: [-1.6, 0, 0], half: [3.1, 2.4] },
-  PRESSURE: { dir: [0.45, 0.22, 0.86], target: [-1.25, -0.1, 0], half: [3.2, 2.4] },
+  PACK: { dir: [0.52, 0.3, 0.8], target: [0, 0, 0], half: [1.55, 2.25] },
+  EXPLODED: { dir: [0.42, 0.3, 0.86], target: [-0.35, 0.6, 0], half: [3.3, 3.3] },
+  DIELINE: { dir: [0.02, 0.06, 1], target: [0.3, 0, 0], half: [4.1, 2.6] },
+  XRAY: { dir: [0.55, 0.28, 0.78], target: [0, 0, 0], half: [1.6, 2.25] },
+  PRESSURE: { dir: [0.45, 0.22, 0.86], target: [0, -0.1, 0], half: [2.3, 2.3] },
 };
 
 
@@ -220,8 +222,8 @@ function SurfacePressureTag({ node, root, surface, pressure, visible }) {
     <group ref={group}>
       <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={label} className={'surface-pressure-tag ' + (pct > 100 ? 'over' : '')}>
-          <b>{SURFACE_LABEL[surface]}</b>
-          <span>{pct}% load</span>
+          <b>{FACE_FR[surface]}</b>
+          <span>{pct}% de charge</span>
         </div>
       </Html>
     </group>
@@ -391,9 +393,9 @@ function PreviewTag({ node, root, surface, from, to }) {
     <group ref={group}>
       <Html center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
         <div className={'preview-tag' + (over ? ' over' : '')}>
-          <b>{SURFACE_LABEL[surface]}</b>
+          <b>{FACE_FR[surface]}</b>
           <span>{Math.round(from * 100)}<i>→</i><strong>{Math.round(to * 100)}%</strong></span>
-          <em>{over ? 'OVER-INKED' : 'FITS'}</em>
+          <em>{over ? 'trop plein !' : 'ça tient'}</em>
         </div>
       </Html>
     </group>
@@ -491,7 +493,6 @@ function SpatialStudioScene({
     const distance = Math.max(view.half[1] / tanHalf, view.half[0] / (tanHalf * aspect)) * 1.08 * sizeFactor;
     const dir = new THREE.Vector3(...view.dir).normalize();
     const target = new THREE.Vector3(...view.target).multiplyScalar(sizeFactor);
-    if (aspect < 1) { target.y += 1.5; target.x = view.target[0] > -1 ? target.x : 0; }
     return { distance, dir, target, position: target.clone().addScaledVector(dir, distance) };
   }, [size.width, size.height, camera.fov, sizeFactor]);
 

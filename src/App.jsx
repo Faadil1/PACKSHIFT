@@ -12,10 +12,9 @@ import {
   SURFACES,
   SURFACE_LABEL,
   buildPressure,
-  capacityFor,
-  clampDims,
   emptyPlacements,
   isNominal,
+  clampDims,
   overloadedSurfaces,
   solvePlacements,
   suggestDims,
@@ -23,29 +22,28 @@ import {
 import { decodeState, encodeState } from './app/urlState.js';
 import { dielineSVG } from './export/dieline.js';
 import { isMuted, play, setMuted, unlockAudio } from './audio/sound.js';
-import { Headline, PrepressMarks } from './ui/Headline.jsx';
-import { InkStrip, Ticket, TicketGhost } from './ui/Ticket.jsx';
+import { CALM, CAST, Character, LOUD, useFlip } from './ui/Character.jsx';
+import { ColumnHeadline } from './ui/ColumnHeadline.jsx';
 
 const VIEWS = [
-  ['PACK', 'Pack'],
-  ['EXPLODED', 'Open'],
-  ['DIELINE', 'Dieline'],
-  ['XRAY', 'X-ray'],
-  ['PRESSURE', 'Ink'],
+  ['PACK', 'Boîte'],
+  ['EXPLODED', 'Ouverte'],
+  ['DIELINE', 'À plat'],
+  ['XRAY', 'Rayons X'],
+  ['PRESSURE', 'Charge'],
 ];
 const VIEW_PRESET = { PACK: 0, EXPLODED: 44, DIELINE: 100, XRAY: 0, PRESSURE: 0 };
-const STOPS = [
-  [0, 'Closed'],
-  [12, 'Lid'],
-  [36, 'Product'],
-  [70, 'Shell'],
-  [100, 'Dieline'],
-];
 const PHASES = ['opening', 'dieline', 'reflow', 'closing'];
+const SLOTS = [
+  ['LEFT_COPY', 'Gauche'],
+  ['FRONT', 'Avant'],
+  ['RIGHT_DATA', 'Droite'],
+  ['BACK', 'Dos'],
+];
+const FR_SURFACE = { FRONT: 'la face avant', LEFT_COPY: 'la gauche', RIGHT_DATA: 'la droite', BACK: 'le dos' };
 
 const reducedMotion = () => typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-// Pauses are reading time, kept under reduced motion; only animation is removed.
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const forceProcedural = () => typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('procedural') === '1';
@@ -77,7 +75,7 @@ function Loader() {
   if (!active && progress >= 100) return null;
   return (
     <div className="loader" role="status" aria-live="polite">
-      <span>Loading the Blender master</span>
+      <span>Chargement du master Blender</span>
       <i><b style={{ width: Math.round(progress) + '%' }} /></i>
     </div>
   );
@@ -97,6 +95,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState(initial?.viewMode || 'PACK');
   const [decomposition, setDecomposition] = useState(initial ? VIEW_PRESET[initial.viewMode] || 0 : 0);
   const [placements, setPlacements] = useState(initial?.placements || emptyPlacements());
+  const [order, setOrder] = useState([]); // placement order, for who gets pushed out
   const [dims, setDims] = useState(initial?.dims || NOMINAL_DIMS);
   const [history, setHistory] = useState([]);
   const [compiled, setCompiled] = useState(false);
@@ -110,39 +109,46 @@ export default function App() {
   const [announcement, setAnnouncement] = useState('');
   const [toast, setToast] = useState('');
   const [muted, setMutedState] = useState(isMuted);
-  const [drag, setDrag] = useState(null); // { kind, x, y, vx, surface, over }
+  const [drag, setDrag] = useState(null); // { kind, x, y, vx, target }
   const [resetArmed, setResetArmed] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   const animationToken = useRef(0);
   const decompositionRef = useRef(decomposition);
   const runningRef = useRef(false);
   const tourToken = useRef(0);
   const pickRef = useRef(null);
-  const stageRef = useRef(null);
+  const spreadRef = useRef(null);
 
   const brief = useMemo(() => ALL_KINDS.filter((k) => Object.prototype.hasOwnProperty.call(placements, k)), [placements]);
   const pressures = useMemo(() => buildPressure(placements, market, dims), [placements, market, dims]);
-  const capacity = useMemo(() => capacityFor(market, dims), [market, dims]);
-  const basePressures = useMemo(
-    () => Object.fromEntries(SURFACES.map((s) => [s, MARKETS[market].base[s] / capacity[s]])),
-    [market, capacity],
-  );
   const collisionSurfaces = useMemo(() => overloadedSurfaces(pressures), [pressures]);
   const placedCount = brief.filter((kind) => placements[kind]).length;
   const collision = collisionSurfaces.length > 0;
-  const maxLoad = Math.max(...SURFACES.map((s) => pressures[s]));
+  const frontLoad = pressures.FRONT;
   const suggestion = useMemo(
     () => (compilePhase === 'unsolved' ? suggestDims(placements, market, dims) : null),
     [compilePhase, placements, market, dims],
   );
 
-  // Live preview of what a placement would do, before it happens.
+  // Who stands where. Placement order decides who gets shoved off the front.
+  const rank = (k) => {
+    const i = order.indexOf(k);
+    return i < 0 ? -1 : i;
+  };
+  const frontKinds = brief.filter((k) => placements[k] === 'FRONT').sort((a, b) => rank(a) - rank(b));
+  const ejected = collisionSurfaces.includes('FRONT') && frontKinds.length > 1 ? frontKinds[frontKinds.length - 1] : null;
+  const standing = frontKinds.filter((k) => k !== ejected);
+  const wings = brief.filter((k) => !placements[k]);
+  const movedTo = Object.fromEntries((lastDiff?.moves || []).map((m) => [m.kind, m.to]));
+
+  const dropTarget = drag?.target || null;
   const preview = useMemo(() => {
-    if (!drag?.kind || !drag.surface) return null;
-    const next = buildPressure({ ...placements, [drag.kind]: drag.surface }, market, dims);
-    return { kind: drag.kind, surface: drag.surface, from: pressures[drag.surface], to: next[drag.surface] };
-  }, [drag?.kind, drag?.surface, placements, market, dims, pressures]);
+    if (!drag?.kind || !drag.target || drag.target === 'WINGS') return null;
+    const next = buildPressure({ ...placements, [drag.kind]: drag.target }, market, dims);
+    return { kind: drag.kind, surface: drag.target, from: pressures[drag.target], to: next[drag.target] };
+  }, [drag?.kind, drag?.target, placements, market, dims, pressures]);
+
+  useFlip(spreadRef, JSON.stringify(placements) + '|' + (ejected || '') + '|' + dims.width);
 
   /* ----------------------------- effects ---------------------------- */
 
@@ -171,17 +177,15 @@ export default function App() {
     return () => clearTimeout(id);
   }, [market, brief, placements, dims, viewMode, running]);
 
-  // Halftone parallax (subtle, pointer-driven, skipped under reduced motion).
+  // Eyes follow the pointer (CSS variables, no React re-render).
   useEffect(() => {
-    if (reducedMotion()) return undefined;
     let raf = 0;
     const onMove = (e) => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const x = e.clientX / window.innerWidth - 0.5;
-        const y = e.clientY / window.innerHeight - 0.5;
-        document.documentElement.style.setProperty('--px', x.toFixed(3));
-        document.documentElement.style.setProperty('--py', y.toFixed(3));
+        const root = document.documentElement.style;
+        root.setProperty('--px', (e.clientX / window.innerWidth - 0.5).toFixed(3));
+        root.setProperty('--py', (e.clientY / window.innerHeight - 0.5).toFixed(3));
       });
     };
     window.addEventListener('pointermove', onMove, { passive: true });
@@ -223,13 +227,14 @@ export default function App() {
 
   const flash = (message) => {
     setToast(message);
-    setTimeout(() => setToast(''), 2400);
+    setTimeout(() => setToast(''), 2600);
   };
 
-  const snapshot = () => ({ placements, dims });
-  const commitPlacements = (next) => {
+  const snapshot = () => ({ placements, dims, order });
+  const commitPlacements = (next, nextOrder = order) => {
     setHistory((h) => [...h.slice(-29), snapshot()]);
     setPlacements(next);
+    setOrder(nextOrder);
     setLastDiff(null);
   };
 
@@ -246,15 +251,16 @@ export default function App() {
     if (placements[kind] === surface) return;
     setCompiled(false);
     setCompilePhase('idle');
-    commitPlacements({ ...placements, [kind]: surface });
+    commitPlacements({ ...placements, [kind]: surface }, [...order.filter((k) => k !== kind), kind]);
     play('crease', { intensity: 0.7 });
-    setAnnouncement(`${REQUIREMENTS[kind].label} placed on ${SURFACE_LABEL[surface]}.`);
+    setAnnouncement(`${REQUIREMENTS[kind].label} va sur ${FR_SURFACE[surface]}.`);
   };
 
   const unplace = (kind) => {
     if (runningRef.current || !placements[kind]) return;
-    commitPlacements({ ...placements, [kind]: null });
+    commitPlacements({ ...placements, [kind]: null }, order.filter((k) => k !== kind));
     setCompiled(false);
+    setCompilePhase('idle');
   };
 
   const addToBrief = (kind) => {
@@ -263,14 +269,14 @@ export default function App() {
     setCompiled(false);
     setCompilePhase('idle');
     play('tick');
-    setAnnouncement(`${REQUIREMENTS[kind].label} added to the job.`);
+    setAnnouncement(`${REQUIREMENTS[kind].label} entre en coulisse.`);
   };
 
   const removeFromBrief = (kind) => {
     if (runningRef.current || REQUIREMENTS[kind].core) return;
     const next = { ...placements };
     delete next[kind];
-    commitPlacements(next);
+    commitPlacements(next, order.filter((k) => k !== kind));
     setCompiled(false);
     setCompilePhase('idle');
     if (selectedKind === kind) setSelectedKind(null);
@@ -290,32 +296,36 @@ export default function App() {
     setHistory((h) => h.slice(0, -1));
     setPlacements(previous.placements);
     setDims(previous.dims);
+    setOrder(previous.order || []);
     setCompiled(false);
     setCompilePhase('idle');
     setLastDiff(null);
-    setAnnouncement('Undid last change.');
+    setAnnouncement('Dernier changement annulé.');
   };
 
-  /* --------------------------- ticket drag --------------------------- */
+  /* ------------------------ character drag & drop ---------------------- */
 
-  const startTicketDrag = (kind) => (event) => {
+  const targetAt = (x, y) => {
+    const el = document.elementFromPoint(x, y)?.closest?.('[data-drop]');
+    if (el) return el.getAttribute('data-drop');
+    return pickRef.current?.(x, y) || null;
+  };
+
+  const startDrag = (kind) => (event) => {
     if (runningRef.current || event.button > 0) return;
+    event.preventDefault();
     const startX = event.clientX;
     const startY = event.clientY;
     let lastX = startX;
     let moved = false;
     let current = null;
     const move = (e) => {
-      const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-      if (!moved && dist < 6) return;
+      if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) < 6) return;
       if (!moved) {
         moved = true;
-        document.body.classList.add('is-dragging-ticket');
-        setSheetOpen(false);
+        document.body.classList.add('is-dragging');
       }
-      const surface = pickRef.current?.(e.clientX, e.clientY) || null;
-      const next = buildPressure({ ...placements, [kind]: surface || 'FRONT' }, market, dims);
-      current = { kind, x: e.clientX, y: e.clientY, vx: e.clientX - lastX, surface, over: surface ? next[surface] > 1 : false };
+      current = { kind, x: e.clientX, y: e.clientY, vx: e.clientX - lastX, target: targetAt(e.clientX, e.clientY) };
       lastX = e.clientX;
       setDrag(current);
     };
@@ -323,18 +333,23 @@ export default function App() {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
-      document.body.classList.remove('is-dragging-ticket');
+      document.body.classList.remove('is-dragging');
       setDrag(null);
       if (!moved) {
         setSelectedKind((c) => (c === kind ? null : kind));
         play('tick');
-      } else if (current?.surface) {
-        placeConstraint(kind, current.surface);
-      }
+      } else if (current?.target === 'WINGS') unplace(kind);
+      else if (current?.target) placeConstraint(kind, current.target);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', up);
+  };
+
+  const dropOn = (surface) => {
+    if (!selectedKind) return;
+    if (surface === 'WINGS') unplace(selectedKind);
+    else placeConstraint(selectedKind, surface);
   };
 
   /* ----------------------------- compile ----------------------------- */
@@ -360,6 +375,7 @@ export default function App() {
     setReflowMoves(solution.moves);
     await sleep(Math.max(700, flightDuration(solution.moves.length) * 1000));
     setPlacements(solution.placements);
+    setOrder((o) => [...o.filter((k) => solution.placements[k]), ...Object.keys(solution.placements).filter((k) => !o.includes(k))]);
     await sleep(450);
     guard();
 
@@ -374,8 +390,8 @@ export default function App() {
     setLastDiff({ moves: solution.moves, market: targetMarket, valid: solution.valid });
     play(solution.valid ? 'resolve' : 'collide');
     setAnnouncement(solution.valid
-      ? `Compiled. Valid form for ${MARKETS[targetMarket].label}. ${solution.moves.length} requirement(s) moved.`
-      : 'No valid layout exists for this job at this carton size.');
+      ? `L'éditeur a tranché. Forme valide pour ${MARKETS[targetMarket].label}. ${solution.moves.length} exigence(s) déplacée(s).`
+      : 'Aucune mise en page ne tient sur ce carton.');
     return solution;
   };
 
@@ -392,7 +408,7 @@ export default function App() {
 
   /* ---------------------------- guided tour --------------------------- */
 
-  const TOUR_STEPS = 8;
+  const TOUR_STEPS = 7;
   const runTour = async () => {
     if (runningRef.current) return;
     unlockAudio();
@@ -408,6 +424,11 @@ export default function App() {
       await sleep(ms);
       guard();
     };
+    const put = (next, nextOrder) => {
+      setPlacements(next);
+      setOrder(nextOrder);
+      play('crease', { intensity: 0.7 });
+    };
 
     lock(true);
     setHistory((h) => [...h.slice(-29), snapshot()]);
@@ -421,40 +442,39 @@ export default function App() {
       setViewMode('PACK');
       setDecomp(0);
       setPlacements(emptyPlacements());
+      setOrder([]);
       setLastDiff(null);
 
-      caption(1, 'A real Blender master', 'Folding carton, tuck flap, hinges, jar, cap, seal, insert and leaflet — exported from Blender, driven live in the browser.');
+      caption(1, 'Un vrai carton Blender', 'À gauche, le master Blender : charnières, pot, capuchon, notice. À droite, la face avant — cette colonne.');
       await wait(900);
       setViewMode('XRAY');
-      await wait(2600);
+      await wait(2400);
       setViewMode('PACK');
 
-      caption(2, 'Put everything on the front', 'Language copy, a data carrier and a marketing claim all fight for the same panel.');
-      await wait(700);
-      setPlacements({ language: 'FRONT', data: null, claim: null });
-      play('crease', { intensity: 0.7 });
-      await wait(750);
-      setPlacements({ language: 'FRONT', data: 'FRONT', claim: null });
-      play('crease', { intensity: 0.7 });
-      await wait(750);
-      setPlacements(IMPOSSIBLE_FRONT);
+      caption(2, 'Tout le monde veut la façade', 'Les exigences sont des personnages. Chacun réclame la face avant.');
+      await wait(600);
+      put({ language: 'FRONT', data: null, claim: null }, ['language']);
+      await wait(800);
+      put({ language: 'FRONT', data: 'FRONT', claim: null }, ['language', 'data']);
+      await wait(800);
+      put(IMPOSSIBLE_FRONT, ['language', 'data', 'claim']);
 
-      caption(3, 'The front is over-inked', 'Demand exceeds the panel’s printable capacity. The proof drifts out of register instead of silently shrinking type.');
+      caption(3, 'La colonne ne tient plus', 'La typographie se comprime, le dernier arrivé est éjecté dans la marge.');
       setViewMode('PRESSURE');
-      await wait(2600);
+      await wait(2800);
 
-      caption(4, 'Press: open, reflow, refold', 'The lid opens, the product lifts out, the carton unfolds, and each requirement flies to the panel that can hold it.');
+      caption(4, 'L’éditeur tranche', 'Le carton s’ouvre, se met à plat, chaque exigence rejoint la face qui peut la porter.');
       const eu = await runCompile(IMPOSSIBLE_FRONT, 'EU', NOMINAL_DIMS, guard);
-      await wait(1400);
+      await wait(1600);
 
-      caption(5, 'Same master, new market', 'Canada reserves the left panel for bilingual statements. The solver finds a different valid layout.');
+      caption(5, 'Même master, autre marché', 'Le Canada réserve la gauche aux mentions bilingues : l’éditeur trouve une autre répartition.');
       setMarket('CANADA');
       setCompiled(false);
       await wait(900);
       const ca = await runCompile(eu.placements, 'CANADA', NOMINAL_DIMS, guard);
-      await wait(1200);
+      await wait(1300);
 
-      caption(6, 'Grow the job', 'Add warnings, an eco claim and a retail barcode. Nothing fits any more — and the proof says so.');
+      caption(6, 'Trois de plus en coulisse', 'Avertissements, allégation éco, code-barres. Cette fois, même l’éditeur cale.');
       const grown = { ...ca.placements, warning: null, eco: null, barcode: null };
       setPlacements(grown);
       await wait(1300);
@@ -462,14 +482,11 @@ export default function App() {
       await wait(1800);
 
       const bigger = suggestDims(grown, 'CANADA', NOMINAL_DIMS) || NOMINAL_DIMS;
-      caption(7, `+${bigger.width - NOMINAL_DIMS.width} mm solves it`, `The solver computes the smallest carton that fits: ${bigger.width} × ${bigger.depth} × ${bigger.height} mm. Same hinges, rebuilt geometry.`);
+      caption(7, `+${bigger.width - NOMINAL_DIMS.width} mm, et tout le monde tient`, `L’éditeur calcule le plus petit carton qui suffit : ${bigger.width} × ${bigger.depth} × ${bigger.height} mm.`);
       setDims(bigger);
-      await wait(1600);
+      await wait(1500);
       await runCompile(grown, 'CANADA', bigger, guard);
-      await wait(1300);
-
-      caption(8, 'Your turn', 'Drag a ticket onto a face, scrub the object apart, change the stock — then share the proof or export the dieline.');
-      await wait(3600);
+      await wait(3200);
     } catch (error) {
       if (!(error instanceof Cancelled)) throw error;
       animationToken.current += 1;
@@ -491,7 +508,6 @@ export default function App() {
   const resetStudio = () => {
     if (runningRef.current) return;
     if (!resetArmed) {
-      // Destructive: ask for a second press instead of a modal.
       setResetArmed(true);
       setTimeout(() => setResetArmed(false), 2200);
       return;
@@ -500,6 +516,7 @@ export default function App() {
     animationToken.current += 1;
     setHistory((h) => [...h.slice(-29), snapshot()]);
     setPlacements(emptyPlacements());
+    setOrder([]);
     setDims(NOMINAL_DIMS);
     setDecomp(0);
     setViewMode('PACK');
@@ -508,7 +525,7 @@ export default function App() {
     setSelectedKind(null);
     setReflowMoves([]);
     setLastDiff(null);
-    flash('Fresh proof. Undo (Z) brings the last one back.');
+    flash('Page blanche. Z pour revenir en arrière.');
   };
 
   const changeMarket = (value) => {
@@ -518,16 +535,16 @@ export default function App() {
     setCompilePhase('idle');
     setLastDiff(null);
     play('tick');
-    setAnnouncement(`Market set to ${MARKETS[value].label}. ${MARKETS[value].note}`);
+    setAnnouncement(`Édition ${MARKETS[value].label}. ${MARKETS[value].note}`);
   };
 
   const shareLink = async () => {
     const url = window.location.origin + window.location.pathname + '#' + encodeState({ market, brief, placements, dims, viewMode });
     try {
       await navigator.clipboard.writeText(url);
-      flash('Proof link copied — it reopens this exact state.');
+      flash('Lien copié — il rouvre exactement cette page.');
     } catch {
-      window.prompt('Copy this link', url);
+      window.prompt('Copier ce lien', url);
     }
   };
 
@@ -542,7 +559,7 @@ export default function App() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    flash('Concept dieline exported · SVG · mm');
+    flash('Dieline concept exportée · SVG · mm');
   };
 
   const toggleSound = () => {
@@ -560,7 +577,6 @@ export default function App() {
       if (key === 'escape') {
         if (tour) skipTour();
         setSelectedKind(null);
-        setSheetOpen(false);
         return;
       }
       if (event.target.closest?.('button') && (key === 'enter' || key === ' ')) return;
@@ -577,56 +593,59 @@ export default function App() {
   /* ------------------------------ copy ------------------------------ */
 
   const marketLabel = MARKETS[market].label;
-  const sceneCopy = (() => {
-    if (compilePhase === 'opening') return ['Pressing · 1/4', 'Tuck out. Lid up. Product out.'];
-    if (compilePhase === 'dieline') return ['Pressing · 2/4', 'Every surface is on the table.'];
-    if (compilePhase === 'reflow') return ['Pressing · 3/4', 'Requirements find their panel.'];
-    if (compilePhase === 'closing') return ['Pressing · 4/4', 'Same master. New hierarchy.'];
-    if (compilePhase === 'unsolved') return ['Proof rejected', 'Nothing fits this stock.'];
-    if (collision) {
-      const which = collisionSurfaces.map((s) => SURFACE_LABEL[s].toLowerCase()).join(' + ');
-      return [collisionSurfaces.includes('FRONT') ? 'Impossible front' : 'Over-inked', `The ${which} refuses the brief.`];
-    }
-    if (viewMode === 'EXPLODED') return ['Open', 'One object. Nine parts.'];
-    if (viewMode === 'DIELINE') return ['Dieline', 'Flat, printed, negotiable.'];
-    if (viewMode === 'XRAY') return ['X-ray', 'More than its skin.'];
-    if (viewMode === 'PRESSURE') return ['Ink load', 'Demand, made visible.'];
-    if (compiled) return [`In register · ${marketLabel}`, 'The package made room.'];
-    if (placedCount === 0) return ['Proof room', 'Packaging is a compiled surface.'];
-    return ['Proof live', 'Place. Overload. Press.'];
+  const phaseIndex = PHASES.indexOf(compilePhase);
+  const chapter = (() => {
+    if (running && phaseIndex >= 0) return ['04', 'L’éditeur', 'Le carton s’ouvre, se met à plat et se replie. Chaque exigence marche vers la face qui peut la porter.'];
+    if (compilePhase === 'unsolved') return ['04', 'L’impasse', 'Aucune répartition ne tient sur ce carton. Il faut retirer une exigence — ou agrandir le carton.'];
+    if (collision) return ['03', 'La face avant', 'La colonne de droite est la face avant. Elle déborde : la typographie se comprime et le dernier arrivé est éjecté.'];
+    if (compiled) return ['05', 'La forme valide', `Même master, nouvelle hiérarchie. Chacun a sa face — édition ${marketLabel}.`];
+    if (placedCount === 0) return ['01', 'Le brief', 'Six exigences attendent en coulisse. Glisse-les sur le carton ou dans la colonne de droite.'];
+    return ['02', 'La mise en page', 'Place les exigences. La colonne de droite est la face avant : elle a une limite.'];
   })();
 
-  const headlineState = compilePhase === 'unsolved' || (collision && !running)
-    ? 'misregistered'
-    : compiled
-      ? 'registered'
-      : 'idle';
+  const headline = (() => {
+    if (running && phaseIndex >= 0) return 'L’ÉDITEUR REDISTRIBUE';
+    if (compilePhase === 'unsolved') return 'MÊME L’ÉDITEUR CALE';
+    if (collision && frontLoad > 1) return 'LA FACE AVANT NE TIENT PLUS';
+    if (compiled) return 'CHACUN SA FACE';
+    return 'LA FACE AVANT A UNE LIMITE';
+  })();
+  const stretch = Math.round(125 - Math.min(1, frontLoad) * 63);
+  const spill = frontLoad > 1 && !running ? (frontLoad > 1.4 ? 2 : 1) : 0;
 
-  const hint = drag
-    ? (drag.surface ? `Release to print on ${SURFACE_LABEL[drag.surface]}.` : 'Move over a face of the pack.')
-    : selectedKind
-      ? `${REQUIREMENTS[selectedKind].label} lifted — tap a face on the pack or an ink column.`
-      : placedCount === 0
-        ? 'Drag a ticket onto a face of the pack.'
-        : collision
-          ? 'Move a ticket yourself, or hit PRESS and let the solver negotiate.'
-          : 'Orbit, scrub the timeline, or press to compile.';
+  const noteFor = (kind) => {
+    if (running) return null;
+    if (kind === ejected) return ['pas de place !', 'pen'];
+    if (compiled && movedTo[kind]) return [CALM[movedTo[kind]], 'blue'];
+    if (!compiled && placements[kind] === 'FRONT' && kind === order[order.length - 1]) return [LOUD[kind], 'ink'];
+    return null;
+  };
 
-  const statusTone = compilePhase === 'unsolved' || collision ? 'hot' : compiled ? 'ok' : placedCount ? 'live' : 'idle';
-  const statusWord = compilePhase === 'unsolved'
-    ? 'REJECTED'
-    : collision
-      ? 'OVER-INKED'
-      : compiled
-        ? 'IN REGISTER'
-        : placedCount
-          ? 'LIVE'
-          : 'AWAITING';
+  const renderChar = (kind, i, size = 1, state = '') => {
+    const note = noteFor(kind);
+    return (
+      <Character
+        key={kind}
+        kind={kind}
+        index={i}
+        size={size}
+        state={state}
+        note={note?.[0]}
+        noteTone={note?.[1]}
+        selected={selectedKind === kind}
+        dragging={drag?.kind === kind}
+        disabled={running}
+        onPointerDown={startDrag(kind)}
+        onKeySelect={() => setSelectedKind((c) => (c === kind ? null : kind))}
+        onRemove={!REQUIREMENTS[kind].core && !placements[kind] ? () => removeFromBrief(kind) : undefined}
+      />
+    );
+  };
 
+  const predicted = (surface) => (preview && preview.surface === surface ? preview.to : null);
   const nominal = isNominal(dims);
-  const geometrySource = usingFallback || !nominal ? 'PROCEDURAL TWIN' : 'BLENDER MASTER 0.6.0';
-  const wdth = Math.round(125 - Math.min(1.4, Math.max(0, maxLoad)) / 1.4 * 55);
-  const phaseIndex = PHASES.indexOf(compilePhase);
+  const geometrySource = usingFallback || !nominal ? 'jumeau procédural' : 'master Blender 0.6.0';
+  const pressLabel = running ? (phaseIndex >= 0 ? `${phaseIndex + 1}/4` : '…') : 'l’éditeur tranche';
 
   const sceneProps = {
     dims,
@@ -643,267 +662,269 @@ export default function App() {
     interactionLocked: running || Boolean(drag),
     onPlaceConstraint: placeConstraint,
     selectedKind,
-    hoverSurface: drag?.surface || null,
+    hoverSurface: drag?.target && drag.target !== 'WINGS' ? drag.target : null,
     preview,
     onPickerReady: (fn) => { pickRef.current = fn; },
   };
 
-  const pressClass = running ? 'running' : collision ? 'hot' : placedCount ? 'ready' : 'idle';
+  const frontTone = frontLoad > 1 ? 'hot' : frontLoad > 0.75 ? 'warm' : 'cool';
 
   return (
     <main
-      className={`room tone-${statusTone} mode-${viewMode.toLowerCase()}${selectedKind ? ' is-selecting' : ''}${tour ? ' is-touring' : ''}${running ? ' is-running' : ''}`}
-      style={{ '--wdth': wdth, '--load': Math.min(1.4, maxLoad).toFixed(3) }}
+      className={`report${selectedKind ? ' is-selecting' : ''}${drag ? ' is-dragging-char' : ''}${tour ? ' is-touring' : ''}${running ? ' is-running' : ''}`}
+      ref={spreadRef}
     >
-      <div className="halftone" aria-hidden="true" />
-
-      <header className="masthead">
-        <div className="wordmark">
-          <strong>PACK<span>SHIFT</span></strong>
-          <small>Proof room · Day 19 · v5.3</small>
+      <header className="running-head">
+        <div className="masthead-title">
+          <strong>PACKSHIFT</strong>
+          <span>Rapport de négociation · N° 19</span>
         </div>
-
-        <div className="plates" role="group" aria-label="Market plate">
-          {Object.keys(MARKETS).map((value, i) => (
+        <nav className="editions" aria-label="Édition (marché)">
+          {Object.keys(MARKETS).map((value) => (
             <button
               key={value}
-              className={'plate plate-' + i + (market === value ? ' active' : '')}
+              className={market === value ? 'active' : ''}
               aria-pressed={market === value}
               disabled={running}
               onClick={() => changeMarket(value)}
               title={MARKETS[value].note}
             >
-              <i aria-hidden="true" />
-              {value === 'CANADA' ? 'CA' : value}
+              Édition {value === 'CANADA' ? 'CA' : value}
             </button>
           ))}
-        </div>
-
-        <nav className="tools" aria-label="Tools">
-          <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">
-            {tour ? 'Skip tour' : 'Guided tour'}<kbd>T</kbd>
-          </button>
-          <button onClick={shareLink} disabled={running} title="Copy a link to this exact proof">Share</button>
-          <button onClick={exportDieline} disabled={running} title="Export the concept dieline (SVG, mm)">Dieline ⤓</button>
-          <button onClick={toggleSound} aria-pressed={!muted} title="Sound" className="tool-sound">
+        </nav>
+        <nav className="tools" aria-label="Outils">
+          <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">{tour ? 'Passer' : 'Visite guidée'}</button>
+          <button onClick={shareLink} disabled={running}>Partager</button>
+          <button onClick={exportDieline} disabled={running}>Dieline ⤓</button>
+          <button onClick={toggleSound} aria-pressed={!muted} aria-label={muted ? 'Son coupé' : 'Son actif'} className="tool-sound">
             <span className={'bars' + (muted ? ' off' : '')} aria-hidden="true"><i /><i /><i /></span>
-            <span className="sr-only">{muted ? 'Sound off' : 'Sound on'}</span>
           </button>
         </nav>
       </header>
 
-      <aside className={'job' + (sheetOpen ? ' open' : '')} aria-label="Job ticket">
-        <button className="job-handle" onClick={() => setSheetOpen((o) => !o)} aria-expanded={sheetOpen}>
-          <span />Job · {placedCount}/{brief.length} placed
-        </button>
-        <div className="job-head">
-          <span>JOB TICKET</span>
-          <b>{brief.length} req · {marketLabel}</b>
-        </div>
-        <ul className="tickets">
-          {brief.map((kind, i) => (
-            <Ticket
-              key={kind}
-              index={i}
-              kind={kind}
-              weight={MARKETS[market].weight[kind] / capacity[placements[kind] || REQUIREMENTS[kind].preferred]}
-              placed={placements[kind]}
-              selected={selectedKind === kind}
-              dragging={drag?.kind === kind}
-              disabled={running}
-              onPointerDown={startTicketDrag(kind)}
-              onKeySelect={() => setSelectedKind((c) => (c === kind ? null : kind))}
-              onUnplace={() => unplace(kind)}
-              onRemove={() => removeFromBrief(kind)}
-            />
-          ))}
-        </ul>
-        {ALL_KINDS.some((k) => !brief.includes(k)) && (
-          <div className="add">
-            <span>ADD TO JOB</span>
-            {ALL_KINDS.filter((k) => !brief.includes(k)).map((kind) => (
-              <button key={kind} onClick={() => addToBrief(kind)} disabled={running} style={{ '--ink': REQUIREMENTS[kind].color }}>
-                + {REQUIREMENTS[kind].label}
-              </button>
-            ))}
+      <div className="spread">
+        {/* ---------------------------- LEFT PAGE ---------------------------- */}
+        <section className="page page-left" aria-label="Page de gauche : le carton">
+          <div className="chapter">
+            <div className="chapter-no" key={chapter[0]}>{chapter[0]}</div>
+            <div className="chapter-text">
+              <span>CHAPITRE</span>
+              <h2 key={chapter[1]}>{chapter[1]}</h2>
+              <p>{chapter[2]}</p>
+            </div>
           </div>
-        )}
-        <div className="stock">
-          <div className="job-head">
-            <span>STOCK</span>
-            <b>{nominal ? 'Blender master' : 'Custom · twin'}</b>
-          </div>
-          {['width', 'depth', 'height'].map((key) => (
-            <label key={key} className="stock-row">
-              <span>{key[0].toUpperCase()}</span>
+
+          <figure className="figure">
+            <figcaption>
+              <span>FIG. 1 — LE CARTON</span>
+              <span>{geometrySource}</span>
+            </figcaption>
+            <div className={'plate' + (dropTarget && dropTarget !== 'WINGS' ? ' targeted' : '')}>
+              <div className="canvas-wrap">
+                <Canvas
+                  shadows
+                  flat
+                  dpr={[1, 1.75]}
+                  camera={{ position: [4.6, 2.6, 7.3], fov: 34, near: 0.1, far: 80 }}
+                  gl={{ antialias: true, alpha: true }}
+                  aria-label="Carton 3D. Glisse une exigence sur une de ses faces."
+                >
+                  <Suspense fallback={null}>
+                    {usingFallback ? (
+                      <PackageScene procedural {...sceneProps} />
+                    ) : (
+                      <SceneBoundary fallback={<PackageScene procedural {...sceneProps} />} onFallback={() => setUsingFallback(true)}>
+                        <PackageScene {...sceneProps} />
+                      </SceneBoundary>
+                    )}
+                  </Suspense>
+                </Canvas>
+                <Loader />
+              </div>
+              <div className="views" role="group" aria-label="Vues">
+                {VIEWS.map(([mode, label], i) => (
+                  <button key={mode} className={viewMode === mode ? 'active' : ''} aria-pressed={viewMode === mode} onClick={() => setMode(mode)} disabled={running}>
+                    <kbd>{i + 1}</kbd>{label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="scrub">
+              <span>DÉPLIER</span>
               <input
                 type="range"
-                min={DIM_LIMITS[key][0]}
-                max={DIM_LIMITS[key][1]}
-                value={dims[key]}
+                min="0"
+                max="100"
+                value={Math.round(decomposition)}
                 disabled={running}
-                onChange={(e) => changeDims({ ...dims, [key]: Number(e.target.value) })}
-                aria-label={`Carton ${key} in millimetres`}
+                style={{ '--v': decomposition }}
+                onChange={(event) => {
+                  animationToken.current += 1;
+                  setDecomp(Number(event.target.value));
+                  if (!['XRAY', 'PRESSURE'].includes(viewMode)) setViewMode('CUSTOM');
+                }}
+                aria-label="Déplier le carton"
               />
-              <output>{dims[key]}</output>
+              <output>{Math.round(decomposition)}%</output>
             </label>
-          ))}
-          {!nominal && <button className="stock-reset" onClick={() => changeDims(NOMINAL_DIMS)} disabled={running}>Back to 56 × 36 × 130</button>}
-        </div>
-      </aside>
+          </figure>
 
-      <section className={'stage' + (collision ? ' has-collision' : '')} ref={stageRef}>
-        <PrepressMarks state={headlineState} />
-
-        <div className="scene-copy">
-          <span className="eyebrow">{sceneCopy[0]}</span>
-          <Headline text={sceneCopy[1]} state={headlineState} />
-          <p>{hint}</p>
-        </div>
-
-        <div className="canvas-wrap">
-          <Canvas
-            shadows
-            flat
-            dpr={[1, 1.75]}
-            camera={{ position: [4.6, 2.6, 7.3], fov: 34, near: 0.1, far: 80 }}
-            gl={{ antialias: true, alpha: true }}
-            aria-label="3D package. Drag job tickets onto its faces."
-          >
-            <Suspense fallback={null}>
-              {usingFallback ? (
-                <PackageScene procedural {...sceneProps} />
-              ) : (
-                <SceneBoundary fallback={<PackageScene procedural {...sceneProps} />} onFallback={() => setUsingFallback(true)}>
-                  <PackageScene {...sceneProps} />
-                </SceneBoundary>
-              )}
-            </Suspense>
-          </Canvas>
-          <Loader />
-        </div>
-
-        {lastDiff && lastDiff.moves.length > 0 && !running && (
-          <div className="report" role="status">
-            <span>REGISTER REPORT · {lastDiff.moves.length} moved</span>
-            <ul>
-              {lastDiff.moves.map((m, i) => (
-                <li key={m.kind} style={{ '--ink': REQUIREMENTS[m.kind].color, '--i': i }}>
-                  <b>{REQUIREMENTS[m.kind].label}</b>
-                  <em>{m.from ? SURFACE_LABEL[m.from] : '—'}</em>
-                  <i aria-hidden="true">→</i>
-                  <strong>{SURFACE_LABEL[m.to]}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {compilePhase === 'unsolved' && !running && (
-          <div className="rejected" role="alert">
-            <span>PROOF REJECTED</span>
-            <b>{brief.length} requirements · {dims.width} × {dims.depth} × {dims.height} mm · {marketLabel}</b>
-            {suggestion ? (
-              <button onClick={() => changeDims(suggestion)}>
-                Grow stock to {suggestion.width} × {suggestion.depth} × {suggestion.height} mm
-              </button>
-            ) : <em>No stock within limits holds this job — remove a requirement.</em>}
-          </div>
-        )}
-
-        {tour && (
-          <div className="tour" role="status" aria-live="polite">
-            <div className="tour-dots" aria-hidden="true">
-              {Array.from({ length: tour.total }, (_, i) => <i key={i} className={i < tour.step ? 'on' : ''} />)}
+          <div className="faces">
+            <div className="faces-head"><span>FIG. 2 — OÙ VIT CHAQUE EXIGENCE</span><span>charge / capacité</span></div>
+            <div className="slots">
+              {SLOTS.map(([surface, label]) => {
+                const load = pressures[surface];
+                const p = predicted(surface);
+                const who = brief.filter((k) => placements[k] === surface);
+                const over = load > 1;
+                return (
+                  <div
+                    key={surface}
+                    className={'slot' + (over ? ' over' : '') + (dropTarget === surface ? ' drop' : '') + (selectedKind ? ' pickable' : '')}
+                    data-drop={surface}
+                    onClick={() => dropOn(surface)}
+                  >
+                    <div className="slot-head">
+                      <b>{label}</b>
+                      <em className={p !== null && p > 1 ? 'hot' : ''}>{Math.round((p ?? load) * 100)}%</em>
+                    </div>
+                    <i className="slot-bar"><b style={{ width: Math.min(100, load * 100) + '%' }} />{p !== null && <u style={{ width: Math.min(100, p * 100) + '%' }} />}</i>
+                    <div className="slot-cast">
+                      {surface === 'FRONT'
+                        ? <span className="slot-pointer">→ la colonne de droite{who.length ? ` · ${who.length}` : ''}</span>
+                        : who.map((k, i) => renderChar(k, i, 0.55, 'mini'))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <span>{String(tour.step).padStart(2, '0')} / {String(tour.total).padStart(2, '0')}</span>
-            <b key={tour.title}>{tour.title}</b>
-            <p key={tour.body}>{tour.body}</p>
-            <button onClick={skipTour}>Skip · Esc</button>
           </div>
-        )}
 
-        {toast && <div className="toast" role="status">{toast}</div>}
-        <div className="sr-only" aria-live="assertive">{announcement}</div>
-      </section>
-
-      <aside className="inks" aria-label="Ink load">
-        <div className="job-head"><span>INK LOAD</span><b>{Math.round(maxLoad * 100)}% peak</b></div>
-        <InkStrip
-          pressures={pressures}
-          basePressures={basePressures}
-          preview={preview}
-          target={Boolean(selectedKind)}
-          disabled={running}
-          onPick={(surface) => selectedKind && placeConstraint(selectedKind, surface)}
-        />
-        <p className="inks-legend"><i className="k" />base <i className="c" />placed <i className="m" />over</p>
-      </aside>
-
-      <footer className="deck">
-        <div className="timeline">
-          <div className="views" role="group" aria-label="Views">
-            {VIEWS.map(([mode, label], i) => (
-              <button key={mode} className={viewMode === mode ? 'active' : ''} aria-pressed={viewMode === mode} onClick={() => setMode(mode)} disabled={running}>
-                <kbd>{i + 1}</kbd>{label}
-              </button>
+          <div className="stock">
+            <span>CARTON</span>
+            {['width', 'depth', 'height'].map((key) => (
+              <label key={key}>
+                <em>{{ width: 'L', depth: 'P', height: 'H' }[key]}</em>
+                <input
+                  type="range"
+                  min={DIM_LIMITS[key][0]}
+                  max={DIM_LIMITS[key][1]}
+                  value={dims[key]}
+                  disabled={running}
+                  onChange={(e) => changeDims({ ...dims, [key]: Number(e.target.value) })}
+                  aria-label={`Carton ${key} en millimètres`}
+                />
+                <output>{dims[key]}</output>
+              </label>
             ))}
+            <span className="dim">mm</span>
           </div>
-          <div className="ruler">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(decomposition)}
-              disabled={running}
-              onChange={(event) => {
-                animationToken.current += 1;
-                setDecomp(Number(event.target.value));
-                if (!['XRAY', 'PRESSURE'].includes(viewMode)) setViewMode('CUSTOM');
-              }}
-              aria-label="Decompose the package"
-              aria-valuetext={`${Math.round(decomposition)}%`}
-              style={{ '--v': decomposition }}
-            />
-            <div className="ticks" aria-hidden="true">
-              {Array.from({ length: 41 }, (_, i) => <i key={i} className={i % 5 === 0 ? 'major' : ''} />)}
-            </div>
-            <div className="stops" aria-hidden="true">
-              {STOPS.map(([at, label]) => <span key={label} style={{ left: at + '%' }} className={decomposition >= at - 1 ? 'passed' : ''}>{label}</span>)}
-            </div>
-          </div>
-        </div>
+        </section>
 
-        <div className="press-cluster">
-          <button className="ghost" onClick={undo} disabled={running || history.length === 0} title="Undo (Z)">Undo</button>
-          <button className={'ghost' + (resetArmed ? ' armed' : '')} onClick={resetStudio} disabled={running} title="Reset (R)">
-            {resetArmed ? 'Sure?' : 'Reset'}
-          </button>
-          <button
-            className={'press ' + pressClass}
-            onClick={compileSurface}
-            disabled={running || brief.length === 0}
-            aria-label="Press: compile the surface (C)"
-            style={{ '--phase': phaseIndex < 0 ? 0 : (phaseIndex + 1) / PHASES.length }}
+        {/* ---------------------------- RIGHT PAGE --------------------------- */}
+        <section className={'page page-right tone-' + frontTone} aria-label="Page de droite : la face avant">
+          <div className="page-head">
+            <span>FACE AVANT = CETTE COLONNE · {dims.width} MM</span>
+            <span className={'front-load ' + frontTone}>{Math.round((predicted('FRONT') ?? frontLoad) * 100)}%</span>
+          </div>
+
+          <div
+            className={'column' + (dropTarget === 'FRONT' ? ' drop' : '') + (selectedKind ? ' pickable' : '')}
+            data-drop="FRONT"
+            onClick={() => dropOn('FRONT')}
           >
-            <span className="press-ring" aria-hidden="true" />
-            <b>{running ? (phaseIndex >= 0 ? `${phaseIndex + 1}/4` : '···') : 'PRESS'}</b>
-            <small>{running ? 'compiling' : 'compile · C'}</small>
-          </button>
-        </div>
-      </footer>
+            <ColumnHeadline text={headline} stretch={stretch} spill={spill} tone={frontLoad > 1 && !running ? 'hot' : 'ink'} />
+            <div className="stage">
+              <div className="baseline" />
+              <div className="standing">
+                {standing.map((k, i) => renderChar(k, i, 1, frontLoad > 1 ? 'squeezed' : ''))}
+              </div>
+              {compiled && standing.length > 0 && !running && <span className="pen-circle" aria-hidden="true" />}
+            </div>
+            <div className="edge" aria-hidden="true"><span>BORD DE FACE</span></div>
+            <div className="margin-drop">
+              {ejected && renderChar(ejected, 0, 1, 'ejected')}
+            </div>
+          </div>
 
-      <div className={'slug tone-' + statusTone} aria-live="polite">
-        <b>{statusWord}</b>
-        <span>{marketLabel.toUpperCase()}</span>
-        <span>{dims.width}×{dims.depth}×{dims.height} MM</span>
-        <span>{placedCount}/{brief.length} PLACED</span>
-        {collision && <span className="hot">{collisionSurfaces.map((s) => `${SURFACE_LABEL[s].toUpperCase()} ${Math.round(pressures[s] * 100)}%`).join(' · ')}</span>}
-        <span className="dim">{geometrySource}</span>
-        <span className="dim grow">CONCEPT · DEMO CAPACITIES · NOT REGULATORY OR MANUFACTURING VALIDATION</span>
+          <div className="editor-line" aria-live="polite">
+            {compiled && !running && <p className="pen-note">ok — chacun sa face. {lastDiff?.moves?.length ? `${lastDiff.moves.length} déplacé${lastDiff.moves.length > 1 ? 's' : ''}.` : ''} ✓</p>}
+            {compilePhase === 'unsolved' && !running && (
+              <p className="pen-note">
+                même moi, je cale.
+                {suggestion
+                  ? <button onClick={() => changeDims(suggestion)}>→ carton {suggestion.width} × {suggestion.depth} × {suggestion.height} mm ?</button>
+                  : <em> retire une exigence.</em>}
+              </p>
+            )}
+            {collision && !running && compilePhase !== 'unsolved' && <p className="pen-note">{collisionSurfaces.map((s) => FR_SURFACE[s]).join(' + ')} : {Math.round(Math.max(...collisionSurfaces.map((s) => pressures[s])) * 100)} % — trop plein.</p>}
+          </div>
+
+          <div className="actions">
+            <button className="ghost" onClick={undo} disabled={running || history.length === 0} title="Annuler (Z)">Annuler</button>
+            <button className={'ghost' + (resetArmed ? ' armed' : '')} onClick={resetStudio} disabled={running} title="Recommencer (R)">{resetArmed ? 'Sûr ?' : 'Recommencer'}</button>
+            <button
+              className={'pen-button' + (collision ? ' urgent' : '') + (running ? ' running' : '')}
+              onClick={compileSurface}
+              disabled={running || brief.length === 0}
+              style={{ '--phase': phaseIndex < 0 ? 0 : (phaseIndex + 1) / PHASES.length }}
+              title="Compiler (C)"
+            >
+              <span>{pressLabel}</span>
+            </button>
+          </div>
+
+          <div
+            className={'wings' + (dropTarget === 'WINGS' ? ' drop' : '') + (selectedKind ? ' pickable' : '')}
+            data-drop="WINGS"
+            onClick={() => dropOn('WINGS')}
+          >
+            <div className="wings-head">
+              <span>EN COULISSE</span>
+              <span className="add">
+                {ALL_KINDS.filter((k) => !brief.includes(k)).map((kind) => (
+                  <button key={kind} onClick={(e) => { e.stopPropagation(); addToBrief(kind); }} disabled={running} style={{ '--ink': CAST[kind].color }}>
+                    + {REQUIREMENTS[kind].label}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <div className="wings-cast">
+              {wings.length ? wings.map((k, i) => renderChar(k, i, 0.8)) : <span className="empty">personne — tout le monde est sur le carton</span>}
+            </div>
+          </div>
+        </section>
       </div>
 
-      <TicketGhost drag={drag} />
+      <footer className="running-foot">
+        <nav aria-label="Chapitres">
+          {[['01', 'Le brief'], ['02', 'La mise en page'], ['03', 'La face avant'], ['04', 'L’éditeur'], ['05', 'La forme valide']].map(([n, t]) => (
+            <span key={n} className={chapter[0] === n ? 'on' : ''}><b>{n}</b> {t}</span>
+          ))}
+        </nav>
+        <span className="truth">Concept · capacités de démonstration · ni réglementaire ni fabrication</span>
+      </footer>
+
+      {tour && (
+        <aside className="tour" role="status" aria-live="polite">
+          <span>NOTE DE L’ÉDITEUR · {tour.step} / {tour.total}</span>
+          <b key={tour.title}>{tour.title}</b>
+          <p key={tour.body}>{tour.body}</p>
+          <button onClick={skipTour}>passer · échap</button>
+        </aside>
+      )}
+      {toast && <div className="toast" role="status">{toast}</div>}
+      <div className="sr-only" aria-live="assertive">{announcement}</div>
+
+      {drag && (
+        <div className="drag-ghost" style={{ transform: `translate(${drag.x}px, ${drag.y}px) translate(-50%, -60%) rotate(${Math.max(-18, Math.min(18, drag.vx))}deg)` }} aria-hidden="true">
+          <span className="char-body" style={{ width: CAST[drag.kind].w, height: CAST[drag.kind].h, background: CAST[drag.kind].color }} data-shape={CAST[drag.kind].shape}>
+            <span className="eyes"><i><b /></i><i><b /></i></span>
+          </span>
+          <small>{drag.target === 'WINGS' ? 'en coulisse' : drag.target ? `→ ${FR_SURFACE[drag.target]}` : REQUIREMENTS[drag.kind].label}</small>
+        </div>
+      )}
     </main>
   );
 }

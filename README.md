@@ -388,6 +388,29 @@ A visually plausible package is not automatically a digital twin.
 
 ---
 
+## V6 — Rapport négocié (current UI)
+
+The studio is now an annual-report spread — directions 04 (living annual
+report) + 05 (negotiation) from the design exploration, combined.
+
+- **The right-hand column is the front panel.** Its headline sits on the
+  Archivo width axis and narrows as the front fills; when the front is over
+  capacity the last words are pushed out past the dashed face edge.
+- **Requirements are characters** (bold modular shapes, ink outline, eyes that
+  follow the pointer). They stand on the column's baseline, wait "en coulisse",
+  or live in Fig. 2's face slots. Drag one onto the column, a slot or a face of
+  the 3D carton — or tap it, then tap a destination.
+- **The last one in gets shoved out.** On overload the most recent arrival is
+  ejected into the margin with a handwritten "pas de place !".
+- **The editor settles it in red pen.** "L'éditeur tranche" runs the solver:
+  the Blender carton (Fig. 1) opens, flattens and refolds while the characters
+  walk (FLIP) to their faces and annotate the move ("gauche, ok").
+- **Fig. 2 — où vit chaque exigence** doubles as the load strip (per-face
+  load, predicted load while dragging).
+- Chapters (01 Le brief → 05 La forme valide) follow the state; the guided tour
+  is written as editor's notes. French UI throughout; self-hosted Archivo,
+  JetBrains Mono, Newsreader and Caveat.
+
 ## V5.3 — Proof Room (UI/UX direction)
 
 The interface is now a prepress **proof room**: key-black desk, paper job

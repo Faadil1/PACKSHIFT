@@ -5,6 +5,8 @@ import App from './App.jsx';
 // drives the load-sensitive headline; no third-party font request.
 import '@fontsource-variable/archivo/standard.css';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/newsreader';
+import '@fontsource/caveat/700.css';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { NOMINAL_DIMS, REQUIREMENTS, SURFACES, SURFACE_LABEL, clampDims, isNominal } from '../model/pressure.js';
 import { buildProceduralMaster } from './proceduralMaster.js';
 import {
-  createBlockTexture, createCardTexture, createPanelSet, paintCard, paintPanelSet, panelMM, paperFibreNormal,
+  createBlockTexture, createPanelSet, paintPanelSet, panelMM, paperFibreNormal,
 } from './panelArt.js';
 import { play } from '../audio/sound.js';
 
@@ -55,14 +55,13 @@ const ART_FACE = {
 // Camera framing: half-extents (world units, nominal carton) of what each view
 // must show. Distance is fitted to the live aspect ratio and carton size.
 const CAMERA_VIEWS = {
-  PACK: { dir: [0.52, 0.3, 0.8], target: [0, 0, 0], half: [1.6, 2.4] },
-  EXPLODED: { dir: [0.42, 0.3, 0.86], target: [-0.3, 0.75, 0], half: [3.2, 3.6] },
-  DIELINE: { dir: [0.02, 0.06, 1], target: [0.35, 0, 0], half: [3.9, 2.6] },
-  XRAY: { dir: [0.55, 0.28, 0.78], target: [0, 0, 0], half: [1.7, 2.4] },
-  PRESSURE: { dir: [0.45, 0.22, 0.86], target: [0, -0.1, 0], half: [2.4, 2.4] },
+  PACK: { dir: [0.52, 0.3, 0.8], target: [-1.6, 0, 0], half: [3.1, 2.4] },
+  EXPLODED: { dir: [0.42, 0.3, 0.86], target: [-1.5, 0.75, 0], half: [4.2, 3.6] },
+  DIELINE: { dir: [0.02, 0.06, 1], target: [-1.2, 0, 0], half: [5.2, 2.7] },
+  XRAY: { dir: [0.55, 0.28, 0.78], target: [-1.6, 0, 0], half: [3.1, 2.4] },
+  PRESSURE: { dir: [0.45, 0.22, 0.86], target: [-1.25, -0.1, 0], half: [3.2, 2.4] },
 };
 
-const PLACED_OFFSET = { language: 0.75, warning: 0.3, data: -0.05, eco: -0.35, claim: -0.7, barcode: -1.05 };
 
 function smoothstep(edge0, edge1, value) {
   const x = THREE.MathUtils.clamp((value - edge0) / (edge1 - edge0), 0, 1);
@@ -333,7 +332,7 @@ function CollisionField({ node, active, dims }) {
       ].map(([x, y, bw, bh], index) => (
         <mesh key={index} position={[x, y, 0]}>
           <boxGeometry args={[bw, bh, 0.0004]} />
-          <meshBasicMaterial color="#ba3f34" transparent opacity={0.95} toneMapped={false} />
+          <meshBasicMaterial color="#ff2e9a" transparent opacity={0.95} toneMapped={false} />
         </mesh>
       ))}
     </group>,
@@ -342,160 +341,61 @@ function CollisionField({ node, active, dims }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Draggable requirements — a camera-space tray when unplaced          */
+/* Picker: lets the DOM (brief tickets) raycast into the Blender panels  */
 /* ------------------------------------------------------------------ */
 
-const TRAY_DISTANCE = 6.5;
-
-function traySlot(i, count, camera, size, out) {
-  const aspect = size.width / Math.max(1, size.height);
-  const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * TRAY_DISTANCE;
-  const halfW = halfH * aspect;
-  let scale = 0.58;
-  if (aspect >= 1.05) {
-    // desktop: stack lower-left (two columns for a long brief)
-    const perCol = count > 4 ? Math.ceil(count / 2) : count;
-    const col = Math.floor(i / perCol);
-    const row = i % perCol;
-    const spacing = Math.min(0.5, (halfH * 1.05) / Math.max(1, perCol));
-    scale = Math.min(0.58, spacing * 1.15);
-    out.set(-halfW + 0.2 + 0.9 * scale + col * 1.9 * scale, -halfH * 0.05 - row * spacing, -TRAY_DISTANCE);
-  } else {
-    const perRow = Math.min(3, count);
-    const rowIndex = Math.floor(i / perRow);
-    const colIndex = i % perRow;
-    scale = THREE.MathUtils.clamp((halfW * 2 * 0.31) / 1.8, 0.3, 0.58);
-    out.set((colIndex - (perRow - 1) / 2) * halfW * 0.66, -halfH + 0.45 * scale + 0.1 + rowIndex * 0.72 * scale, -TRAY_DISTANCE);
-  }
-  camera.localToWorld(out);
-  return scale;
+function SurfacePicker({ nodes, onReady }) {
+  const { camera, gl } = useThree();
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const ndc = useMemo(() => new THREE.Vector2(), []);
+  useEffect(() => {
+    if (!onReady) return undefined;
+    const pick = (clientX, clientY) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+      ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+      raycaster.setFromCamera(ndc, camera);
+      const candidates = SURFACES.map((surface) => nodes[surface]).filter(Boolean);
+      for (const hit of raycaster.intersectObjects(candidates, true)) {
+        const surface = surfaceFromHit(hit.object);
+        if (surface) return surface;
+      }
+      return null;
+    };
+    onReady(pick);
+    return () => onReady(null);
+  }, [camera, gl, nodes, onReady, raycaster, ndc]);
+  return null;
 }
 
-function DraggableConstraint({
-  kind, index, count, assignedSurface, nodes, rootNode, onPlace, onHover, onSelect, selected, locked,
-}) {
-  const { camera, size, controls, gl } = useThree();
+// Predictive load shown on the face under the dragged ticket, before release.
+function PreviewTag({ node, root, surface, from, to }) {
   const group = useRef();
-  const dragging = useRef(false);
-  const downAt = useRef(null);
-  const dragPlane = useRef(new THREE.Plane());
-  const hoverRef = useRef(null);
-  const temp = useMemo(() => new THREE.Vector3(), []);
-  const desired = useMemo(() => new THREE.Vector3(), []);
   const nodePos = useMemo(() => new THREE.Vector3(), []);
   const rootPos = useMemo(() => new THREE.Vector3(), []);
   const outward = useMemo(() => new THREE.Vector3(), []);
-  const normal = useMemo(() => new THREE.Vector3(), []);
-  const targetScale = useMemo(() => new THREE.Vector3(), []);
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
-  const meta = REQUIREMENTS[kind];
-  const cardTexture = useMemo(() => createCardTexture(), []);
-  useEffect(() => () => cardTexture.dispose(), [cardTexture]);
-  useEffect(() => {
-    paintCard(cardTexture, {
-      label: meta.label,
-      color: meta.color,
-      selected,
-      badge: assignedSurface ? '✓' : selected ? 'TAP' : 'DRAG',
-      sub: assignedSurface ? 'on ' + SURFACE_LABEL[assignedSurface] : selected ? 'now tap a face' : meta.sub,
-    });
-  }, [cardTexture, meta, selected, assignedSurface]);
-
-  useFrame((_, delta) => {
-    if (!group.current || dragging.current) return;
-    let s;
-    if (assignedSurface && nodes[assignedSurface] && rootNode) {
-      nodes[assignedSurface].getWorldPosition(nodePos);
-      rootNode.getWorldPosition(rootPos);
-      outward.copy(nodePos).sub(rootPos);
-      outward.y = 0;
-      if (outward.lengthSq() < 0.0001) outward.set(0, 0, 1);
-      outward.normalize();
-      desired.copy(nodePos).addScaledVector(outward, 1.35);
-      desired.y += PLACED_OFFSET[kind] ?? 0;
-      s = 0.4;
-    } else {
-      s = traySlot(index, count, camera, size, desired);
-    }
-    if (selected) s *= 1.08;
-    const alpha = 1 - Math.exp(-8 * delta);
-    group.current.position.lerp(desired, alpha);
-    group.current.quaternion.slerp(camera.quaternion, alpha);
-    group.current.scale.lerp(targetScale.setScalar(s), alpha);
+  useFrame(() => {
+    if (!group.current || !node || !root) return;
+    node.getWorldPosition(nodePos);
+    root.getWorldPosition(rootPos);
+    outward.copy(nodePos).sub(rootPos);
+    outward.y = 0;
+    if (outward.lengthSq() < 0.0001) outward.set(0, 0, 1);
+    outward.normalize();
+    group.current.position.copy(nodePos).addScaledVector(outward, 0.35);
+    group.current.position.y += 0.4;
   });
-
-  const findSurface = (event) => {
-    // R3F v9 pointer events expose `ray` but not always `raycaster` while the
-    // pointer is captured, so cast our own ray against the Blender panels.
-    if (!event.ray) return null;
-    raycaster.ray.copy(event.ray);
-    const candidates = SURFACES.map((surface) => nodes[surface]).filter(Boolean);
-    for (const hit of raycaster.intersectObjects(candidates, true)) {
-      const surface = surfaceFromHit(hit.object);
-      if (surface) return surface;
-    }
-    return null;
-  };
-
-  const release = (event) => {
-    dragging.current = false;
-    event.target.releasePointerCapture?.(event.pointerId);
-    document.body.classList.remove('is-dragging-constraint');
-    if (controls) controls.enabled = !locked;
-  };
-
-  const handleDown = (event) => {
-    if (locked) return;
-    event.stopPropagation();
-    dragging.current = true;
-    downAt.current = [event.clientX, event.clientY];
-    event.target.setPointerCapture?.(event.pointerId);
-    camera.getWorldDirection(normal);
-    dragPlane.current.setFromNormalAndCoplanarPoint(normal, group.current.position);
-    document.body.classList.add('is-dragging-constraint');
-    if (controls) controls.enabled = false; // never orbit while carrying a requirement
-  };
-
-  const handleMove = (event) => {
-    if (!dragging.current || locked) return;
-    event.stopPropagation();
-    if (event.ray.intersectPlane(dragPlane.current, temp)) group.current.position.copy(temp);
-    const surface = findSurface(event);
-    if (surface !== hoverRef.current) {
-      hoverRef.current = surface;
-      onHover(surface);
-    }
-  };
-
-  const handleUp = (event) => {
-    if (!dragging.current) return;
-    event.stopPropagation();
-    const moved = downAt.current ? Math.hypot(event.clientX - downAt.current[0], event.clientY - downAt.current[1]) : 99;
-    release(event);
-    const surface = hoverRef.current || findSurface(event);
-    hoverRef.current = null;
-    onHover(null);
-    if (moved < 6) onSelect(kind); // a tap selects; then tap a face
-    else if (surface) onPlace(kind, surface);
-  };
-
+  if (!node) return null;
+  const over = to > 1;
   return (
     <group ref={group}>
-      <mesh
-        onPointerDown={handleDown}
-        onPointerMove={handleMove}
-        onPointerUp={handleUp}
-        onPointerCancel={(event) => dragging.current && release(event)}
-        onPointerOver={() => { if (!locked) gl.domElement.style.cursor = 'grab'; }}
-        onPointerOut={() => { gl.domElement.style.cursor = ''; }}
-      >
-        <boxGeometry args={[1.8, 0.66, 0.05]} />
-        <meshStandardMaterial color="#f7f1e6" roughness={0.8} metalness={0} />
-      </mesh>
-      <mesh position={[0, 0, 0.026]} raycast={() => null}>
-        <planeGeometry args={[1.8, 0.66]} />
-        <meshBasicMaterial map={cardTexture} toneMapped={false} />
-      </mesh>
+      <Html center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
+        <div className={'preview-tag' + (over ? ' over' : '')}>
+          <b>{SURFACE_LABEL[surface]}</b>
+          <span>{Math.round(from * 100)}<i>→</i><strong>{Math.round(to * 100)}%</strong></span>
+          <em>{over ? 'OVER-INKED' : 'FITS'}</em>
+        </div>
+      </Html>
     </group>
   );
 }
@@ -506,13 +406,15 @@ function DraggableConstraint({
 
 function SpatialStudioScene({
   source, dims = NOMINAL_DIMS, market, viewMode, decomposition, placements, brief, pressures, collisionSurfaces,
-  compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind, onSelectKind,
+  compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind,
+  hoverSurface = null, preview = null, onPickerReady,
 }) {
   const scene = source;
   const { camera, size } = useThree();
   const controls = useRef();
   const rig = useRef();
-  const [hoveredSurface, setHoveredSurface] = useState(null);
+  const [tapHover, setHoveredSurface] = useState(null);
+  const hoveredSurface = hoverSurface || tapHover;
   const reduced = useMemo(prefersReducedMotion, []);
   const d = clampDims(dims);
   const sizeFactor = Math.max(d.height / NOMINAL_DIMS.height, (d.width + d.depth) / (NOMINAL_DIMS.width + NOMINAL_DIMS.depth));
@@ -568,9 +470,9 @@ function SpatialStudioScene({
 
   const scratch = useMemo(() => ({
     color: new THREE.Color(),
-    red: new THREE.Color('#ba3f34'),
-    amber: new THREE.Color('#d6a858'),
-    hover: new THREE.Color('#d5a84d'),
+    red: new THREE.Color('#ff2e9a'),
+    amber: new THREE.Color('#00c2ff'),
+    hover: new THREE.Color('#ffe14a'),
     calm: new THREE.Color('#e4dccb'),
     white: new THREE.Color('#ffffff'),
     scale: new THREE.Vector3(),
@@ -589,7 +491,7 @@ function SpatialStudioScene({
     const distance = Math.max(view.half[1] / tanHalf, view.half[0] / (tanHalf * aspect)) * 1.08 * sizeFactor;
     const dir = new THREE.Vector3(...view.dir).normalize();
     const target = new THREE.Vector3(...view.target).multiplyScalar(sizeFactor);
-    if (aspect < 1) target.y += 0.45;
+    if (aspect < 1) { target.y += 1.5; target.x = view.target[0] > -1 ? target.x : 0; }
     return { distance, dir, target, position: target.clone().addScaledVector(dir, distance) };
   }, [size.width, size.height, camera.fov, sizeFactor]);
 
@@ -745,7 +647,6 @@ function SpatialStudioScene({
   });
 
   const pressureVisible = viewMode === 'PRESSURE' && decomposition < 0.3;
-  const kinds = brief || Object.keys(placements);
 
   const surfaceHandlers = {
     onPointerMove: (event) => {
@@ -766,8 +667,7 @@ function SpatialStudioScene({
 
   return (
     <>
-      <color attach="background" args={['#eee9df']} />
-      <fog attach="fog" args={['#eee9df', 14 * sizeFactor, 30 * sizeFactor]} />
+      <fog attach="fog" args={['#0d0d0f', 16 * sizeFactor, 34 * sizeFactor]} />
 
       {/* Procedural studio environment: soft boxes only, nothing downloaded. */}
       <Environment resolution={256} frames={1}>
@@ -788,7 +688,7 @@ function SpatialStudioScene({
         shadow-bias={-0.0004}
       />
       <directionalLight position={[3, 2, 9]} intensity={0.6} color="#fffaf2" />
-      {collisionSurfaces.length > 0 && <pointLight position={[0, -0.2, 2.8]} intensity={1.1} color="#ba3f34" />}
+      {collisionSurfaces.length > 0 && <pointLight position={[0, -0.2, 2.8]} intensity={1.6} color="#ff2e9a" />}
 
       <group ref={rig} scale={CLOSED_SCALE} rotation={[0.035, Math.PI - 0.28, 0]}>
         <primitive object={runtime.scene} dispose={null} {...surfaceHandlers} />
@@ -820,22 +720,16 @@ function SpatialStudioScene({
         <FlyingBlock key={move.kind} move={move} index={index} nodes={nodes} market={market} rig={rig} />
       ))}
 
-      {kinds.map((kind, index) => (
-        <DraggableConstraint
-          key={kind}
-          kind={kind}
-          index={index}
-          count={kinds.length}
-          assignedSurface={placements[kind]}
-          nodes={nodes}
-          rootNode={nodes.PACKSHIFT_ROOT}
-          onPlace={onPlaceConstraint}
-          onHover={setHoveredSurface}
-          onSelect={onSelectKind}
-          selected={selectedKind === kind}
-          locked={interactionLocked}
+      <SurfacePicker nodes={nodes} onReady={onPickerReady} />
+      {preview && (
+        <PreviewTag
+          node={nodes[preview.surface]}
+          root={nodes.PACKSHIFT_ROOT}
+          surface={preview.surface}
+          from={preview.from}
+          to={preview.to}
         />
-      ))}
+      )}
 
       <OrbitControls
         ref={controls}
@@ -850,7 +744,7 @@ function SpatialStudioScene({
         maxPolarAngle={2.45}
       />
 
-      <ContactShadows position={[0, -2.35 * (d.height / NOMINAL_DIMS.height), 0]} opacity={0.24} scale={14} blur={2.6} far={7} />
+      <ContactShadows position={[0, -2.35 * (d.height / NOMINAL_DIMS.height), 0]} opacity={0.55} scale={14} blur={2.6} far={7} />
     </>
   );
 }

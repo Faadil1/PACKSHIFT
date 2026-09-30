@@ -388,6 +388,35 @@ A visually plausible package is not automatically a digital twin.
 
 ---
 
+## V5.3 — Proof Room (UI/UX direction)
+
+The interface is now a prepress **proof room**: key-black desk, paper job
+tickets, fluorescent process inks. Colour carries meaning — cyan = headroom,
+magenta = over-inked, yellow = lifted / live.
+
+- **Job tickets** (left rail) replace the floating 3D cards: perforated stubs
+  showing each requirement's load share; drag one onto the pack (a tilting
+  ghost follows the pointer) or tap it, then tap a face or ink column.
+- **Predictive load**: while dragging, the face under the pointer shows
+  `Left copy 15 → 82%  FITS` (or `OVER-INKED`) and the ink column previews
+  the result — before anything is placed.
+- **Ink strip** (right rail): one density column per face — hatched base
+  load, cyan placed load, magenta spill when over capacity.
+- **Load-sensitive headline**: the Archivo width axis narrows as the busiest
+  face fills; words rise from a mask; on collision the CMY plates drift out of
+  register, on a valid form they snap back.
+- **PRESS**: a single round control — neutral when idle, yellow when ready,
+  pulsing magenta on collision, with a 4-phase progress ring while compiling.
+- **Timeline deck**: view chips (1–5) and a ruler scrubber with named stops.
+- **Slug line**: one status line (state · market · stock · placed · source).
+- Prepress furniture (crop marks, registration targets, colour bar), a
+  pointer-parallax halftone field, staggered ticket deal-in, register report.
+- Reset asks for a second press; self-hosted variable fonts (Archivo, JetBrains
+  Mono); mobile stacks stage → tickets → inks → deck with no horizontal scroll.
+
+Motion follows easing / offset & delay / masking / parallax / morph, and
+removes itself under `prefers-reduced-motion`.
+
 ## V5.2 — signature, control, material, jury kit
 
 **Signature moment**

@@ -36,9 +36,9 @@ function fitText(ctx, value, maxWidth, size, weight, family) {
   return s;
 }
 
-function drawSnapshot(ctx, source, x, y, w, h) {
+function drawSnapshot(ctx, source, x, y, w, h, contain = false) {
   if (!source || !source.width) return;
-  const scale = Math.max(w / source.width, h / source.height) * 1.22;
+  const scale = contain ? Math.min(w / source.width, h / source.height) * 1.12 : Math.max(w / source.width, h / source.height) * 1.22;
   const dw = source.width * scale;
   const dh = source.height * scale;
   ctx.save();
@@ -69,91 +69,100 @@ export async function renderShareCard(p) {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
+  const GALLERY = '#1c1a16';
+  const FLOOR = '#2a2620';
+  const GOLD = '#d9b25f';
 
-  ctx.fillStyle = PAPER;
+  // the gallery: wall, floor, a spotlight cone
+  ctx.fillStyle = GALLERY;
   ctx.fillRect(0, 0, W, H);
-
-  // paper grain
-  for (let i = 0; i < 2600; i += 1) {
-    ctx.fillStyle = `rgba(22,20,15,${Math.random() * 0.035})`;
-    ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
-  }
+  ctx.fillStyle = FLOOR;
+  ctx.fillRect(0, 880, W, H - 880);
+  const glow = ctx.createRadialGradient(W / 2, 380, 40, W / 2, 380, 520);
+  glow.addColorStop(0, 'rgba(255,236,196,.22)');
+  glow.addColorStop(1, 'rgba(255,236,196,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, 880);
+  ctx.fillStyle = 'rgba(255,244,220,.07)';
+  ctx.beginPath();
+  ctx.moveTo(W * 0.43, 0);
+  ctx.lineTo(W * 0.57, 0);
+  ctx.lineTo(W * 0.84, 880);
+  ctx.lineTo(W * 0.16, 880);
+  ctx.closePath();
+  ctx.fill();
 
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = MUTED;
-  ctx.font = `500 26px ${MONO}`;
-  ctx.fillText(p.kicker.toUpperCase(), 72, 92);
+  ctx.fillStyle = '#b9ad94';
+  ctx.font = `500 22px ${MONO}`;
+  ctx.fillText((p.cartel?.house || p.kicker).toUpperCase(), 72, 78);
 
-  ctx.fillStyle = INK;
-  // Same size for both lines, capped so short titles ("DOES IT / FIT?")
-  // don't push the result off the card.
+  // the question, in paper white
   const size = Math.min(
-    170,
-    fitText(ctx, p.titleLines[0], W - 144, 250, '900 extra-condensed', DISPLAY),
-    fitText(ctx, p.titleLines[1], W - 144, 250, '900 extra-condensed', DISPLAY),
+    118,
+    fitText(ctx, p.titleLines[0], W - 144, 200, '900 extra-condensed', DISPLAY),
+    fitText(ctx, p.titleLines[1], W - 144, 200, '900 extra-condensed', DISPLAY),
   );
   ctx.font = `900 extra-condensed ${size}px ${DISPLAY}`;
-  const s1 = size;
-  const s2 = size;
-  ctx.fillText(p.titleLines[0], 68, 92 + s1 * 0.95);
-  ctx.fillStyle = p.fits ? INK : PEN;
-  ctx.fillText(p.titleLines[1], 68, 92 + s1 * 0.95 + s2 * 0.92);
-  const top = 92 + s1 * 0.95 + s2 * 0.92 + 20;
+  ctx.fillStyle = PAPER;
+  ctx.fillText(p.titleLines[0], 68, 96 + size * 0.95);
+  ctx.fillStyle = p.fits ? PAPER : PEN;
+  ctx.fillText(p.titleLines[1], 68, 96 + size * 1.85);
 
-  // the box
-  const boxY = top + 10;
-  const boxH = Math.max(420, 900 - top);
-  drawSnapshot(ctx, p.snapshot, 72, boxY, W - 144, boxH);
+  // the work itself: the box on its pedestal (transparent 3D snapshot)
+  drawSnapshot(ctx, p.snapshot, 90, 300, W - 180, 640, true);
 
-  // handwritten verdict + stars, circled in pen
-  const vY = boxY + boxH + 70;
-  ctx.fillStyle = PEN;
-  const vs = fitText(ctx, p.verdict, W - 360, 88, 700, HAND);
-  ctx.fillText(p.verdict, 80, vY);
-  const vw = ctx.measureText(p.verdict).width;
-  ctx.strokeStyle = PEN;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.ellipse(80 + vw / 2, vY - vs * 0.3, vw / 2 + 34, vs * 0.62, -0.03, 0.15, Math.PI * 2 + 0.05);
-  ctx.stroke();
+  // handwritten verdict, gold, bottom left
+  ctx.fillStyle = GOLD;
+  fitText(ctx, p.verdict, 470, 70, 700, HAND);
+  ctx.fillText(p.verdict, 72, 1010);
+  ctx.fillStyle = '#cfc3a8';
+  fitText(ctx, p.detail, 470, 26, 600, DISPLAY);
+  const words = p.detail.split(' · ');
+  words.forEach((w, i) => ctx.fillText(w, 74, 1060 + i * 34));
+
+  // the gallery label (cartel), bottom right
+  const cx = 580;
+  const cy = 900;
+  const cw = 430;
+  const ch = 210;
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  ctx.fillRect(cx + 8, cy + 12, cw, ch);
+  ctx.fillStyle = '#fbf8f1';
+  ctx.fillRect(cx, cy, cw, ch);
+  const c = p.cartel || {};
+  ctx.fillStyle = INK;
+  fitText(ctx, c.artist || '', cw - 60, 32, 800, DISPLAY);
+  ctx.fillText(c.artist || '', cx + 28, cy + 50);
+  ctx.font = `italic 400 24px Newsreader, Georgia, serif`;
+  fitText(ctx, c.work || '', cw - 56, 24, 'italic 400', 'Newsreader, Georgia, serif');
+  ctx.fillText(c.work || '', cx + 28, cy + 86);
+  ctx.fillStyle = '#3d3932';
+  (c.lines || []).slice(0, 2).forEach((line, i) => {
+    fitText(ctx, line, cw - 56, 19, 400, 'Newsreader, Georgia, serif');
+    ctx.fillText(line, cx + 28, cy + 118 + i * 26);
+  });
+  ctx.fillStyle = 'rgba(20,19,19,.18)';
+  ctx.fillRect(cx + 28, cy + 160, cw - 56, 2);
+  ctx.fillStyle = INK;
+  ctx.font = `500 16px ${MONO}`;
+  ctx.fillText(c.acquired || '', cx + 28, cy + 190);
   if (p.stars) {
-    ctx.font = `900 72px ${DISPLAY}`;
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#d8d0c1';
-    ctx.fillText('★★★', W - 72, vY);
     ctx.fillStyle = PEN;
-    ctx.fillText('★'.repeat(p.stars), W - 72 - ctx.measureText('★'.repeat(3 - p.stars)).width, vY);
-    ctx.textAlign = 'left';
+    ctx.font = `900 22px ${DISPLAY}`;
+    ctx.fillText('★'.repeat(p.stars), cx + 28 + ctx.measureText(c.acquired || '').width + 60, cy + 191);
+  }
+  if (p.fits) {
+    ctx.fillStyle = PEN;
+    ctx.beginPath();
+    ctx.arc(cx + cw - 40, cy + 184, 13, 0, Math.PI * 2);
+    ctx.fill();
   }
 
-  ctx.fillStyle = INK;
-  fitText(ctx, p.detail, W - 144, 34, 700, DISPLAY);
-  ctx.fillText(p.detail, 80, vY + 64);
-
-  // four face gauges
-  const gY = vY + 110;
-  const gw = (W - 144 - 3 * 18) / 4;
-  FACE_ORDER.forEach((face, i) => {
-    const x = 72 + i * (gw + 18);
-    const load = p.pressures?.[face] ?? 0;
-    ctx.fillStyle = 'rgba(22,20,15,.08)';
-    ctx.fillRect(x, gY, gw, 22);
-    ctx.fillStyle = load > 1 ? PEN : INK;
-    ctx.fillRect(x, gY, gw * Math.min(1, load), 22);
-    if (load > 1) {
-      ctx.fillStyle = PEN;
-      ctx.fillRect(x + gw - 6, gY - 10, 6, 42);
-    }
-    ctx.fillStyle = MUTED;
-    ctx.font = `500 22px ${MONO}`;
-    fitText(ctx, `${p.faces[face].toUpperCase()} ${Math.round(load * 100)}%`, gw, 22, 500, MONO);
-    ctx.fillText(`${p.faces[face].toUpperCase()} ${Math.round(load * 100)}%`, x, gY + 52);
-  });
-
   // footer / call to action
-  ctx.fillStyle = INK;
-  ctx.fillRect(0, H - 110, W, 110);
   ctx.fillStyle = PAPER;
+  ctx.fillRect(0, H - 110, W, 110);
+  ctx.fillStyle = INK;
   ctx.font = `900 40px ${DISPLAY}`;
   ctx.fillText(p.cta, 72, H - 44);
   ctx.textAlign = 'right';

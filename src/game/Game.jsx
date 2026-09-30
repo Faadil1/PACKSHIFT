@@ -30,6 +30,7 @@ import {
   todayKey,
 } from './levels.js';
 import { renderShareCard, shareText } from './shareCard.js';
+import { RealSizeFace, Ruler, guessScale } from './RealSize.jsx';
 import {
   LANGS,
   LANG_LABEL,
@@ -73,6 +74,15 @@ const fromLink = (() => {
 })();
 
 const emptyFor = (level) => Object.fromEntries(startKinds(level).map((k) => [k, null]));
+const SCALE_KEY = 'packshift.scale';
+const readScale = () => {
+  try {
+    const v = Number(localStorage.getItem(SCALE_KEY));
+    return v >= 0.5 && v <= 2 ? v : null;
+  } catch {
+    return null;
+  }
+};
 const POP_DELAY = 900; // ms an overfull face holds before the last sticker falls off
 
 export default function Game({ onPro, lang = 'fr', setLang }) {
@@ -93,7 +103,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const [won, setWon] = useState(null);
   const [selectedKind, setSelectedKind] = useState(null);
   const [drag, setDrag] = useState(null);
-  const [lid, setLid] = useState(OPEN_LID);
+  const [lid, setLid] = useState((fromLink?.level || LEVELS[0]).sizing === 'shrink' ? 0 : OPEN_LID);
   const [progress, setProgress] = useState(readProgress);
   const [toast, setToast] = useState('');
   const [muted, setMutedState] = useState(isMuted);
@@ -102,6 +112,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const [stamp, setStamp] = useState(false); // "NOUVELLE LOI" overlay
   const [popped, setPopped] = useState(null); // { kind, surface, n }
   const [pops, setPops] = useState(0);
+  const [filled, setFilled] = useState(false); // intro: every mention, every language
+  const [faceK, setFaceK] = useState(() => readScale() ?? guessScale());
+  const [scaling, setScaling] = useState(false);
+  const [crack, setCrack] = useState(0); // press level: burst on a pop
 
   const boardRef = useRef(null);
   const sceneWrap = useRef(null);
@@ -145,6 +159,23 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     return () => window.removeEventListener('pointerdown', unlock);
   }, []);
 
+  // The intro's "waouh": a beat after the page lands, every mandatory
+  // mention in every language is printed on the real-size face — and spills.
+  useEffect(() => {
+    if (screen !== 'intro') return undefined;
+    const id = setTimeout(() => { setFilled(true); play('stamp'); }, reducedMotion() ? 0 : 3200);
+    return () => clearTimeout(id);
+  }, [screen]);
+
+  const setScale = (v) => {
+    setFaceK(v);
+    try {
+      localStorage.setItem(SCALE_KEY, String(v));
+    } catch {
+      /* not kept */
+    }
+  };
+
   // Warm the 3D chunk while the intro is being read.
   useEffect(() => {
     if (screen !== 'intro') return undefined;
@@ -186,6 +217,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
       setPopped((prev) => ({ kind, surface, n: (prev?.n || 0) + 1 }));
       setPops((c) => c + 1);
       play('pop');
+      if (level.sizing === 'shrink') {
+        setCrack(Date.now());
+        play('collide');
+      }
     }, POP_DELAY);
     return () => clearTimeout(id);
   }, [overloaded.join(), won, drag]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -257,7 +292,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     if (!keepRival) setRival(null);
     if (nextBrand) setBrand(nextBrand);
     lidAnim.current += 1;
-    setLid(OPEN_LID);
+    setLid(next.sizing === 'shrink' ? 0 : OPEN_LID); // under the press the lid stays shut
     setScreen('play');
     play('tick');
   };
@@ -302,7 +337,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
     setSelectedKind(null);
     play('fanfare');
     animateLid(0, 1100);
-    setTimeout(() => setSnapshotReady(true), 1250);
+    setTimeout(() => setSnapshotReady(true), 2100); // after the pedestal rises and the camera settles
     if (!isSandbox) {
       const key = level.id === 'daily' ? 'daily-' + level.key : String(level.id);
       const prev = progress[key];
@@ -456,6 +491,13 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
         fits: Boolean(won) || fits,
         host: window.location.host,
         titleLines: T.cardTitle,
+        cartel: {
+          house: T.museum.house,
+          artist: isSandbox ? (brand.name || T.museum.artist) : T.museum.artist,
+          work: isSandbox ? T.museum.workBrand(brand.slogan) : T.museum.work(level.id === 'daily' ? level.key.slice(4) : level.id, copy.title),
+          lines: [T.museum.medium(activeKinds.length), T.museum.front(cm(dims.width))],
+          acquired: won ? T.museum.acquired : '',
+        },
         faces: T.face,
         cta: T.cardCta,
       });
@@ -573,8 +615,10 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
   const sceneProps = {
     dims,
     market: level.market,
-    viewMode: 'GAME',
+    viewMode: won ? 'MUSEUM' : level.sizing === 'shrink' ? 'PRESS' : 'GAME',
     decomposition: lid,
+    pedestal: Boolean(won),
+    press: level.sizing === 'shrink' && !won,
     placements,
     brief: activeKinds,
     pressures,
@@ -611,25 +655,48 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
           </nav>
           <button className="g-link" onClick={onPro}>{T.pro}</button>
         </header>
-        <section className="hook" key={lang}>
-          <p className="hook-1">{T.hook1[0]}<mark>{T.hook1[1]}</mark></p>
-          <p className="hook-2">{T.hook2}</p>
-          <p className="hook-3">{T.hook3[0]}<em>{T.hook3[1]}</em></p>
-          <div className="hook-box" aria-hidden="true">
-            <div className="hook-carton"><span>{cm(56)}</span></div>
-            {Object.keys(CAST).map((kind, i) => (
-              <span key={kind} className={`hook-pop char-${CAST[kind].shape}`} style={{ '--i': i, background: CAST[kind].color }}>
-                <span className="eyes"><i><b /></i><i><b /></i></span>
-              </span>
-            ))}
+        <section className="real-intro" key={lang}>
+          <div className="ri-head">
+            <p className="g-kicker ri-kicker">{T.real.kicker}</p>
+            <h1 className="ri-title">{T.real.title}</h1>
+            <p className="ri-sub">{T.real.sub}</p>
           </div>
-          <h1 className="hook-q">{T.appTitle}</h1>
-          <button className="g-cta" onClick={() => startLevel(LEVELS[0])} onPointerEnter={preloadScene}>
-            {T.play} <small>{T.playSub}</small>
-          </button>
-          <div className="hook-more">
-            <button onClick={() => startLevel(daily)}>{T.daily} <small>{levelText(daily, lang).date}</small></button>
-            <button onClick={() => startLevel(SANDBOX)}>{T.create} <small>{T.createSub}</small></button>
+
+          <div className="ri-stage">
+            <div className="ri-face-row">
+              <div className="ri-face-col">
+                <RealSizeFace T={T} lang={lang} filled={filled} k={faceK} onPlay={() => startLevel(LEVELS[0])} />
+                <Ruler k={faceK} />
+              </div>
+              <div className="ri-card" style={{ width: 323.5 * faceK, height: 204 * faceK }} aria-hidden="true">
+                <span>{T.real.card}</span>
+              </div>
+            </div>
+            <div className="ri-tools">
+              <button type="button" className={filled ? 'on' : ''} onClick={() => { setFilled((f) => !f); play(filled ? 'tick' : 'stamp'); }}>{filled ? T.real.unfill : T.real.fill}</button>
+              <button type="button" onClick={() => setScaling((v) => !v)} aria-expanded={scaling}>{T.real.scale}</button>
+              <small>{T.real.approx}</small>
+            </div>
+            {scaling && (
+              <label className="ri-scale">
+                <span>{T.real.scale}</span>
+                <input type="range" min="0.6" max="1.9" step="0.01" value={faceK} onChange={(e) => setScale(Number(e.target.value))} />
+              </label>
+            )}
+            <p className={'ri-note' + (filled ? ' hot' : '')} key={String(filled)}>{filled ? T.real.filled : T.real.sub}</p>
+          </div>
+
+          <div className="ri-foot">
+            <p className="hook-1">{T.hook1[0]}<mark>{T.hook1[1]}</mark></p>
+            <p className="hook-3">{T.hook3[0]}<em>{T.hook3[1]}</em></p>
+            <h2 className="hook-q">{T.appTitle}</h2>
+            <button className="g-cta" onClick={() => startLevel(LEVELS[0])} onPointerEnter={preloadScene}>
+              {T.play} <small>{T.playSub}</small>
+            </button>
+            <div className="hook-more">
+              <button onClick={() => startLevel(daily)}>{T.daily} <small>{levelText(daily, lang).date}</small></button>
+              <button onClick={() => startLevel(SANDBOX)}>{T.create} <small>{T.createSub}</small></button>
+            </div>
           </div>
         </section>
         <footer className="g-foot">{T.disclaimer}</footer>
@@ -707,10 +774,17 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
       )}
 
       <div className="g-board">
-        <div className={'g-stage' + (drag?.target && drag.target !== 'TRAY' ? ' targeted' : '')} ref={sceneWrap}>
+        <div className={'g-stage' + (drag?.target && drag.target !== 'TRAY' ? ' targeted' : '') + (won ? ' museum' : '') + (level.sizing === 'shrink' && !won ? ' press' : '')} ref={sceneWrap}>
           <Suspense fallback={<div className="g-loading">{T.loading}</div>}>
             <GameScene {...sceneProps} />
           </Suspense>
+          {level.sizing === 'shrink' && !won && (
+            <div className="g-press-hud" aria-hidden="true">
+              <small>{T.press.kicker}</small>
+              <b>{cm(dims.width)}</b>
+            </div>
+          )}
+          {crack > 0 && level.sizing === 'shrink' && !won && <div className="g-crack" key={crack} aria-hidden="true">{T.press.crack}</div>}
           <p className={'g-status tone-' + status.tone} role="status" aria-live="polite" key={status.text}>{status.text}</p>
         </div>
 
@@ -777,7 +851,7 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
           {level.sizing && (
             <div className="g-size">
               <label>
-                <span>{T.boxSize}</span>
+                <span>{level.sizing === 'shrink' ? T.press.lower : T.boxSize}</span>
                 <input
                   type="range"
                   min={SIZE_MIN}
@@ -816,13 +890,20 @@ export default function Game({ onPro, lang = 'fr', setLang }) {
               return <span key={i} className={`char-${CAST[kind].shape}`} style={{ '--i': i, background: CAST[kind].color }} />;
             })}
           </div>
-          <p className="g-kicker">{kickerFor()}</p>
-          <h2>{isSandbox ? T.win.brandFits(brand.name) : T.win.fits}</h2>
-          {!isSandbox && <p className="g-stars" aria-label={T.win.starsAria(won.stars)}>{'★'.repeat(won.stars)}<span>{'★'.repeat(3 - won.stars)}</span></p>}
-          <p className="g-score">
-            {T.win.score(won.moves, formatTime(won.ms), cm(won.width))}
-            {level.sizing && best !== null && won.step > best && <><br /><em>{T.win.record(cm(sizeDims(best).width))}</em></>}
-          </p>
+          <p className="g-house">{T.museum.house}</p>
+          <div className="g-cartel">
+            <b className="g-artist">{isSandbox ? (brand.name || T.museum.artist) : T.museum.artist}</b>
+            <i className="g-work">{isSandbox ? T.museum.workBrand(brand.slogan) : T.museum.work(level.id === 'daily' ? level.key.slice(4) : level.id, copy.title)}</i>
+            <span>{T.museum.medium(activeKinds.length)} {T.museum.front(cm(won.width))}</span>
+            <span>{T.museum.collection}</span>
+            <hr />
+            <div className="g-acq">
+              <span>{T.museum.acquired}{!isSandbox && <em aria-label={T.win.starsAria(won.stars)}> {'★'.repeat(won.stars)}<u>{'★'.repeat(3 - won.stars)}</u></em>}</span>
+              <span className="g-reddot" title={T.museum.dot} />
+            </div>
+            <span className="g-score-line">{T.win.score(won.moves, formatTime(won.ms), cm(won.width))}</span>
+            {level.sizing && best !== null && won.step > best && <em className="g-record">{T.win.record(cm(sizeDims(best).width))}</em>}
+          </div>
           {beatRival !== null && <p className="g-vs">{beatRival ? T.win.beat : T.win.lost}</p>}
           <p className="g-fact">{copy.fact}</p>
           <div className="g-win-actions">

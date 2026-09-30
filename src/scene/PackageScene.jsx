@@ -70,6 +70,11 @@ const CAMERA_VIEWS = {
   PRESSURE: { dir: [0.45, 0.22, 0.86], target: [0, -0.1, 0], half: [2.3, 2.3] },
   // Public game: the whole closed carton plus its open lid, with air around it.
   GAME: { dir: [0.55, 0.44, 0.72], target: [0, 0.62, 0], half: [2.1, 3.2] },
+  // Win screen: the closed carton on a museum pedestal.
+  MUSEUM: { dir: [0.5, 0.22, 0.84], target: [0, -1.25, 0], half: [2.6, 4.2] },
+  // Level "la marque veut plus petit": a hydraulic press. `fixed` = the
+  // framing ignores the carton size, so shrinking the box is visible.
+  PRESS: { dir: [0.5, 0.2, 0.84], target: [0, 1.5, 0], half: [3.4, 4.9], fixed: true },
 };
 
 
@@ -418,6 +423,7 @@ function SpatialStudioScene({
   source, dims = NOMINAL_DIMS, market, viewMode, decomposition, placements, brief, pressures, collisionSurfaces,
   compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind,
   hoverSurface = null, preview = null, onPickerReady, brand = null, labels = DEFAULT_LABELS,
+  pedestal = false, press = false,
 }) {
   const scene = source;
   const { camera, size } = useThree();
@@ -498,9 +504,10 @@ function SpatialStudioScene({
     const view = CAMERA_VIEWS[viewName];
     const aspect = size.width / Math.max(1, size.height);
     const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-    const distance = Math.max(view.half[1] / tanHalf, view.half[0] / (tanHalf * aspect)) * 1.08 * sizeFactor;
+    const sf = view.fixed ? 1 : sizeFactor;
+    const distance = Math.max(view.half[1] / tanHalf, view.half[0] / (tanHalf * aspect)) * 1.08 * sf;
     const dir = new THREE.Vector3(...view.dir).normalize();
-    const target = new THREE.Vector3(...view.target).multiplyScalar(sizeFactor);
+    const target = new THREE.Vector3(...view.target).multiplyScalar(sf);
     return { distance, dir, target, position: target.clone().addScaledVector(dir, distance) };
   }, [size.width, size.height, camera.fov, sizeFactor]);
 
@@ -755,8 +762,113 @@ function SpatialStudioScene({
         maxPolarAngle={2.45}
       />
 
-      <ContactShadows position={[0, -2.35 * (d.height / NOMINAL_DIMS.height), 0]} opacity={0.55} scale={14} blur={2.6} far={7} />
+      {pedestal && <Pedestal k={d.height / NOMINAL_DIMS.height} />}
+      {press && <Press k={d.height / NOMINAL_DIMS.height} />}
+      <ContactShadows position={[0, (pedestal || press ? -2.065 : -2.35) * (d.height / NOMINAL_DIMS.height), 0]} opacity={0.55} scale={pedestal || press ? 5 : 14} blur={2.6} far={7} />
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game props: a museum pedestal and a hydraulic press                  */
+/* ------------------------------------------------------------------ */
+
+// k = carton height / nominal. The closed carton spans about ±2.05·k in y.
+function Pedestal({ k }) {
+  const top = -2.07 * k;
+  const lift = useRef();
+  // rises into place under the closed carton
+  useFrame((_, delta) => {
+    if (lift.current) lift.current.position.y = THREE.MathUtils.damp(lift.current.position.y, 0, 4, delta);
+  });
+  return (
+    <group ref={lift} position={[0, -5, 0]}>
+      <mesh position={[0, top - 0.09, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.5, 0.18, 3.5]} />
+        <meshStandardMaterial color="#f6f2ea" roughness={0.35} />
+      </mesh>
+      <mesh position={[0, top - 1.6, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.1, 2.84, 3.1]} />
+        <meshStandardMaterial color="#ece6da" roughness={0.55} />
+      </mesh>
+      <mesh position={[0, top - 3.08, 0]} receiveShadow>
+        <boxGeometry args={[3.5, 0.14, 3.5]} />
+        <meshStandardMaterial color="#d9d1c2" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+function hazardTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffcc00';
+  g.fillRect(0, 0, 512, 64);
+  g.fillStyle = '#141313';
+  for (let x = -64; x < 576; x += 64) {
+    g.beginPath();
+    g.moveTo(x, 64);
+    g.lineTo(x + 32, 64);
+    g.lineTo(x + 96, 0);
+    g.lineTo(x + 64, 0);
+    g.closePath();
+    g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function Press({ k }) {
+  const ram = useRef();
+  const rod = useRef();
+  const stripes = useMemo(hazardTexture, []);
+  useEffect(() => () => stripes.dispose(), [stripes]);
+  const floor = -2.07 * k;
+  const beamY = 6.2;
+  useFrame((_, delta) => {
+    if (!ram.current) return;
+    // the ram rests just on the carton's top and follows it down
+    const target = 2.07 * k + 0.05 + 0.4;
+    ram.current.position.y = THREE.MathUtils.damp(ram.current.position.y, target, 6, delta);
+    const len = Math.max(0.1, beamY - 0.3 - (ram.current.position.y + 0.4));
+    rod.current.scale.y = len;
+    rod.current.position.y = ram.current.position.y + 0.4 + len / 2;
+  });
+  const steel = <meshStandardMaterial color="#5b6168" metalness={0.6} roughness={0.35} />;
+  return (
+    <group>
+      <mesh position={[0, floor - 0.25, 0]} receiveShadow>
+        <boxGeometry args={[5.6, 0.5, 3.2]} />
+        {steel}
+      </mesh>
+      {[-2.5, 2.5].map((x) => (
+        <mesh key={x} position={[x, (floor + beamY) / 2, 0]} castShadow>
+          <cylinderGeometry args={[0.2, 0.2, beamY - floor, 16]} />
+          <meshStandardMaterial color="#8a9098" metalness={0.8} roughness={0.25} />
+        </mesh>
+      ))}
+      <mesh position={[0, beamY, 0]} castShadow>
+        <boxGeometry args={[5.8, 0.7, 1.4]} />
+        {steel}
+      </mesh>
+      <mesh ref={rod} position={[0, 4, 0]}>
+        <cylinderGeometry args={[0.32, 0.32, 1, 20]} />
+        <meshStandardMaterial color="#c9ced4" metalness={0.9} roughness={0.15} />
+      </mesh>
+      <group ref={ram} position={[0, 2.07 * k + 1.5, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[3.2, 0.8, 2.6]} />
+          {steel}
+        </mesh>
+        <mesh position={[0, 0, 1.305]}>
+          <planeGeometry args={[3.2, 0.34]} />
+          <meshBasicMaterial map={stripes} toneMapped={false} />
+        </mesh>
+      </group>
+    </group>
   );
 }
 

@@ -443,7 +443,19 @@ understands in under ten seconds.
   layouts, it fits nowhere without re-arranging the box (tested); and a
   **slogan die** in *Ta boîte* rolls real-sounding claims of every length.
   Now 6 levels.
-- **Scope guardrail** — a new "fun" idea ships only if it (1) makes the
+- **V8 staging — the challenge on a pedestal** (chosen from the design
+  canvas): **Taille réelle** opens the site — the front panel drawn at
+  (roughly) real size, 56 × 130 mm in CSS millimetres scaled per device
+  (phones: ~68 mm screen width heuristic; a bank-card outline and a scale
+  slider let anyone calibrate, remembered per viewer); a beat later every
+  mandatory mention, in every language, prints on it and runs off the bottom.
+  **Le Musée** is the win: the closed carton rises onto a 3D pedestal under a
+  spotlight, the score becomes a gallery label (*Toi — Boîte n° 4, « Nouvelle
+  loi »… Œuvre validée ●*) and the share image is the same museum piece.
+  **La Presse** stages level 5: a 3D hydraulic press whose ram rests on the
+  carton and follows it down as you shrink it (fixed framing, so the shrink is
+  visible), a giant cm readout, and a *CRAC !* when a sticker pops.
+ — a new "fun" idea ships only if it (1) makes the
   space-vs-mandatory-information tension more felt, (2) runs on the real
   carton, pressure model and solver, and (3) stays honest (demo rules, no
   fake regulation). Out of scope on purpose: accounts, global leaderboards,

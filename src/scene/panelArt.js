@@ -277,7 +277,7 @@ function drawFront(ctx, s, w, h, orm, bump) {
   text(ctx, title[0], 5, 22 + titleSize, { size: titleSize, weight: 800, spacing: -0.7 });
   text(ctx, title[1], 5, 22 + titleSize * 1.9, { size: titleSize, weight: 800, spacing: -0.7 });
   const afterTitle = 22 + titleSize * 1.9;
-  text(ctx, s.brand?.name ? 'CRÈME · 50 mL' : 'BARRIER CREAM', 5, afterTitle + 7, { size: 2.7, weight: 800, spacing: 0.25 });
+  text(ctx, s.brand?.name ? (s.brand.tagline || 'CRÈME · 50 mL') : 'BARRIER CREAM', 5, afterTitle + 7, { size: 2.7, weight: 800, spacing: 0.25 });
   rule(ctx, 5, afterTitle + 11, 12);
 
   // Foil: logo is hot-stamped (low roughness, full metalness) + gold ink.

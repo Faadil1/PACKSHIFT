@@ -31,7 +31,7 @@ export const CALM = {
 };
 
 export function Character({
-  kind, size = 1, note, noteTone = 'ink', state = '', selected, dragging, disabled, onPointerDown, onKeySelect, onRemove, index = 0, look, label,
+  kind, size = 1, note, noteTone = 'ink', state = '', selected, dragging, disabled, onPointerDown, onKeySelect, onRemove, index = 0, look, label, ariaLabel, removeLabel,
 }) {
   const c = CAST[kind];
   const meta = REQUIREMENTS[kind];
@@ -54,7 +54,7 @@ export function Character({
         onPointerDown={onPointerDown}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onKeySelect?.(); } }}
         aria-pressed={selected}
-        aria-label={`${name}. Glisse-le sur une face, ou appuie sur Entrée puis choisis une face.`}
+        aria-label={ariaLabel || `${name}. Glisse-le sur une face, ou appuie sur Entrée puis choisis une face.`}
       >
         <span className="eyes" aria-hidden="true">
           <i><b style={{ transform: `translate(${lx}px, ${ly}px)` }} /></i>
@@ -63,7 +63,7 @@ export function Character({
       </button>
       <span className="char-label">{name}</span>
       {onRemove && !disabled && (
-        <button className="char-x" onClick={onRemove} aria-label={`Retirer ${name}`}>×</button>
+        <button className="char-x" onClick={onRemove} aria-label={removeLabel || `Retirer ${name}`}>×</button>
       )}
     </div>
   );

@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MARKETS,
-  REQUIREMENTS,
   buildPressure,
   capacityFor,
   overloadedSurfaces,
@@ -11,19 +10,14 @@ import {
 import { isMuted, play, setMuted, unlockAudio } from '../audio/sound.js';
 import { CAST, Character, useFlip } from '../ui/Character.jsx';
 import {
-  ALREADY,
-  FACE,
   FACE_ORDER,
   LEVELS,
-  MARKET_PLAIN,
   NAME_MAX,
-  PLAIN,
   SANDBOX,
   SIZE_MAX,
   SIZE_MIN,
   SLOGAN_MAX,
   brandOpts,
-  cm,
   dailyLevel,
   decodeGameHash,
   encodeGameHash,
@@ -31,11 +25,18 @@ import {
   levelById,
   minimalStep,
   sizeDims,
-  solved,
   starsFor,
   todayKey,
 } from './levels.js';
 import { renderShareCard, shareText } from './shareCard.js';
+import {
+  LANGS,
+  LANG_LABEL,
+  STRINGS,
+  formatCm,
+  levelText,
+} from './i18n.js';
+import { PRO } from '../app/proStrings.js';
 
 const GameScene = lazy(() => import('./GameScene.jsx'));
 const preloadScene = () => import('./GameScene.jsx');
@@ -72,10 +73,12 @@ const fromLink = (() => {
 
 const emptyFor = (level) => Object.fromEntries(level.kinds.map((k) => [k, null]));
 
-export default function Game({ onPro }) {
+export default function Game({ onPro, lang = 'fr', setLang }) {
+  const T = STRINGS[lang];
+  const cm = (mm) => formatCm(mm, lang);
   const [screen, setScreen] = useState(fromLink ? 'play' : 'intro');
   const [level, setLevel] = useState(fromLink?.level || LEVELS[0]);
-  const [brand, setBrand] = useState(fromLink?.brand || { name: 'Ma crème', slogan: 'Hydrate 24h' });
+  const [brand, setBrand] = useState(fromLink?.brand || STRINGS[lang].defaultBrand);
   const [rival, setRival] = useState(fromLink?.rival || null);
   const [placements, setPlacements] = useState(() => emptyFor(fromLink?.level || LEVELS[0]));
   const [order, setOrder] = useState([]);
@@ -100,6 +103,19 @@ export default function Game({ onPro }) {
   const lidAnim = useRef(0);
 
   const isSandbox = level.id === 'boite';
+  const copy = useMemo(() => levelText(level, lang), [level, lang]);
+
+  // Language: <html lang>, the tab title, and the choice remembered.
+  useEffect(() => {
+    document.title = T.htmlTitle;
+  }, [T]);
+  const changeLang = (next) => {
+    if (next === lang) return;
+    // Keep the player's own brand, but swap the default one for the new language.
+    setBrand((b) => (b.name === T.defaultBrand.name && b.slogan === T.defaultBrand.slogan ? STRINGS[next].defaultBrand : b));
+    setLang?.(next);
+    play('tick');
+  };
   const opts = isSandbox ? brandOpts(brand, level.market) : undefined;
   const dims = sizeDims(step);
   const pressures = useMemo(() => buildPressure(placements, level.market, dims, opts), [placements, level.market, dims.width, dims.depth, dims.height, opts?.weights?.claim]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -145,9 +161,9 @@ export default function Game({ onPro }) {
   // Keep the URL pointing at the current puzzle (so a copied address works).
   useEffect(() => {
     if (screen !== 'play') return;
-    const hash = '#' + encodeGameHash({ level, brand: isSandbox ? brand : null, result: null });
+    const hash = '#' + encodeGameHash({ level, brand: isSandbox ? brand : null, result: null, lang });
     if (window.location.hash !== hash) window.history.replaceState(null, '', hash);
-  }, [screen, level, brand, isSandbox]);
+  }, [screen, level, brand, isSandbox, lang]);
 
   // Placement levels win by themselves the moment everything fits.
   useEffect(() => {
@@ -259,7 +275,7 @@ export default function Game({ onPro }) {
     const solution = solvePlacements(placements, level.market, dims, opts);
     if (!solution.valid) {
       setHint({ impossible: true });
-      flash(level.sizing ? 'Aucun rangement ne marche à cette taille. Change la taille de la boîte.' : 'Même la meilleure solution déborde ici.');
+      flash(level.sizing ? T.hintFlash.sizing : T.hintFlash.none);
       setHints((h) => h + 1);
       return;
     }
@@ -341,34 +357,34 @@ export default function Game({ onPro }) {
   /* ----------------------------- share ------------------------------ */
 
   const shareUrl = (withResult) => window.location.origin + window.location.pathname + '#'
-    + encodeGameHash({ level, brand: isSandbox ? brand : null, result: withResult && won ? won : null });
+    + encodeGameHash({ level, brand: isSandbox ? brand : null, result: withResult && won ? won : null, lang });
 
   const verdictFor = () => {
     if (isSandbox) {
-      if (won) return `« ${brand.name || 'Mon produit'} » rentre !`;
-      if (best === null) return 'Mon slogan ne rentre nulle part';
-      return 'Ça ne rentre pas… encore';
+      if (won) return T.card.brandFits(brand.name);
+      if (best === null) return T.card.sloganNever;
+      return T.card.notYetBrand;
     }
-    return won ? `Rangé en ${won.moves} coup${won.moves > 1 ? 's' : ''}` : 'Pas encore';
+    return won ? T.card.solved(won.moves) : T.card.notYet;
   };
 
   const detailFor = () => {
-    const n = level.kinds.length;
-    const size = `boîte de ${cm(dims.width)}`;
-    if (isSandbox) return `« ${brand.slogan} » · ${brand.slogan.length} caractères · ${size}`;
-    return `${n} mentions obligatoires · ${size}${won ? ' · ' + formatTime(won.ms) : ''}`;
+    if (isSandbox) return T.card.detailBrand(brand.slogan, brand.slogan.length, cm(dims.width));
+    return T.card.detail(level.kinds.length, cm(dims.width), won ? formatTime(won.ms) : '');
   };
 
-  const kickerFor = () => (level.id === 'daily' ? level.title : isSandbox ? 'Ta boîte' : `Niveau ${level.id} · ${level.title}`);
+  const kickerFor = () => (level.id === 'daily' ? copy.title : isSandbox ? copy.title : T.card.kickerLevel(level.id, copy.title));
 
   const share = async () => {
     unlockAudio();
     const url = shareUrl(true);
     const text = shareText({
-      title: level.id === 'daily' ? level.title : isSandbox ? `« ${brand.name} »` : `Niveau ${level.id}`,
+      appTitle: T.appTitle,
+      faces: T.face,
+      title: level.id === 'daily' || isSandbox ? (isSandbox ? `${copy.title} · ${brand.name}` : copy.title) : T.card.textLevel(level.id),
       fits: Boolean(won) || fits,
       stars: won?.stars || 0,
-      detail: won ? `${won.moves} coups · ${cm(dims.width)}` : `${cm(dims.width)}`,
+      detail: won ? T.card.textMoves(won.moves, cm(dims.width)) : cm(dims.width),
       pressures,
       url,
     });
@@ -395,17 +411,20 @@ export default function Game({ onPro }) {
         pressures,
         fits: Boolean(won) || fits,
         host: window.location.host,
+        titleLines: T.cardTitle,
+        faces: T.face,
+        cta: T.cardCta,
       });
     } catch (error) {
       console.warn('PACKSHIFT: share card failed', error);
     }
-    const file = blob ? new File([blob], 'est-ce-que-ca-rentre.png', { type: 'image/png' }) : null;
+    const file = blob ? new File([blob], T.fileName, { type: 'image/png' }) : null;
     // Phones: the native share sheet (image + text straight into WhatsApp,
     // Instagram, Messages…). Desktop: download the card and copy the text.
     if (phone && navigator.share) {
       try {
-        if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text, title: 'Est-ce que ça rentre ?' });
-        else await navigator.share({ text, url, title: 'Est-ce que ça rentre ?' });
+        if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text, title: T.appTitle });
+        else await navigator.share({ text, url, title: T.appTitle });
         return;
       } catch (error) {
         if (error?.name === 'AbortError') return;
@@ -416,58 +435,59 @@ export default function Game({ onPro }) {
       const href = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = href;
-      a.download = 'est-ce-que-ca-rentre.png';
+      a.download = T.fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(href), 1500);
     }
-    if (copied) flash(blob ? 'Image téléchargée · texte et lien copiés' : 'Texte et lien copiés');
-    else if (blob) flash('Image téléchargée');
-    else window.prompt('Copie ce texte', text);
+    if (copied) flash(blob ? T.toast.downloadedCopied : T.toast.copied);
+    else if (blob) flash(T.toast.downloaded);
+    else window.prompt(T.toast.copyPrompt, text);
   };
 
   const copyChallenge = async () => {
     const url = shareUrl(true);
     try {
       await navigator.clipboard.writeText(url);
-      flash('Lien du défi copié. Envoie-le à quelqu’un !');
+      flash(T.toast.challengeCopied);
     } catch {
-      window.prompt('Copie ce lien', url);
+      window.prompt(T.toast.linkPrompt, url);
     }
   };
 
   /* ------------------------------ copy ------------------------------ */
 
+  const S = T.status;
   const status = (() => {
-    if (won) return { tone: 'win', text: 'Ça rentre !' };
-    if (hint?.impossible) return { tone: 'hot', text: level.sizing === 'shrink' ? 'Trop petit : rien ne marche à cette taille.' : 'Aucun rangement ne marche à cette taille. Agrandis la boîte ↓' };
+    if (won) return { tone: 'win', text: S.ok };
+    if (hint?.impossible) return { tone: 'hot', text: level.sizing === 'shrink' ? S.impossibleShrink : S.impossibleGrow };
     const v = violations[0];
-    if (v?.kind === 'claim') return { tone: 'hot', text: 'Le slogan doit être devant, sinon personne ne le voit.' };
-    if (v?.kind === 'barcode') return { tone: 'hot', text: 'Pas de code-barres devant : ça gâche la vitrine.' };
+    if (v?.kind === 'claim') return { tone: 'hot', text: S.sloganFront };
+    if (v?.kind === 'barcode') return { tone: 'hot', text: S.barcodeFront };
     if (overloaded.length) {
-      const f = overloaded.map((s) => FACE[s]).join(' + ');
-      if (level.sizing === 'grow' && allPlaced && moves >= 6) return { tone: 'hot', text: `${f} déborde encore… et si la boîte était plus grande ?` };
-      if (isSandbox && placements.claim === 'FRONT' && overloaded.includes('FRONT')) return { tone: 'hot', text: best === null ? 'Ton slogan est trop long pour n’importe quelle boîte. Raccourcis-le !' : `Ton slogan prend trop de place devant. Raccourcis-le, ou agrandis la boîte.` };
-      return { tone: 'hot', text: `Ça déborde : ${f} !` };
+      const f = overloaded.map((x) => T.face[x]).join(' + ');
+      if (level.sizing === 'grow' && allPlaced && moves >= 6) return { tone: 'hot', text: S.growHint(f) };
+      if (isSandbox && placements.claim === 'FRONT' && overloaded.includes('FRONT')) return { tone: 'hot', text: best === null ? S.sloganNever : S.sloganLong };
+      return { tone: 'hot', text: S.overflow(f) };
     }
-    if (!allPlaced) return { tone: 'ink', text: unplaced.length === level.kinds.length ? 'Glisse une étiquette sur une face (ou touche-la, puis touche une face).' : `Encore ${unplaced.length} étiquette${unplaced.length > 1 ? 's' : ''} à coller.` };
-    if (level.sizing === 'shrink') return { tone: 'ok', text: step > (best ?? step) ? 'Ça rentre. Peux-tu rétrécir encore ?' : 'Ça rentre. C’est ta taille finale ?' };
-    if (level.sizing === 'grow') return { tone: 'ok', text: step > (best ?? step) ? 'Ça rentre ! Mais une boîte plus petite marcherait-elle ?' : 'Ça rentre ! C’est ta taille finale ?' };
-    if (isSandbox) return { tone: 'ok', text: 'Ça rentre ! Valide ta boîte.' };
-    return { tone: 'ok', text: 'Ça rentre !' };
+    if (!allPlaced) return { tone: 'ink', text: unplaced.length === level.kinds.length ? S.start : S.remaining(unplaced.length) };
+    if (level.sizing === 'shrink') return { tone: 'ok', text: step > (best ?? step) ? S.shrinkMore : S.shrinkFinal };
+    if (level.sizing === 'grow') return { tone: 'ok', text: step > (best ?? step) ? S.growSmaller : S.growFinal };
+    if (isSandbox) return { tone: 'ok', text: S.sandboxOk };
+    return { tone: 'ok', text: S.ok };
   })();
 
   const noteFor = (kind) => {
     if (won) return null;
-    if (level.id === 1 && moves === 0 && kind === 'claim') return ['glisse-moi devant ↗', 'ink'];
-    if (hint?.kind === kind) return [`→ ${FACE[hint.surface]}`, 'blue'];
+    if (level.id === 1 && moves === 0 && kind === 'claim') return [T.notes.dragMe, 'ink'];
+    if (hint?.kind === kind) return [`→ ${T.face[hint.surface]}`, 'blue'];
     const surface = placements[kind];
     if (!surface) return null;
-    if (violations.some((v) => v.kind === kind)) return [kind === 'claim' ? 'on ne me voit pas !' : 'pas ici !', 'pen'];
+    if (violations.some((v) => v.kind === kind)) return [kind === 'claim' ? T.notes.notSeen : T.notes.notHere, 'pen'];
     if (overloaded.includes(surface)) {
       const onFace = order.filter((k) => placements[k] === surface);
-      if (onFace[onFace.length - 1] === kind) return ['je rentre pas !', 'pen'];
+      if (onFace[onFace.length - 1] === kind) return [T.notes.noRoom, 'pen'];
     }
     return null;
   };
@@ -481,7 +501,8 @@ export default function Game({ onPro }) {
         index={i}
         size={size}
         state={state}
-        label={PLAIN[kind].name}
+        label={T.plain[kind].name}
+        ariaLabel={T.charAria(T.plain[kind].name)}
         note={note?.[0]}
         noteTone={note?.[1]}
         selected={selectedKind === kind}
@@ -518,7 +539,8 @@ export default function Game({ onPro }) {
     hoverSurface: drag?.target && drag.target !== 'TRAY' ? drag.target : null,
     preview,
     onPickerReady: (fn) => { pickRef.current = fn; },
-    brand: isSandbox ? { name: brand.name, slogan: brand.slogan } : null,
+    brand: isSandbox ? { name: brand.name, slogan: brand.slogan, tagline: T.boxTagline } : null,
+    labels: PRO[lang].scene,
   };
 
   const levelKey = (l) => (l.id === 'daily' ? 'daily-' + l.key : String(l.id));
@@ -533,30 +555,35 @@ export default function Game({ onPro }) {
       <main className="game intro">
         <header className="g-top">
           <strong className="g-logo">PACKSHIFT</strong>
-          <button className="g-link" onClick={onPro}>Mode pro →</button>
+          <nav className="g-lang" aria-label={T.langNav}>
+            {LANGS.map((l) => (
+              <button key={l} className={l === lang ? 'on' : ''} aria-pressed={l === lang} lang={l} onClick={() => changeLang(l)}>{LANG_LABEL[l]}</button>
+            ))}
+          </nav>
+          <button className="g-link" onClick={onPro}>{T.pro}</button>
         </header>
-        <section className="hook">
-          <p className="hook-1">Tout ce qui est écrit sur une boîte est <mark>obligatoire.</mark></p>
-          <p className="hook-2">Ou presque.</p>
-          <p className="hook-3">Et il n’y a <em>pas la place.</em></p>
+        <section className="hook" key={lang}>
+          <p className="hook-1">{T.hook1[0]}<mark>{T.hook1[1]}</mark></p>
+          <p className="hook-2">{T.hook2}</p>
+          <p className="hook-3">{T.hook3[0]}<em>{T.hook3[1]}</em></p>
           <div className="hook-box" aria-hidden="true">
-            <div className="hook-carton"><span>5,6 cm</span></div>
+            <div className="hook-carton"><span>{cm(56)}</span></div>
             {Object.keys(CAST).map((kind, i) => (
               <span key={kind} className={`hook-pop char-${CAST[kind].shape}`} style={{ '--i': i, background: CAST[kind].color }}>
                 <span className="eyes"><i><b /></i><i><b /></i></span>
               </span>
             ))}
           </div>
-          <h1 className="hook-q">Est-ce que ça rentre ?</h1>
+          <h1 className="hook-q">{T.appTitle}</h1>
           <button className="g-cta" onClick={() => startLevel(LEVELS[0])} onPointerEnter={preloadScene}>
-            Jouer <small>5 niveaux · 2 minutes</small>
+            {T.play} <small>{T.playSub}</small>
           </button>
           <div className="hook-more">
-            <button onClick={() => startLevel(daily)}>Défi du jour <small>{daily.title.replace('Défi du ', '')}</small></button>
-            <button onClick={() => startLevel(SANDBOX)}>Crée ta boîte <small>ton slogan rentre ?</small></button>
+            <button onClick={() => startLevel(daily)}>{T.daily} <small>{levelText(daily, lang).date}</small></button>
+            <button onClick={() => startLevel(SANDBOX)}>{T.create} <small>{T.createSub}</small></button>
           </div>
         </section>
-        <footer className="g-foot">Règles simplifiées pour le jeu · pas un avis réglementaire</footer>
+        <footer className="g-foot">{T.disclaimer}</footer>
       </main>
     );
   }
@@ -566,59 +593,64 @@ export default function Game({ onPro }) {
   return (
     <main className={`game play${selectedKind ? ' is-selecting' : ''}${drag ? ' is-dragging-char' : ''}${won ? ' is-won' : ''}`} ref={boardRef}>
       <header className="g-top">
-        <button className="g-back" onClick={() => { setScreen('intro'); window.history.replaceState(null, '', window.location.pathname); }} aria-label="Retour à l’accueil">←</button>
-        <nav className="g-levels" aria-label="Niveaux">
+        <button className="g-back" onClick={() => { setScreen('intro'); window.history.replaceState(null, '', window.location.pathname); }} aria-label={T.back}>←</button>
+        <nav className="g-levels" aria-label={T.levelsNav}>
           {LEVELS.map((l) => (
-            <button key={l.id} className={(level.id === l.id ? 'on ' : '') + (progress[levelKey(l)] ? 'done' : '')} onClick={() => startLevel(l)} aria-label={`Niveau ${l.id} : ${l.title}`}>
+            <button key={l.id} className={(level.id === l.id ? 'on ' : '') + (progress[levelKey(l)] ? 'done' : '')} onClick={() => startLevel(l)} aria-label={T.levelAria(l.id, levelText(l, lang).title)}>
               {l.id}
               {progress[levelKey(l)] && <i>{'★'.repeat(progress[levelKey(l)].stars)}</i>}
             </button>
           ))}
-          <button className={level.id === 'daily' ? 'on' : ''} onClick={() => startLevel(daily)}>Jour</button>
-          <button className={isSandbox ? 'on' : ''} onClick={() => startLevel(SANDBOX)}>Ta boîte</button>
+          <button className={level.id === 'daily' ? 'on' : ''} onClick={() => startLevel(daily)}>{T.dayShort}</button>
+          <button className={isSandbox ? 'on' : ''} onClick={() => startLevel(SANDBOX)}>{T.levels.boite.title}</button>
         </nav>
         <div className="g-meter" aria-live="off">
-          <span><b>{moves}</b> coup{moves > 1 ? 's' : ''}</span>
+          <span><b>{moves}</b> {T.moves(moves)}</span>
           <span><b>{formatTime(elapsed)}</b></span>
-          <button onClick={toggleSound} className="g-sound" aria-pressed={!muted} aria-label={muted ? 'Son coupé' : 'Son actif'}>{muted ? '♪̸' : '♪'}</button>
+          <button onClick={toggleSound} className="g-sound" aria-pressed={!muted} aria-label={muted ? T.soundOff : T.soundOn}>{muted ? '♪̸' : '♪'}</button>
+          <nav className="g-lang" aria-label={T.langNav}>
+              {LANGS.map((l) => (
+                <button key={l} className={l === lang ? 'on' : ''} aria-pressed={l === lang} lang={l} onClick={() => changeLang(l)}>{LANG_LABEL[l]}</button>
+              ))}
+            </nav>
         </div>
       </header>
 
       <section className="g-mission">
-        <p className="g-kicker">{level.id === 'daily' ? level.title : isSandbox ? 'Ta boîte' : `Niveau ${level.id} / ${LEVELS.length}`} · {MARKET_PLAIN[level.market]}</p>
-        <h1>{isSandbox ? 'Ta boîte' : level.title}</h1>
-        <p className="g-goal">{level.goal}</p>
+        <p className="g-kicker">{typeof level.id === 'number' ? T.kickerLevel(level.id, LEVELS.length) : copy.title} · {T.market[level.market]}</p>
+        <h1>{copy.title}</h1>
+        <p className="g-goal">{copy.goal}</p>
         <ul className="g-rules">
-          {level.rules.map((r) => <li key={r}>{r}</li>)}
+          {copy.rules.map((rule) => <li key={rule}>{rule}</li>)}
         </ul>
         {rival && !won && (
-          <p className="g-rival">Ton ami·e a réussi en <b>{rival.moves} coups</b>{level.sizing ? <> avec une boîte de <b>{cm(sizeDims(rival.step).width)}</b></> : <> et <b>{formatTime(rival.seconds * 1000)}</b></>}. À toi.</p>
+          <p className="g-rival">{T.rival(rival.moves, level.sizing ? T.rivalSize(cm(sizeDims(rival.step).width)) : T.rivalTime(formatTime(rival.seconds * 1000)))}</p>
         )}
       </section>
 
       {isSandbox && (
         <section className="g-brand">
           <label>
-            <span>Nom du produit</span>
+            <span>{T.productName}</span>
             <input value={brand.name} maxLength={NAME_MAX} disabled={Boolean(won)} onChange={(e) => setBrand((b) => ({ ...b, name: e.target.value }))} />
           </label>
           <label className="g-slogan">
-            <span>Ton slogan <em className={brand.slogan.length > 22 ? 'hot' : ''}>{brand.slogan.length} / {SLOGAN_MAX}</em></span>
-            <input value={brand.slogan} maxLength={SLOGAN_MAX} disabled={Boolean(won)} onChange={(e) => setBrand((b) => ({ ...b, slogan: e.target.value }))} placeholder="Ex. : Doux comme un nuage" />
+            <span>{T.yourSlogan} <em className={brand.slogan.length > 22 ? 'hot' : ''}>{brand.slogan.length} / {SLOGAN_MAX}</em></span>
+            <input value={brand.slogan} maxLength={SLOGAN_MAX} disabled={Boolean(won)} onChange={(e) => setBrand((b) => ({ ...b, slogan: e.target.value }))} placeholder={T.sloganPlaceholder} />
           </label>
         </section>
       )}
 
       <div className="g-board">
         <div className={'g-stage' + (drag?.target && drag.target !== 'TRAY' ? ' targeted' : '')} ref={sceneWrap}>
-          <Suspense fallback={<div className="g-loading">La boîte arrive…</div>}>
+          <Suspense fallback={<div className="g-loading">{T.loading}</div>}>
             <GameScene {...sceneProps} />
           </Suspense>
           <p className={'g-status tone-' + status.tone} role="status" aria-live="polite" key={status.text}>{status.text}</p>
         </div>
 
         <div className="g-side">
-          <p className="g-faces-head"><b>Les 4 faces de la boîte</b> · la jauge = la place déjà prise</p>
+          <p className="g-faces-head"><b>{T.facesHead[0]}</b> · {T.facesHead[1]}</p>
           <div className="g-faces">
             {FACE_ORDER.map((surface) => {
               const load = pressures[surface];
@@ -637,11 +669,11 @@ export default function Game({ onPro }) {
                   onClick={() => tapTarget(surface)}
                 >
                   <div className="g-face-head">
-                    <b>{FACE[surface]}</b>
+                    <b>{T.face[surface]}</b>
                     <em className={(p ?? load) > 1 ? 'hot' : ''}>{Math.round((p ?? load) * 100)}%</em>
                   </div>
                   <div className="g-gauge" aria-hidden="true">
-                    <span className="g-seg base" style={{ bottom: 0, height: Math.min(100, base * 100) + '%' }} title={ALREADY[level.market][surface]} />
+                    <span className="g-seg base" style={{ bottom: 0, height: Math.min(100, base * 100) + '%' }} title={T.already[level.market][surface]} />
                     {who.map((k) => {
                       const h = (weight[k] / cap) * 100;
                       const el = <span key={k} className="g-seg" style={{ bottom: acc * 100 + '%', height: h + '%', background: CAST[k].color }} />;
@@ -654,7 +686,7 @@ export default function Game({ onPro }) {
                   <div className="g-face-cast">
                     {who.map((k, i) => renderChar(k, i, 0.5, 'mini' + (over ? ' squeezed' : '')))}
                   </div>
-                  <small className="g-already">déjà imprimé : {ALREADY[level.market][surface]}</small>
+                  <small className="g-already">{T.alreadyPrinted} {T.already[level.market][surface]}</small>
                 </div>
               );
             })}
@@ -666,21 +698,21 @@ export default function Game({ onPro }) {
             onClick={() => tapTarget('TRAY')}
           >
             <div className="g-tray-head">
-              <span>{unplaced.length ? `À coller (${unplaced.length})` : 'Tout est collé'}</span>
-              {!won && <button onClick={(e) => { e.stopPropagation(); giveHint(); }}>Indice {hints ? `(${hints})` : ''}</button>}
+              <span>{unplaced.length ? T.toStick(unplaced.length) : T.allStuck}</span>
+              {!won && <button onClick={(e) => { e.stopPropagation(); giveHint(); }}>{T.hint} {hints ? `(${hints})` : ''}</button>}
             </div>
             <div className="g-tray-cast">
               {unplaced.map((k, i) => renderChar(k, i, 0.78))}
             </div>
             {selectedKind && (
-              <p className="g-why"><b>{PLAIN[selectedKind].name}</b> — {PLAIN[selectedKind].why} <span>Touche une face pour la coller.</span></p>
+              <p className="g-why"><b>{T.plain[selectedKind].name}</b> — {T.plain[selectedKind].why} <span>{T.tapFace}</span></p>
             )}
           </div>
 
           {level.sizing && (
             <div className="g-size">
               <label>
-                <span>Taille de la boîte</span>
+                <span>{T.boxSize}</span>
                 <input
                   type="range"
                   min={SIZE_MIN}
@@ -688,26 +720,31 @@ export default function Game({ onPro }) {
                   value={step}
                   disabled={Boolean(won)}
                   onChange={(e) => resize(Number(e.target.value))}
-                  aria-label="Taille de la boîte"
+                  aria-label={T.boxSize}
                   style={{ '--v': ((step - SIZE_MIN) / (SIZE_MAX - SIZE_MIN)) * 100 }}
                 />
                 <output>{cm(dims.width)} <small>× {cm(dims.height)}</small></output>
               </label>
-              {!won && <button className="g-cta small" disabled={!fits} onClick={finish}>{isSandbox ? 'Valider ma boîte' : 'C’est ma taille finale'}</button>}
+              {!won && <button className="g-cta small" disabled={!fits} onClick={finish}>{isSandbox ? T.validateBox : T.finalSize}</button>}
             </div>
           )}
 
           <div className="g-actions">
-            <button onClick={reset} disabled={moves === 0 && step === (level.step || 0)}>Recommencer</button>
+            <button onClick={reset} disabled={moves === 0 && step === (level.step || 0)}>{T.restart}</button>
             {won?.hidden
-              ? <button className="g-cta small" onClick={() => setWon((w) => ({ ...w, hidden: false }))}>Mon score</button>
-              : <button onClick={share}>Partager</button>}
+              ? <button className="g-cta small" onClick={() => setWon((w) => ({ ...w, hidden: false }))}>{T.myScore}</button>
+              : <button onClick={share}>{T.share}</button>}
           </div>
+          <nav className="g-lang g-lang-foot" aria-label={T.langNav}>
+            {LANGS.map((l) => (
+              <button key={l} className={l === lang ? 'on' : ''} aria-pressed={l === lang} lang={l} onClick={() => changeLang(l)}>{LANG_LABEL[l]}</button>
+            ))}
+          </nav>
         </div>
       </div>
 
       {won && !won.hidden && (
-        <aside className="g-win" role="dialog" aria-label="Gagné">
+        <aside className="g-win" role="dialog" aria-label={T.win.aria}>
           <div className="g-burst" aria-hidden="true">
             {Array.from({ length: 14 }, (_, i) => {
               const kind = Object.keys(CAST)[i % 6];
@@ -715,21 +752,21 @@ export default function Game({ onPro }) {
             })}
           </div>
           <p className="g-kicker">{kickerFor()}</p>
-          <h2>{isSandbox ? `« ${brand.name || 'Ton produit'} » rentre !` : 'Ça rentre !'}</h2>
-          {!isSandbox && <p className="g-stars" aria-label={`${won.stars} étoiles sur 3`}>{'★'.repeat(won.stars)}<span>{'★'.repeat(3 - won.stars)}</span></p>}
+          <h2>{isSandbox ? T.win.brandFits(brand.name) : T.win.fits}</h2>
+          {!isSandbox && <p className="g-stars" aria-label={T.win.starsAria(won.stars)}>{'★'.repeat(won.stars)}<span>{'★'.repeat(3 - won.stars)}</span></p>}
           <p className="g-score">
-            {won.moves} coup{won.moves > 1 ? 's' : ''} · {formatTime(won.ms)} · boîte de {cm(won.width)}
-            {level.sizing && best !== null && won.step > best && <><br /><em>Le record possible : {cm(sizeDims(best).width)}</em></>}
+            {T.win.score(won.moves, formatTime(won.ms), cm(won.width))}
+            {level.sizing && best !== null && won.step > best && <><br /><em>{T.win.record(cm(sizeDims(best).width))}</em></>}
           </p>
-          {beatRival !== null && <p className="g-vs">{beatRival ? 'Tu bats ton ami·e. Renvoie-lui le défi !' : 'Ton ami·e reste devant… cette fois.'}</p>}
-          <p className="g-fact">{level.fact}</p>
+          {beatRival !== null && <p className="g-vs">{beatRival ? T.win.beat : T.win.lost}</p>}
+          <p className="g-fact">{copy.fact}</p>
           <div className="g-win-actions">
-            <button className="g-cta" onClick={share} disabled={!snapshotReady}>{snapshotReady ? 'Partager mon score' : '…'}</button>
-            <button onClick={copyChallenge}>Défier quelqu’un</button>
-            {nextLevel && <button onClick={() => startLevel(nextLevel)}>Niveau suivant →</button>}
-            {!nextLevel && level.id === LEVELS.length && <button onClick={() => startLevel(daily)}>Défi du jour →</button>}
-            {(level.id === 'daily' || isSandbox) && <button onClick={() => startLevel(isSandbox ? daily : SANDBOX)}>{isSandbox ? 'Défi du jour →' : 'Crée ta boîte →'}</button>}
-            <button className="g-link" onClick={() => setWon((w) => ({ ...w, hidden: true }))}>voir la boîte</button>
+            <button className="g-cta" onClick={share} disabled={!snapshotReady}>{snapshotReady ? T.win.shareScore : '…'}</button>
+            <button onClick={copyChallenge}>{T.win.challenge}</button>
+            {nextLevel && <button onClick={() => startLevel(nextLevel)}>{T.win.next}</button>}
+            {!nextLevel && level.id === LEVELS.length && <button onClick={() => startLevel(daily)}>{T.win.dailyArrow}</button>}
+            {(level.id === 'daily' || isSandbox) && <button onClick={() => startLevel(isSandbox ? daily : SANDBOX)}>{isSandbox ? T.win.dailyArrow : T.win.createArrow}</button>}
+            <button className="g-link" onClick={() => setWon((w) => ({ ...w, hidden: true }))}>{T.win.seeBox}</button>
           </div>
         </aside>
       )}
@@ -742,13 +779,10 @@ export default function Game({ onPro }) {
             <span className="eyes"><i><b /></i><i><b /></i></span>
           </span>
           <small>
-            {drag.target === 'TRAY' ? 'décoller' : drag.target ? `→ ${FACE[drag.target]}${preview ? ` · ${Math.round(preview.to * 100)}%` : ''}` : PLAIN[drag.kind].name}
+            {drag.target === 'TRAY' ? T.unstick : drag.target ? `→ ${T.face[drag.target]}${preview ? ` · ${Math.round(preview.to * 100)}%` : ''}` : T.plain[drag.kind].name}
           </small>
         </div>
       )}
     </main>
   );
 }
-
-// Plain-language label for the requirement meta used elsewhere.
-export const plainLabel = (kind) => PLAIN[kind]?.name || REQUIREMENTS[kind]?.label;

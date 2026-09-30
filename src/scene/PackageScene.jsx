@@ -6,7 +6,13 @@ import * as THREE from 'three';
 import { NOMINAL_DIMS, REQUIREMENTS, SURFACES, SURFACE_LABEL, clampDims, isNominal } from '../model/pressure.js';
 import { buildProceduralMaster } from './proceduralMaster.js';
 
-const FACE_FR = { FRONT: 'Avant', LEFT_COPY: 'Gauche', RIGHT_DATA: 'Droite', BACK: 'Dos' };
+// Default (French) scene labels; the app passes its own for the active language.
+const DEFAULT_LABELS = {
+  face: { FRONT: 'Avant', LEFT_COPY: 'Gauche', RIGHT_DATA: 'Droite', BACK: 'Dos' },
+  load: (pct) => `${pct}% de charge`,
+  over: 'trop plein !',
+  fits: 'ça tient',
+};
 import {
   createBlockTexture, createPanelSet, paintPanelSet, panelMM, paperFibreNormal,
 } from './panelArt.js';
@@ -188,7 +194,7 @@ function PanelArtwork({ node, surface, artState, dims, registerMaterial }) {
 /* Labels, flights, collision                                          */
 /* ------------------------------------------------------------------ */
 
-function SurfacePressureTag({ node, root, surface, pressure, visible }) {
+function SurfacePressureTag({ node, root, surface, pressure, visible, labels = DEFAULT_LABELS }) {
   const group = useRef();
   const label = useRef();
   const facing = useRef(true);
@@ -224,8 +230,8 @@ function SurfacePressureTag({ node, root, surface, pressure, visible }) {
     <group ref={group}>
       <Html center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
         <div ref={label} className={'surface-pressure-tag ' + (pct > 100 ? 'over' : '')}>
-          <b>{FACE_FR[surface]}</b>
-          <span>{pct}% de charge</span>
+          <b>{labels.face[surface]}</b>
+          <span>{labels.load(pct)}</span>
         </div>
       </Html>
     </group>
@@ -373,7 +379,7 @@ function SurfacePicker({ nodes, onReady }) {
 }
 
 // Predictive load shown on the face under the dragged ticket, before release.
-function PreviewTag({ node, root, surface, from, to }) {
+function PreviewTag({ node, root, surface, from, to, labels = DEFAULT_LABELS }) {
   const group = useRef();
   const nodePos = useMemo(() => new THREE.Vector3(), []);
   const rootPos = useMemo(() => new THREE.Vector3(), []);
@@ -395,9 +401,9 @@ function PreviewTag({ node, root, surface, from, to }) {
     <group ref={group}>
       <Html center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
         <div className={'preview-tag' + (over ? ' over' : '')}>
-          <b>{FACE_FR[surface]}</b>
+          <b>{labels.face[surface]}</b>
           <span>{Math.round(from * 100)}<i>→</i><strong>{Math.round(to * 100)}%</strong></span>
-          <em>{over ? 'trop plein !' : 'ça tient'}</em>
+          <em>{over ? labels.over : labels.fits}</em>
         </div>
       </Html>
     </group>
@@ -411,7 +417,7 @@ function PreviewTag({ node, root, surface, from, to }) {
 function SpatialStudioScene({
   source, dims = NOMINAL_DIMS, market, viewMode, decomposition, placements, brief, pressures, collisionSurfaces,
   compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind,
-  hoverSurface = null, preview = null, onPickerReady, brand = null,
+  hoverSurface = null, preview = null, onPickerReady, brand = null, labels = DEFAULT_LABELS,
 }) {
   const scene = source;
   const { camera, size } = useThree();
@@ -716,6 +722,7 @@ function SpatialStudioScene({
           surface={surface}
           pressure={pressures[surface] || 0}
           visible={pressureVisible}
+          labels={labels}
         />
       ))}
 
@@ -731,6 +738,7 @@ function SpatialStudioScene({
           surface={preview.surface}
           from={preview.from}
           to={preview.to}
+          labels={labels}
         />
       )}
 

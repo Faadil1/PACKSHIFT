@@ -64,6 +64,9 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 .tools button{height:30px;padding:0 11px;border:0;background:transparent;color:#cfc8bb;font:inherit;letter-spacing:.08em;text-transform:uppercase;transition:color .2s,background .2s}
 .tools button:hover:not(:disabled){color:var(--paper);background:rgba(243,239,230,.08)}
 .tools button:disabled{opacity:.4}
+.tool-lang{display:flex;gap:1px;margin:0 6px;padding:2px;border:1px solid rgba(243,239,230,.25)}
+.tool-lang button{height:24px!important;padding:0 7px!important}
+.tool-lang button.on{background:var(--paper)!important;color:var(--ink)!important}
 .tool-tour{color:#ffcf4a!important;border:1px solid rgba(255,207,74,.45)!important}
 .bars{display:flex;align-items:flex-end;gap:2px;height:13px}
 .bars i{width:3px;background:#cfc8bb;animation:eq .9s ease-in-out infinite alternate}
@@ -159,7 +162,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
 @keyframes jolt{50%{transform:translate(2px,-1px)}}
 
 .column{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;width:78%;border-top:3px solid var(--ink);padding-top:14px;transition:background .2s}
-.column-headline{margin:0;font:900 clamp(56px,8.2vh,104px)/.86 var(--display);letter-spacing:-.02em;transition:font-stretch .8s var(--ease-out),color .4s}
+.column-headline{margin:0;font:900 calc(clamp(56px,8.2vh,104px) * var(--fit,1))/.86 var(--display);letter-spacing:-.02em;transition:font-stretch .8s var(--ease-out),color .4s}
 .column-headline.tone-hot{letter-spacing:-.035em}
 .cw{display:inline-block;overflow:visible;margin-right:.14em}
 .cw-in{display:inline-block;animation:rise .7s var(--ease-out) both;animation-delay:calc(var(--i)*55ms);transition:transform .8s var(--spring),color .4s}
@@ -301,7 +304,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none}
   .chapter-no{font-size:84px}
   .chapter-text h2{font-size:24px}
   .column{width:calc(100% - 64px)}
-  .column-headline{font-size:44px}
+  .column-headline{font-size:calc(44px * var(--fit,1))}
   .margin-drop{left:calc(100% + 4px);width:60px}
   .running-foot{flex-wrap:wrap;height:auto;padding:12px 4px}
   .running-foot nav{flex-wrap:wrap;gap:10px}

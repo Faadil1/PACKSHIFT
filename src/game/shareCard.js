@@ -1,7 +1,7 @@
 // Shareable result: a 1080×1350 portrait card (fits Instagram / WhatsApp /
 // X previews) plus a spoiler-free text grid à la Wordle.
 
-import { FACE, FACE_ORDER } from './levels.js';
+import { FACE_ORDER } from './levels.js';
 
 const W = 1080;
 const H = 1350;
@@ -59,7 +59,9 @@ function drawSnapshot(ctx, source, x, y, w, h) {
  * @param {object} p.pressures  face -> load (1 = full)
  * @param {boolean} p.fits
  * @param {string} p.host     e.g. "packshift-awd.pages.dev"
- * @param {string} [p.brandName]
+ * @param {string[]} p.titleLines  e.g. ['EST-CE QUE', 'ÇA RENTRE ?']
+ * @param {object} p.faces   face -> localised name
+ * @param {string} p.cta     e.g. 'À toi de jouer →'
  */
 export async function renderShareCard(p) {
   await fontsReady();
@@ -83,11 +85,19 @@ export async function renderShareCard(p) {
   ctx.fillText(p.kicker.toUpperCase(), 72, 92);
 
   ctx.fillStyle = INK;
-  const s1 = fitText(ctx, 'EST-CE QUE', W - 144, 250, '900 extra-condensed', DISPLAY);
-  ctx.fillText('EST-CE QUE', 68, 92 + s1 * 0.95);
-  const s2 = fitText(ctx, 'ÇA RENTRE ?', W - 144, 250, '900 extra-condensed', DISPLAY);
+  // Same size for both lines, capped so short titles ("DOES IT / FIT?")
+  // don't push the result off the card.
+  const size = Math.min(
+    170,
+    fitText(ctx, p.titleLines[0], W - 144, 250, '900 extra-condensed', DISPLAY),
+    fitText(ctx, p.titleLines[1], W - 144, 250, '900 extra-condensed', DISPLAY),
+  );
+  ctx.font = `900 extra-condensed ${size}px ${DISPLAY}`;
+  const s1 = size;
+  const s2 = size;
+  ctx.fillText(p.titleLines[0], 68, 92 + s1 * 0.95);
   ctx.fillStyle = p.fits ? INK : PEN;
-  ctx.fillText('ÇA RENTRE ?', 68, 92 + s1 * 0.95 + s2 * 0.92);
+  ctx.fillText(p.titleLines[1], 68, 92 + s1 * 0.95 + s2 * 0.92);
   const top = 92 + s1 * 0.95 + s2 * 0.92 + 20;
 
   // the box
@@ -136,7 +146,8 @@ export async function renderShareCard(p) {
     }
     ctx.fillStyle = MUTED;
     ctx.font = `500 22px ${MONO}`;
-    ctx.fillText(`${FACE[face].toUpperCase()} ${Math.round(load * 100)}%`, x, gY + 52);
+    fitText(ctx, `${p.faces[face].toUpperCase()} ${Math.round(load * 100)}%`, gw, 22, 500, MONO);
+    ctx.fillText(`${p.faces[face].toUpperCase()} ${Math.round(load * 100)}%`, x, gY + 52);
   });
 
   // footer / call to action
@@ -144,7 +155,7 @@ export async function renderShareCard(p) {
   ctx.fillRect(0, H - 110, W, 110);
   ctx.fillStyle = PAPER;
   ctx.font = `900 40px ${DISPLAY}`;
-  ctx.fillText('À toi de jouer →', 72, H - 44);
+  ctx.fillText(p.cta, 72, H - 44);
   ctx.textAlign = 'right';
   ctx.font = `500 28px ${MONO}`;
   ctx.fillText(p.host, W - 72, H - 46);
@@ -154,17 +165,17 @@ export async function renderShareCard(p) {
 }
 
 // Spoiler-free text for group chats: how full each face is, not what is where.
-export function shareText({ title, fits, stars, detail, pressures, url }) {
+export function shareText({ appTitle, faces, title, fits, stars, detail, pressures, url }) {
   const bar = (load) => {
     const n = Math.max(load > 0 ? 1 : 0, Math.min(5, Math.round(Math.min(1, load) * 5)));
     const fill = load > 1 ? '🟥' : '🟩';
     return Array.from({ length: 5 }, (_, i) => (i < n ? fill : '⬜')).join('');
   };
-  const faces = FACE_ORDER.map((f) => `${bar(pressures?.[f] ?? 0)} ${FACE[f]}`).join('\n');
+  const rows = FACE_ORDER.map((f) => `${bar(pressures?.[f] ?? 0)} ${faces[f]}`).join('\n');
   return [
-    `📦 Est-ce que ça rentre ? — ${title}`,
+    `📦 ${appTitle} — ${title}`,
     `${fits ? '✅' : '❌'} ${detail}${stars ? ' ' + '⭐'.repeat(stars) : ''}`,
-    faces,
+    rows,
     url,
   ].join('\n');
 }

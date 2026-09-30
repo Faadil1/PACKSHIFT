@@ -22,25 +22,15 @@ import {
 import { decodeState, encodeState } from './app/urlState.js';
 import { dielineSVG } from './export/dieline.js';
 import { isMuted, play, setMuted, unlockAudio } from './audio/sound.js';
-import { CALM, CAST, Character, LOUD, useFlip } from './ui/Character.jsx';
+import { CAST, Character, useFlip } from './ui/Character.jsx';
+import { PRO } from './app/proStrings.js';
+import { LANGS, LANG_LABEL, STRINGS } from './game/i18n.js';
 import { ColumnHeadline } from './ui/ColumnHeadline.jsx';
 
-const VIEWS = [
-  ['PACK', 'Boîte'],
-  ['EXPLODED', 'Ouverte'],
-  ['DIELINE', 'À plat'],
-  ['XRAY', 'Rayons X'],
-  ['PRESSURE', 'Charge'],
-];
+const VIEWS = ['PACK', 'EXPLODED', 'DIELINE', 'XRAY', 'PRESSURE'];
 const VIEW_PRESET = { PACK: 0, EXPLODED: 44, DIELINE: 100, XRAY: 0, PRESSURE: 0 };
 const PHASES = ['opening', 'dieline', 'reflow', 'closing'];
-const SLOTS = [
-  ['LEFT_COPY', 'Gauche'],
-  ['FRONT', 'Avant'],
-  ['RIGHT_DATA', 'Droite'],
-  ['BACK', 'Dos'],
-];
-const FR_SURFACE = { FRONT: 'la face avant', LEFT_COPY: 'la gauche', RIGHT_DATA: 'la droite', BACK: 'le dos' };
+const SLOTS = ['LEFT_COPY', 'FRONT', 'RIGHT_DATA', 'BACK'];
 
 const reducedMotion = () => typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -70,12 +60,12 @@ class SceneBoundary extends Component {
   }
 }
 
-function Loader() {
+function Loader({ label }) {
   const { active, progress } = useProgress();
   if (!active && progress >= 100) return null;
   return (
     <div className="loader" role="status" aria-live="polite">
-      <span>Chargement du master Blender</span>
+      <span>{label}</span>
       <i><b style={{ width: Math.round(progress) + '%' }} /></i>
     </div>
   );
@@ -90,7 +80,8 @@ const initial = (() => {
   }
 })();
 
-export default function App({ onExit }) {
+export default function App({ onExit, lang = 'fr', setLang }) {
+  const P = PRO[lang] || PRO.fr;
   const [market, setMarket] = useState(initial?.market || 'EU');
   const [viewMode, setViewMode] = useState(initial?.viewMode || 'PACK');
   const [decomposition, setDecomposition] = useState(initial ? VIEW_PRESET[initial.viewMode] || 0 : 0);
@@ -253,7 +244,7 @@ export default function App({ onExit }) {
     setCompilePhase('idle');
     commitPlacements({ ...placements, [kind]: surface }, [...order.filter((k) => k !== kind), kind]);
     play('crease', { intensity: 0.7 });
-    setAnnouncement(`${REQUIREMENTS[kind].label} va sur ${FR_SURFACE[surface]}.`);
+    setAnnouncement(P.say.placed(REQUIREMENTS[kind].label, P.surfaceThe[surface]));
   };
 
   const unplace = (kind) => {
@@ -269,7 +260,7 @@ export default function App({ onExit }) {
     setCompiled(false);
     setCompilePhase('idle');
     play('tick');
-    setAnnouncement(`${REQUIREMENTS[kind].label} entre en coulisse.`);
+    setAnnouncement(P.say.added(REQUIREMENTS[kind].label));
   };
 
   const removeFromBrief = (kind) => {
@@ -300,7 +291,7 @@ export default function App({ onExit }) {
     setCompiled(false);
     setCompilePhase('idle');
     setLastDiff(null);
-    setAnnouncement('Dernier changement annulé.');
+    setAnnouncement(P.say.undone);
   };
 
   /* ------------------------ character drag & drop ---------------------- */
@@ -390,8 +381,8 @@ export default function App({ onExit }) {
     setLastDiff({ moves: solution.moves, market: targetMarket, valid: solution.valid });
     play(solution.valid ? 'resolve' : 'collide');
     setAnnouncement(solution.valid
-      ? `L'éditeur a tranché. Forme valide pour ${MARKETS[targetMarket].label}. ${solution.moves.length} exigence(s) déplacée(s).`
-      : 'Aucune mise en page ne tient sur ce carton.');
+      ? P.say.valid(MARKETS[targetMarket].label, solution.moves.length)
+      : P.say.invalid);
     return solution;
   };
 
@@ -445,13 +436,13 @@ export default function App({ onExit }) {
       setOrder([]);
       setLastDiff(null);
 
-      caption(1, 'Un vrai carton Blender', 'À gauche, le master Blender : charnières, pot, capuchon, notice. À droite, la face avant — cette colonne.');
+      caption(1, ...P.steps[0]);
       await wait(900);
       setViewMode('XRAY');
       await wait(2400);
       setViewMode('PACK');
 
-      caption(2, 'Tout le monde veut la façade', 'Les exigences sont des personnages. Chacun réclame la face avant.');
+      caption(2, ...P.steps[1]);
       await wait(600);
       put({ language: 'FRONT', data: null, claim: null }, ['language']);
       await wait(800);
@@ -459,22 +450,22 @@ export default function App({ onExit }) {
       await wait(800);
       put(IMPOSSIBLE_FRONT, ['language', 'data', 'claim']);
 
-      caption(3, 'La colonne ne tient plus', 'La typographie se comprime, le dernier arrivé est éjecté dans la marge.');
+      caption(3, ...P.steps[2]);
       setViewMode('PRESSURE');
       await wait(2800);
 
-      caption(4, 'L’éditeur tranche', 'Le carton s’ouvre, se met à plat, chaque exigence rejoint la face qui peut la porter.');
+      caption(4, ...P.steps[3]);
       const eu = await runCompile(IMPOSSIBLE_FRONT, 'EU', NOMINAL_DIMS, guard);
       await wait(1600);
 
-      caption(5, 'Même master, autre marché', 'Le Canada réserve la gauche aux mentions bilingues : l’éditeur trouve une autre répartition.');
+      caption(5, ...P.steps[4]);
       setMarket('CANADA');
       setCompiled(false);
       await wait(900);
       const ca = await runCompile(eu.placements, 'CANADA', NOMINAL_DIMS, guard);
       await wait(1300);
 
-      caption(6, 'Trois de plus en coulisse', 'Avertissements, allégation éco, code-barres. Cette fois, même l’éditeur cale.');
+      caption(6, ...P.steps[5]);
       const grown = { ...ca.placements, warning: null, eco: null, barcode: null };
       setPlacements(grown);
       await wait(1300);
@@ -482,7 +473,7 @@ export default function App({ onExit }) {
       await wait(1800);
 
       const bigger = suggestDims(grown, 'CANADA', NOMINAL_DIMS) || NOMINAL_DIMS;
-      caption(7, `+${bigger.width - NOMINAL_DIMS.width} mm, et tout le monde tient`, `L’éditeur calcule le plus petit carton qui suffit : ${bigger.width} × ${bigger.depth} × ${bigger.height} mm.`);
+      caption(7, ...P.stepGrow(bigger.width - NOMINAL_DIMS.width, bigger));
       setDims(bigger);
       await wait(1500);
       await runCompile(grown, 'CANADA', bigger, guard);
@@ -525,7 +516,7 @@ export default function App({ onExit }) {
     setSelectedKind(null);
     setReflowMoves([]);
     setLastDiff(null);
-    flash('Page blanche. Z pour revenir en arrière.');
+    flash(P.toast.blank);
   };
 
   const changeMarket = (value) => {
@@ -535,16 +526,16 @@ export default function App({ onExit }) {
     setCompilePhase('idle');
     setLastDiff(null);
     play('tick');
-    setAnnouncement(`Édition ${MARKETS[value].label}. ${MARKETS[value].note}`);
+    setAnnouncement(`${P.say.edition(MARKETS[value].label)} ${P.marketNote[value]}`);
   };
 
   const shareLink = async () => {
     const url = window.location.origin + window.location.pathname + '#' + encodeState({ market, brief, placements, dims, viewMode });
     try {
       await navigator.clipboard.writeText(url);
-      flash('Lien copié — il rouvre exactement cette page.');
+      flash(P.toast.linkCopied);
     } catch {
-      window.prompt('Copier ce lien', url);
+      window.prompt(P.toast.copyLink, url);
     }
   };
 
@@ -559,7 +550,7 @@ export default function App({ onExit }) {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    flash('Dieline concept exportée · SVG · mm');
+    flash(P.toast.dieline);
   };
 
   const toggleSound = () => {
@@ -580,7 +571,7 @@ export default function App({ onExit }) {
         return;
       }
       if (event.target.closest?.('button') && (key === 'enter' || key === ' ')) return;
-      if (key >= '1' && key <= '5') setMode(VIEWS[Number(key) - 1][0]);
+      if (key >= '1' && key <= '5') setMode(VIEWS[Number(key) - 1]);
       else if (key === 'c') compileSurface();
       else if (key === 'r') resetStudio();
       else if (key === 'z') undo();
@@ -595,29 +586,29 @@ export default function App({ onExit }) {
   const marketLabel = MARKETS[market].label;
   const phaseIndex = PHASES.indexOf(compilePhase);
   const chapter = (() => {
-    if (running && phaseIndex >= 0) return ['04', 'L’éditeur', 'Le carton s’ouvre, se met à plat et se replie. Chaque exigence marche vers la face qui peut la porter.'];
-    if (compilePhase === 'unsolved') return ['04', 'L’impasse', 'Aucune répartition ne tient sur ce carton. Il faut retirer une exigence — ou agrandir le carton.'];
-    if (collision) return ['03', 'La face avant', 'La colonne de droite est la face avant. Elle déborde : la typographie se comprime et le dernier arrivé est éjecté.'];
-    if (compiled) return ['05', 'La forme valide', `Même master, nouvelle hiérarchie. Chacun a sa face — édition ${marketLabel}.`];
-    if (placedCount === 0) return ['01', 'Le brief', 'Six exigences attendent en coulisse. Glisse-les sur le carton ou dans la colonne de droite.'];
-    return ['02', 'La mise en page', 'Place les exigences. La colonne de droite est la face avant : elle a une limite.'];
+    if (running && phaseIndex >= 0) return P.chapter.running;
+    if (compilePhase === 'unsolved') return P.chapter.unsolved;
+    if (collision) return P.chapter.collision;
+    if (compiled) return P.chapter.compiled(marketLabel);
+    if (placedCount === 0) return P.chapter.empty;
+    return P.chapter.layout;
   })();
 
   const headline = (() => {
-    if (running && phaseIndex >= 0) return 'L’ÉDITEUR REDISTRIBUE';
-    if (compilePhase === 'unsolved') return 'MÊME L’ÉDITEUR CALE';
-    if (collision && frontLoad > 1) return 'LA FACE AVANT NE TIENT PLUS';
-    if (compiled) return 'CHACUN SA FACE';
-    return 'LA FACE AVANT A UNE LIMITE';
+    if (running && phaseIndex >= 0) return P.headline.running;
+    if (compilePhase === 'unsolved') return P.headline.unsolved;
+    if (collision && frontLoad > 1) return P.headline.collision;
+    if (compiled) return P.headline.compiled;
+    return P.headline.idle;
   })();
   const stretch = Math.round(125 - Math.min(1, frontLoad) * 63);
   const spill = frontLoad > 1 && !running ? (frontLoad > 1.4 ? 2 : 1) : 0;
 
   const noteFor = (kind) => {
     if (running) return null;
-    if (kind === ejected) return ['pas de place !', 'pen'];
-    if (compiled && movedTo[kind]) return [CALM[movedTo[kind]], 'blue'];
-    if (!compiled && placements[kind] === 'FRONT' && kind === order[order.length - 1]) return [LOUD[kind], 'ink'];
+    if (kind === ejected) return [P.noRoom, 'pen'];
+    if (compiled && movedTo[kind]) return [P.calm[movedTo[kind]], 'blue'];
+    if (!compiled && placements[kind] === 'FRONT' && kind === order[order.length - 1]) return [P.loud[kind], 'ink'];
     return null;
   };
 
@@ -635,6 +626,8 @@ export default function App({ onExit }) {
         selected={selectedKind === kind}
         dragging={drag?.kind === kind}
         disabled={running}
+        ariaLabel={(STRINGS[lang] || STRINGS.fr).charAria(REQUIREMENTS[kind].label)}
+        removeLabel={P.removeFromBrief(REQUIREMENTS[kind].label)}
         onPointerDown={startDrag(kind)}
         onKeySelect={() => setSelectedKind((c) => (c === kind ? null : kind))}
         onRemove={!REQUIREMENTS[kind].core && !placements[kind] ? () => removeFromBrief(kind) : undefined}
@@ -644,8 +637,8 @@ export default function App({ onExit }) {
 
   const predicted = (surface) => (preview && preview.surface === surface ? preview.to : null);
   const nominal = isNominal(dims);
-  const geometrySource = usingFallback || !nominal ? 'jumeau procédural' : 'master Blender 0.6.0';
-  const pressLabel = running ? (phaseIndex >= 0 ? `${phaseIndex + 1}/4` : '…') : 'l’éditeur tranche';
+  const geometrySource = usingFallback || !nominal ? P.procedural : 'master Blender 0.6.0';
+  const pressLabel = running ? (phaseIndex >= 0 ? `${phaseIndex + 1}/4` : '…') : P.editorDecides;
 
   const sceneProps = {
     dims,
@@ -665,6 +658,7 @@ export default function App({ onExit }) {
     hoverSurface: drag?.target && drag.target !== 'WINGS' ? drag.target : null,
     preview,
     onPickerReady: (fn) => { pickRef.current = fn; },
+    labels: P.scene,
   };
 
   const frontTone = frontLoad > 1 ? 'hot' : frontLoad > 0.75 ? 'warm' : 'cool';
@@ -677,9 +671,9 @@ export default function App({ onExit }) {
       <header className="running-head">
         <div className="masthead-title">
           <strong>PACKSHIFT</strong>
-          <span>Rapport de négociation · N° 19</span>
+          <span>{P.masthead}</span>
         </div>
-        <nav className="editions" aria-label="Édition (marché)">
+        <nav className="editions" aria-label={P.editionsAria}>
           {Object.keys(MARKETS).map((value) => (
             <button
               key={value}
@@ -687,18 +681,25 @@ export default function App({ onExit }) {
               aria-pressed={market === value}
               disabled={running}
               onClick={() => changeMarket(value)}
-              title={MARKETS[value].note}
+              title={P.marketNote[value]}
             >
-              Édition {value === 'CANADA' ? 'CA' : value}
+              {P.edition(value === 'CANADA' ? 'CA' : value)}
             </button>
           ))}
         </nav>
-        <nav className="tools" aria-label="Outils">
-          {onExit && <button onClick={onExit} className="tool-game">← le jeu</button>}
-          <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">{tour ? 'Passer' : 'Visite guidée'}</button>
-          <button onClick={shareLink} disabled={running}>Partager</button>
-          <button onClick={exportDieline} disabled={running}>Dieline ⤓</button>
-          <button onClick={toggleSound} aria-pressed={!muted} aria-label={muted ? 'Son coupé' : 'Son actif'} className="tool-sound">
+        <nav className="tools" aria-label={P.toolsAria}>
+          {onExit && <button onClick={onExit} className="tool-game">{P.toGame}</button>}
+          {setLang && (
+            <span className="tool-lang" role="group" aria-label="Langue / Language / Idioma">
+              {LANGS.map((l) => (
+                <button key={l} className={l === lang ? 'on' : ''} aria-pressed={l === lang} lang={l} onClick={() => setLang(l)}>{LANG_LABEL[l]}</button>
+              ))}
+            </span>
+          )}
+          <button onClick={tour ? skipTour : runTour} disabled={running && !tour} className="tool-tour">{tour ? P.skip : P.tour}</button>
+          <button onClick={shareLink} disabled={running}>{P.share}</button>
+          <button onClick={exportDieline} disabled={running}>{P.dieline}</button>
+          <button onClick={toggleSound} aria-pressed={!muted} aria-label={muted ? P.soundOff : P.soundOn} className="tool-sound">
             <span className={'bars' + (muted ? ' off' : '')} aria-hidden="true"><i /><i /><i /></span>
           </button>
         </nav>
@@ -706,11 +707,11 @@ export default function App({ onExit }) {
 
       <div className="spread">
         {/* ---------------------------- LEFT PAGE ---------------------------- */}
-        <section className="page page-left" aria-label="Page de gauche : le carton">
+        <section className="page page-left" aria-label={P.pageLeft}>
           <div className="chapter">
             <div className="chapter-no" key={chapter[0]}>{chapter[0]}</div>
             <div className="chapter-text">
-              <span>CHAPITRE</span>
+              <span>{P.chapterWord}</span>
               <h2 key={chapter[1]}>{chapter[1]}</h2>
               <p>{chapter[2]}</p>
             </div>
@@ -718,7 +719,7 @@ export default function App({ onExit }) {
 
           <figure className="figure">
             <figcaption>
-              <span>FIG. 1 — LE CARTON</span>
+              <span>{P.fig1}</span>
               <span>{geometrySource}</span>
             </figcaption>
             <div className={'plate' + (dropTarget && dropTarget !== 'WINGS' ? ' targeted' : '')}>
@@ -729,7 +730,7 @@ export default function App({ onExit }) {
                   dpr={[1, 1.75]}
                   camera={{ position: [4.6, 2.6, 7.3], fov: 34, near: 0.1, far: 80 }}
                   gl={{ antialias: true, alpha: true }}
-                  aria-label="Carton 3D. Glisse une exigence sur une de ses faces."
+                  aria-label={P.canvasAria}
                 >
                   <Suspense fallback={null}>
                     {usingFallback ? (
@@ -741,18 +742,18 @@ export default function App({ onExit }) {
                     )}
                   </Suspense>
                 </Canvas>
-                <Loader />
+                <Loader label={P.loading} />
               </div>
-              <div className="views" role="group" aria-label="Vues">
-                {VIEWS.map(([mode, label], i) => (
+              <div className="views" role="group" aria-label={P.viewsAria}>
+                {VIEWS.map((mode, i) => (
                   <button key={mode} className={viewMode === mode ? 'active' : ''} aria-pressed={viewMode === mode} onClick={() => setMode(mode)} disabled={running}>
-                    <kbd>{i + 1}</kbd>{label}
+                    <kbd>{i + 1}</kbd>{P.views[mode]}
                   </button>
                 ))}
               </div>
             </div>
             <label className="scrub">
-              <span>DÉPLIER</span>
+              <span>{P.unfold}</span>
               <input
                 type="range"
                 min="0"
@@ -765,16 +766,17 @@ export default function App({ onExit }) {
                   setDecomp(Number(event.target.value));
                   if (!['XRAY', 'PRESSURE'].includes(viewMode)) setViewMode('CUSTOM');
                 }}
-                aria-label="Déplier le carton"
+                aria-label={P.unfoldAria}
               />
               <output>{Math.round(decomposition)}%</output>
             </label>
           </figure>
 
           <div className="faces">
-            <div className="faces-head"><span>FIG. 2 — OÙ VIT CHAQUE EXIGENCE</span><span>charge / capacité</span></div>
+            <div className="faces-head"><span>{P.fig2}</span><span>{P.loadCap}</span></div>
             <div className="slots">
-              {SLOTS.map(([surface, label]) => {
+              {SLOTS.map((surface) => {
+                const label = P.slot[surface];
                 const load = pressures[surface];
                 const p = predicted(surface);
                 const who = brief.filter((k) => placements[k] === surface);
@@ -793,7 +795,7 @@ export default function App({ onExit }) {
                     <i className="slot-bar"><b style={{ width: Math.min(100, load * 100) + '%' }} />{p !== null && <u style={{ width: Math.min(100, p * 100) + '%' }} />}</i>
                     <div className="slot-cast">
                       {surface === 'FRONT'
-                        ? <span className="slot-pointer">→ la colonne de droite{who.length ? ` · ${who.length}` : ''}</span>
+                        ? <span className="slot-pointer">{P.toColumn(who.length)}</span>
                         : who.map((k, i) => renderChar(k, i, 0.55, 'mini'))}
                     </div>
                   </div>
@@ -803,10 +805,10 @@ export default function App({ onExit }) {
           </div>
 
           <div className="stock">
-            <span>CARTON</span>
+            <span>{P.carton}</span>
             {['width', 'depth', 'height'].map((key) => (
               <label key={key}>
-                <em>{{ width: 'L', depth: 'P', height: 'H' }[key]}</em>
+                <em>{P.dimLetter[key]}</em>
                 <input
                   type="range"
                   min={DIM_LIMITS[key][0]}
@@ -814,7 +816,7 @@ export default function App({ onExit }) {
                   value={dims[key]}
                   disabled={running}
                   onChange={(e) => changeDims({ ...dims, [key]: Number(e.target.value) })}
-                  aria-label={`Carton ${key} en millimètres`}
+                  aria-label={P.dimAria(key)}
                 />
                 <output>{dims[key]}</output>
               </label>
@@ -824,9 +826,9 @@ export default function App({ onExit }) {
         </section>
 
         {/* ---------------------------- RIGHT PAGE --------------------------- */}
-        <section className={'page page-right tone-' + frontTone} aria-label="Page de droite : la face avant">
+        <section className={'page page-right tone-' + frontTone} aria-label={P.pageRight}>
           <div className="page-head">
-            <span>FACE AVANT = CETTE COLONNE · {dims.width} MM</span>
+            <span>{P.frontIsColumn(dims.width)}</span>
             <span className={'front-load ' + frontTone}>{Math.round((predicted('FRONT') ?? frontLoad) * 100)}%</span>
           </div>
 
@@ -843,34 +845,34 @@ export default function App({ onExit }) {
               </div>
               {compiled && standing.length > 0 && !running && <span className="pen-circle" aria-hidden="true" />}
             </div>
-            <div className="edge" aria-hidden="true"><span>BORD DE FACE</span></div>
+            <div className="edge" aria-hidden="true"><span>{P.faceEdge}</span></div>
             <div className="margin-drop">
               {ejected && renderChar(ejected, 0, 1, 'ejected')}
             </div>
           </div>
 
           <div className="editor-line" aria-live="polite">
-            {compiled && !running && <p className="pen-note">ok — chacun sa face. {lastDiff?.moves?.length ? `${lastDiff.moves.length} déplacé${lastDiff.moves.length > 1 ? 's' : ''}.` : ''} ✓</p>}
+            {compiled && !running && <p className="pen-note">{P.settled(lastDiff?.moves?.length || 0)}</p>}
             {compilePhase === 'unsolved' && !running && (
               <p className="pen-note">
-                même moi, je cale.
+                {P.stuck}
                 {suggestion
-                  ? <button onClick={() => changeDims(suggestion)}>→ carton {suggestion.width} × {suggestion.depth} × {suggestion.height} mm ?</button>
-                  : <em> retire une exigence.</em>}
+                  ? <button onClick={() => changeDims(suggestion)}>{P.biggerCarton(suggestion)}</button>
+                  : <em>{P.removeOne}</em>}
               </p>
             )}
-            {collision && !running && compilePhase !== 'unsolved' && <p className="pen-note">{collisionSurfaces.map((s) => FR_SURFACE[s]).join(' + ')} : {Math.round(Math.max(...collisionSurfaces.map((s) => pressures[s])) * 100)} % — trop plein.</p>}
+            {collision && !running && compilePhase !== 'unsolved' && <p className="pen-note">{P.overfull(collisionSurfaces.map((x) => P.surfaceThe[x]).join(' + '), Math.round(Math.max(...collisionSurfaces.map((x) => pressures[x])) * 100))}</p>}
           </div>
 
           <div className="actions">
-            <button className="ghost" onClick={undo} disabled={running || history.length === 0} title="Annuler (Z)">Annuler</button>
-            <button className={'ghost' + (resetArmed ? ' armed' : '')} onClick={resetStudio} disabled={running} title="Recommencer (R)">{resetArmed ? 'Sûr ?' : 'Recommencer'}</button>
+            <button className="ghost" onClick={undo} disabled={running || history.length === 0} title={P.undoTitle}>{P.undo}</button>
+            <button className={'ghost' + (resetArmed ? ' armed' : '')} onClick={resetStudio} disabled={running} title={P.restartTitle}>{resetArmed ? P.sure : P.restart}</button>
             <button
               className={'pen-button' + (collision ? ' urgent' : '') + (running ? ' running' : '')}
               onClick={compileSurface}
               disabled={running || brief.length === 0}
               style={{ '--phase': phaseIndex < 0 ? 0 : (phaseIndex + 1) / PHASES.length }}
-              title="Compiler (C)"
+              title={P.compileTitle}
             >
               <span>{pressLabel}</span>
             </button>
@@ -882,7 +884,7 @@ export default function App({ onExit }) {
             onClick={() => dropOn('WINGS')}
           >
             <div className="wings-head">
-              <span>EN COULISSE</span>
+              <span>{P.wings}</span>
               <span className="add">
                 {ALL_KINDS.filter((k) => !brief.includes(k)).map((kind) => (
                   <button key={kind} onClick={(e) => { e.stopPropagation(); addToBrief(kind); }} disabled={running} style={{ '--ink': CAST[kind].color }}>
@@ -892,27 +894,27 @@ export default function App({ onExit }) {
               </span>
             </div>
             <div className="wings-cast">
-              {wings.length ? wings.map((k, i) => renderChar(k, i, 0.8)) : <span className="empty">personne — tout le monde est sur le carton</span>}
+              {wings.length ? wings.map((k, i) => renderChar(k, i, 0.8)) : <span className="empty">{P.nobodyWaiting}</span>}
             </div>
           </div>
         </section>
       </div>
 
       <footer className="running-foot">
-        <nav aria-label="Chapitres">
-          {[['01', 'Le brief'], ['02', 'La mise en page'], ['03', 'La face avant'], ['04', 'L’éditeur'], ['05', 'La forme valide']].map(([n, t]) => (
+        <nav aria-label={P.chaptersAria}>
+          {P.chapters.map(([n, t]) => (
             <span key={n} className={chapter[0] === n ? 'on' : ''}><b>{n}</b> {t}</span>
           ))}
         </nav>
-        <span className="truth">Concept · capacités de démonstration · ni réglementaire ni fabrication</span>
+        <span className="truth">{P.truth}</span>
       </footer>
 
       {tour && (
         <aside className="tour" role="status" aria-live="polite">
-          <span>NOTE DE L’ÉDITEUR · {tour.step} / {tour.total}</span>
+          <span>{P.editorNote(tour.step, tour.total)}</span>
           <b key={tour.title}>{tour.title}</b>
           <p key={tour.body}>{tour.body}</p>
-          <button onClick={skipTour}>passer · échap</button>
+          <button onClick={skipTour}>{P.skipEsc}</button>
         </aside>
       )}
       {toast && <div className="toast" role="status">{toast}</div>}
@@ -923,7 +925,7 @@ export default function App({ onExit }) {
           <span className="char-body" style={{ width: CAST[drag.kind].w, height: CAST[drag.kind].h, background: CAST[drag.kind].color }} data-shape={CAST[drag.kind].shape}>
             <span className="eyes"><i><b /></i><i><b /></i></span>
           </span>
-          <small>{drag.target === 'WINGS' ? 'en coulisse' : drag.target ? `→ ${FR_SURFACE[drag.target]}` : REQUIREMENTS[drag.kind].label}</small>
+          <small>{drag.target === 'WINGS' ? P.toWings : drag.target ? `→ ${P.surfaceThe[drag.target]}` : REQUIREMENTS[drag.kind].label}</small>
         </div>
       )}
     </main>

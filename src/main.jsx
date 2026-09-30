@@ -9,6 +9,8 @@ import '@fontsource/caveat/700.css';
 import './styles.css';
 import './game/game.css';
 import Game from './game/Game.jsx';
+import { decodeGameHash } from './game/levels.js';
+import { detectLang, readStoredLang, storeLang } from './game/i18n.js';
 
 // The public puzzle ("Est-ce que ça rentre ?") is the front door. The full
 // studio (V6 Rapport négocié) stays one click away as "mode pro", and every
@@ -20,24 +22,48 @@ const wantsPro = () => {
   return hash === '#pro' || /(^#|&)m=/.test(hash) || new URLSearchParams(search).has('pro');
 };
 
+// One language for the whole site (game + pro studio), chosen once.
+const initialLang = (() => {
+  let linkLang = null;
+  try {
+    linkLang = decodeGameHash(window.location.hash)?.lang || null;
+  } catch {
+    linkLang = null;
+  }
+  return detectLang({
+    search: window.location.search,
+    linkLang,
+    stored: readStoredLang(),
+    navigatorLangs: navigator.languages?.length ? navigator.languages : [navigator.language],
+  });
+})();
+
 function Root() {
   const [pro, setPro] = useState(wantsPro);
+  const [lang, setLangState] = useState(initialLang);
+  const setLang = (next) => {
+    setLangState(next);
+    storeLang(next);
+  };
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   useEffect(() => {
     const onHash = () => setPro(wantsPro());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   useEffect(() => {
-    document.title = pro ? 'PACKSHIFT — mode pro' : 'Est-ce que ça rentre ? — PACKSHIFT';
-  }, [pro]);
+    if (pro) document.title = `PACKSHIFT — ${{ fr: 'mode pro', en: 'pro mode', es: 'modo pro' }[lang]}`;
+  }, [pro, lang]);
   if (pro) {
     return (
       <Suspense fallback={<div className="game" />}>
-        <Studio onExit={() => { window.location.hash = ''; setPro(false); }} />
+        <Studio lang={lang} setLang={setLang} onExit={() => { window.location.hash = ''; setPro(false); }} />
       </Suspense>
     );
   }
-  return <Game onPro={() => { window.location.hash = 'pro'; setPro(true); }} />;
+  return <Game lang={lang} setLang={setLang} onPro={() => { window.location.hash = 'pro'; setPro(true); }} />;
 }
 
 createRoot(document.getElementById('root')).render(

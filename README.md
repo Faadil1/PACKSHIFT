@@ -432,6 +432,17 @@ understands in under ten seconds.
   layout while a valid one existed (Canada, 60×38×134). Any overflow now carries
   a flat penalty; regression test added, and fit is now monotonic in box size.
 
+- **Multilingual (FR · EN · ES)** — the whole site, game and mode pro:
+  *Est-ce que ça rentre ?* / *Does it fit?* / *¿Cabe o no cabe?*. Language is
+  picked from `?lang=`, then the visitor's saved choice, then their browser
+  language, then the language of the link they were sent, then English; a
+  FR/EN/ES switch sits in every header. Share cards, the emoji text, challenge
+  links (`&l=`), 3D labels, the guided tour and the date/centimetre formats
+  follow it. All copy lives in `src/game/i18n.js` and `src/app/proStrings.js`;
+  a test fails if a language is missing a key. Adding a language = one object
+  per file. Long words (Spanish, German…) shrink the pro headline until they
+  fit inside the dashed face edge.
+
 Code: `src/game/` (`levels.js` pure rules + links, `Game.jsx`, `GameScene.jsx`
 lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
 `tests/game.test.mjs`.

@@ -81,3 +81,13 @@ v7_1_continuity_consequence:
     - museum_stage_full_width
     - share_card_second_cartel_line
     - loading_placeholder
+
+
+final_challenge_package:
+  baseline: V7_1_CONTINUITY_CONSEQUENCE
+  status: READY_FOR_MAIN
+  final_video: "English 51s / natural speed / LIMIT -> PRESSURE -> CONSEQUENCE -> MEMORY -> COMPILER"
+  public_links:
+    live: "https://packshift-awd.pages.dev/"
+    github: "https://github.com/Faadil1/PACKSHIFT"
+  next_after_promotion: "REAL_DEVICE_TOUCH_QA -> GPU_PERF_QA -> optional post-publication polish"

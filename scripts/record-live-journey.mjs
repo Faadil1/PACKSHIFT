@@ -79,14 +79,15 @@ try {
 
   // Make the box physically smaller in visible steps until it cannot hold the brief.
   const slider = page.locator('.g-size input[type="range"]');
-  await moveRange(slider, 'ArrowLeft', 6, 170);
+  await moveRange(slider, 'ArrowLeft', 6, 85);
+  await sleep(1150);
 
   // Hold on the actual CRAC consequence.
   await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 5000 });
   await sleep(320);
 
   // Recover: release pressure, then re-place what the surface rejected.
-  await moveRange(slider, 'ArrowRight', 6, 85);
+  await moveRange(slider, 'ArrowRight', 6, 75);
   await sleep(260);
   await solveVisibleLevel();
   await sleep(850);

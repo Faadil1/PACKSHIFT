@@ -80,10 +80,11 @@ try {
   // Make the box physically smaller in visible steps until it cannot hold the brief.
   const slider = page.locator('.g-size input[type="range"]');
   await moveRange(slider, 'ArrowLeft', 6, 85);
-  await sleep(1150);
 
-  // Hold on the actual CRAC consequence.
-  await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 5000 });
+  // The rejection timer is ~900 ms. Begin watching before the flash so the
+  // recorder cannot miss a short CRACK frame after it has already disappeared.
+  await sleep(560);
+  await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 2200 });
   await sleep(320);
 
   // Recover: release pressure, then re-place what the surface rejected.

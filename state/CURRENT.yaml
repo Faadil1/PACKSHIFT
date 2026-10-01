@@ -133,3 +133,40 @@ status:
   v5_1_depth_review: NEXT
 
 next_gate: "Merge PR 10 (V6) then V7 PR -> redeploy -> real-device QA of the game (touch drag, native share sheet, clipboard on Safari, GPU frame rate) -> hallway test: can a stranger play level 1 without help in <10 s?"
+
+
+v7_1_continuity_consequence:
+  branch: feat/v7-1-continuity-consequence
+  status: IMPLEMENTED_PENDING_LIVE_QA
+  purpose: "Make one carton carry the consequences of the player's negotiation from real-size entry through museum victory."
+  added:
+    - real_size_to_game_handoff
+    - per_run_overload_pop_crack_law_resize_trace
+    - museum_provenance_line
+    - physical_journey_marks_on_final_3d_carton
+    - museum_takeover_stage
+    - non_blank_3d_loading_state
+    - depth_trailer_storyboard_and_voiceover
+  truth_boundary: "Journey marks are experiential memory, not a simulation of real packaging damage."
+  video_plan: docs/VIDEO-V7-DEPTH-TRAILER.md
+  next_gate: "CI -> live preview -> verify trace accumulation -> verify museum marks/share card -> mobile QA -> record final clean trailer shots"
+
+
+final_challenge_package:
+  version: V7_1
+  status: READY_FOR_MAIN
+  public_narrative: "ACTUAL_SIZE -> PRESSURE -> CRACK -> RECOVERY -> MUSEUM -> PRO_COMPILER"
+  final_video:
+    language: EN
+    duration_seconds: 51
+    chapters: [LIMIT, PRESSURE, CONSEQUENCE, MEMORY, COMPILER]
+  evidence:
+    product_checks: PASS
+    blender_master_contract: PASS
+    blender_runtime_integration: PASS
+    cloudflare_preview: PASS
+    live_chromium_journey_recording: PASS
+  remaining_non_blocking:
+    - real_device_touch_QA
+    - GPU_performance_QA
+  promotion_decision: READY

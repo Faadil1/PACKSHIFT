@@ -416,6 +416,64 @@ function PreviewTag({ node, root, surface, from, to, labels = DEFAULT_LABELS }) 
 }
 
 /* ------------------------------------------------------------------ */
+/* Journey marks: the museum shows the same box the player struggled with. */
+/* These are experiential marks, not manufacturing damage simulation.       */
+/* ------------------------------------------------------------------ */
+
+function HistoryMarks({ node, dims, story }) {
+  if (!node || !story) return null;
+  const d = clampDims(dims);
+  const w = d.width / 1000;
+  const h = d.height / 1000;
+  const hasMarks = story.cracks > 0 || story.pops > 0 || story.overloads > 0 || story.law;
+  if (!hasMarks) return null;
+
+  return createPortal(
+    <group position={[0, 0, -0.00135]} rotation={[0, Math.PI, 0]} renderOrder={8}>
+      {story.cracks > 0 && (
+        <>
+          <mesh position={[0, -h * 0.12, 0]} rotation={[0, 0, -0.22]} renderOrder={8}>
+            <planeGeometry args={[w * 0.82, Math.max(0.0045, h * 0.052)]} />
+            <meshStandardMaterial
+              color="#d7c48d"
+              roughness={0.96}
+              transparent
+              opacity={0.9}
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-8}
+            />
+          </mesh>
+          <mesh position={[w * 0.08, -h * 0.08, -0.00005]} rotation={[0, 0, 0.68]} renderOrder={9}>
+            <planeGeometry args={[0.0011, h * 0.24]} />
+            <meshBasicMaterial color="#5a4a34" transparent opacity={0.55} depthWrite={false} toneMapped={false} />
+          </mesh>
+        </>
+      )}
+      {story.overloads > 0 && (
+        <mesh position={[w * 0.36, h * 0.37, -0.00008]} renderOrder={9}>
+          <circleGeometry args={[Math.max(0.0026, w * 0.055), 32]} />
+          <meshBasicMaterial color="#c9303f" transparent opacity={0.92} depthWrite={false} toneMapped={false} />
+        </mesh>
+      )}
+      {story.law && (
+        <mesh position={[-w * 0.25, h * 0.34, -0.0001]} rotation={[0, 0, -0.12]} renderOrder={9}>
+          <planeGeometry args={[w * 0.34, Math.max(0.0022, h * 0.018)]} />
+          <meshBasicMaterial color="#c9303f" transparent opacity={0.72} depthWrite={false} toneMapped={false} />
+        </mesh>
+      )}
+      {story.pops > 0 && story.cracks === 0 && (
+        <mesh position={[-w * 0.34, -h * 0.35, -0.00008]} rotation={[0, 0, 0.15]} renderOrder={9}>
+          <planeGeometry args={[w * 0.18, Math.max(0.003, h * 0.026)]} />
+          <meshBasicMaterial color="#efe2b8" transparent opacity={0.82} depthWrite={false} toneMapped={false} />
+        </mesh>
+      )}
+    </group>,
+    node,
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Scene                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -423,7 +481,7 @@ function SpatialStudioScene({
   source, dims = NOMINAL_DIMS, market, viewMode, decomposition, placements, brief, pressures, collisionSurfaces,
   compiled, compilePhase, reflowMoves, interactionLocked, onPlaceConstraint, selectedKind,
   hoverSurface = null, preview = null, onPickerReady, brand = null, labels = DEFAULT_LABELS,
-  pedestal = false, press = false,
+  pedestal = false, press = false, story = null,
 }) {
   const scene = source;
   const { camera, size } = useThree();
@@ -719,6 +777,7 @@ function SpatialStudioScene({
           />
         ))}
         <CollisionField node={nodes.FRONT} active={collisionSurfaces.includes('FRONT')} dims={d} />
+        {pedestal && <HistoryMarks node={nodes.FRONT} dims={d} story={story} />}
       </group>
 
       {SURFACES.map((surface) => (

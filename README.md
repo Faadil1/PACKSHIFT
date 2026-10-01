@@ -475,6 +475,30 @@ Code: `src/game/` (`levels.js` pure rules + links, `Game.jsx`, `GameScene.jsx`
 lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
 `tests/game.test.mjs`.
 
+## V7.1 — Continuity & Consequence
+
+V7.1 is the current public baseline.
+
+The public journey now reads as one object's history:
+
+`ACTUAL SIZE → PRESSURE → CRACK → RECOVERY → MUSEUM → PRO COMPILER`
+
+- the same 56 mm carton moves from the real-size opening into the game;
+- overloads, rejected labels, press cracks, rule changes and minimum width are recorded per run;
+- the Museum displays those journey marks as provenance;
+- the final 3D carton retains subtle witness marks from the negotiation;
+- the victory moment takes over the stage instead of competing with dashboard UI;
+- the 3D loading state no longer collapses to an empty black frame;
+- the English final film is structured around `LIMIT → PRESSURE → CONSEQUENCE → MEMORY → COMPILER`.
+
+The journey marks are experiential storytelling, not a physical-damage simulation.
+
+### Public links
+
+Live: https://packshift-awd.pages.dev/
+
+GitHub: https://github.com/Faadil1/PACKSHIFT
+
 ## V6 — Rapport négocié (mode pro)
 
 The studio is now an annual-report spread — directions 04 (living annual
@@ -606,21 +630,13 @@ What was wrong in V5 and what changed:
 - unit tests, closed-pose geometry check, `npm ci` + tests in CI;
   Cloudflare `_headers` (immutable assets, GLB caching), code-split bundle.
 
-## Next
+## Current status
 
-V5.1 is the stable baseline, not the finish line.
+The product is now in final challenge packaging.
 
-The next pass focuses on what still prevents the experience from becoming genuinely memorable:
+Automated product gates, Blender/runtime validation, Cloudflare preview and the live Chromium journey recorder pass on V7.1.
 
-- make Blender's contribution even more obvious;
-- deepen physical decomposition;
-- expand user agency beyond the current controls;
-- make internal product anatomy more expressive;
-- improve transitions between physical and informational states;
-- strengthen the Impossible Front signature moment;
-- refine camera, material, light and sound direction;
-- validate touch/mobile interaction;
-- preserve the current remote-first Blender + GLB + R3F architecture.
+Remaining follow-up is deliberately narrow: real-device touch/performance QA and future polish. These do not block the Day 19 final package.
 
 ---
 

@@ -47,24 +47,36 @@ jobs:
           exit 1
 
       - name: Record real browser journey
+        id: record
+        continue-on-error: true
         env:
           PACKSHIFT_BASE_URL: http://127.0.0.1:4173
           PACKSHIFT_RECORD_DIR: artifacts/live-journey
         run: node scripts/record-live-journey.mjs
 
       - name: Convert to MP4
+        if: always()
         run: |
+          test -f artifacts/live-journey/packshift-live-journey.webm
           ffmpeg -y -i artifacts/live-journey/packshift-live-journey.webm             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart             artifacts/live-journey/packshift-live-journey.mp4
 
       - name: Show recording outputs
+        if: always()
         run: |
           ls -lh artifacts/live-journey
           test -s artifacts/live-journey/packshift-live-journey.mp4
           test -s artifacts/live-journey/museum-final.png
 
       - name: Upload live recording
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: packshift-v7-1-live-journey
           path: artifacts/live-journey
           retention-days: 30
+
+      - name: Preserve recording verdict
+        if: steps.record.outcome == 'failure'
+        run: |
+          echo "Live journey assertions failed; recording artifact was preserved for inspection."
+          exit 1

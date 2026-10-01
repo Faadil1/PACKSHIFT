@@ -477,20 +477,27 @@ lazy 3D, `shareCard.js`, `game.css`), routing in `src/main.jsx`, tests in
 
 ## V7.1 — Continuity & Consequence
 
-V7 made the public experience memorable in separate moments. V7.1 connects those moments into **one object's history**.
+V7.1 is the current public baseline.
 
-- leaving **Taille réelle** now hands the same 56 mm object into the game instead of feeling like a hard page change;
-- each run records new overloads, rejected labels, press cracks, mid-run rule changes and the smallest width reached;
-- the museum cartel exposes those **journey marks** as provenance rather than showing only a score;
-- the final 3D carton can retain subtle physical witness marks (repair strip / acquisition mark / rule mark) so the object on the pedestal is visibly the one the player negotiated with;
-- the museum becomes a stage takeover while the result is open, instead of competing with the dashboard UI;
-- the 3D loading state now shows an object silhouette rather than an empty black frame.
+The public journey now reads as one object's history:
 
-These traces are experiential storytelling. They are **not claims of simulated physical damage or manufacturing validation**.
+`ACTUAL SIZE → PRESSURE → CRACK → RECOVERY → MUSEUM → PRO COMPILER`
 
-The video narrative is locked in `docs/VIDEO-V7-DEPTH-TRAILER.md` around:
+- the same 56 mm carton moves from the real-size opening into the game;
+- overloads, rejected labels, press cracks, rule changes and minimum width are recorded per run;
+- the Museum displays those journey marks as provenance;
+- the final 3D carton retains subtle witness marks from the negotiation;
+- the victory moment takes over the stage instead of competing with dashboard UI;
+- the 3D loading state no longer collapses to an empty black frame;
+- the English final film is structured around `LIMIT → PRESSURE → CONSEQUENCE → MEMORY → COMPILER`.
 
-`LIMIT → PRESSURE → CONSEQUENCE → COMPILATION → MEMORY`.
+The journey marks are experiential storytelling, not a physical-damage simulation.
+
+### Public links
+
+Live: https://packshift-awd.pages.dev/
+
+GitHub: https://github.com/Faadil1/PACKSHIFT
 
 ## V6 — Rapport négocié (mode pro)
 
@@ -623,21 +630,13 @@ What was wrong in V5 and what changed:
 - unit tests, closed-pose geometry check, `npm ci` + tests in CI;
   Cloudflare `_headers` (immutable assets, GLB caching), code-split bundle.
 
-## Next
+## Current status
 
-V5.1 is the stable baseline, not the finish line.
+The product is now in final challenge packaging.
 
-The next pass focuses on what still prevents the experience from becoming genuinely memorable:
+Automated product gates, Blender/runtime validation, Cloudflare preview and the live Chromium journey recorder pass on V7.1.
 
-- make Blender's contribution even more obvious;
-- deepen physical decomposition;
-- expand user agency beyond the current controls;
-- make internal product anatomy more expressive;
-- improve transitions between physical and informational states;
-- strengthen the Impossible Front signature moment;
-- refine camera, material, light and sound direction;
-- validate touch/mobile interaction;
-- preserve the current remote-first Blender + GLB + R3F architecture.
+Remaining follow-up is deliberately narrow: real-device touch/performance QA and future polish. These do not block the Day 19 final package.
 
 ---
 

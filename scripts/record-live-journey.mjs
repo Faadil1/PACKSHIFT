@@ -117,8 +117,9 @@ try {
 
   await page.keyboard.press('t');
   await page.locator('.tour').waitFor({ state: 'visible', timeout: 5000 });
-  await page.locator('.tour').waitFor({ state: 'hidden', timeout: 45000 });
-  await sleep(1800);
+  // Capture only the meaningful opening chapters of the pro compiler tour.
+  // The final social cut is intentionally ~51 s; do not wait for the full guided tour.
+  await sleep(14500);
 
   if (browserErrors.length) {
     console.log('PACKSHIFT_BROWSER_ERRORS:', JSON.stringify(browserErrors, null, 2));

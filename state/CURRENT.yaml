@@ -150,3 +150,23 @@ v7_1_continuity_consequence:
   truth_boundary: "Journey marks are experiential memory, not a simulation of real packaging damage."
   video_plan: docs/VIDEO-V7-DEPTH-TRAILER.md
   next_gate: "CI -> live preview -> verify trace accumulation -> verify museum marks/share card -> mobile QA -> record final clean trailer shots"
+
+
+final_challenge_package:
+  version: V7_1
+  status: READY_FOR_MAIN
+  public_narrative: "ACTUAL_SIZE -> PRESSURE -> CRACK -> RECOVERY -> MUSEUM -> PRO_COMPILER"
+  final_video:
+    language: EN
+    duration_seconds: 51
+    chapters: [LIMIT, PRESSURE, CONSEQUENCE, MEMORY, COMPILER]
+  evidence:
+    product_checks: PASS
+    blender_master_contract: PASS
+    blender_runtime_integration: PASS
+    cloudflare_preview: PASS
+    live_chromium_journey_recording: PASS
+  remaining_non_blocking:
+    - real_device_touch_QA
+    - GPU_performance_QA
+  promotion_decision: READY

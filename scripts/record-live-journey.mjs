@@ -31,12 +31,12 @@ page.on('console', (msg) => {
 
 const sleep = (ms) => page.waitForTimeout(ms);
 
-async function setRange(locator, value) {
-  await locator.evaluate((el, next) => {
-    el.value = String(next);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }, value);
+async function moveRange(locator, key, count, delay = 320) {
+  await locator.focus();
+  for (let i = 0; i < count; i += 1) {
+    await locator.press(key);
+    await sleep(delay);
+  }
 }
 
 async function solveVisibleLevel() {
@@ -79,20 +79,14 @@ try {
 
   // Make the box physically smaller in visible steps until it cannot hold the brief.
   const slider = page.locator('.g-size input[type="range"]');
-  for (const value of [-1, -2, -3, -4, -5, -6]) {
-    await setRange(slider, value);
-    await sleep(360);
-  }
+  await moveRange(slider, 'ArrowLeft', 6, 420);
 
   // Hold on the actual CRAC consequence.
   await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 5000 });
   await sleep(520);
 
   // Recover: release pressure, then re-place what the surface rejected.
-  for (const value of [-5, -4, -3, -2, -1, 0]) {
-    await setRange(slider, value);
-    await sleep(180);
-  }
+  await moveRange(slider, 'ArrowRight', 6, 190);
   await sleep(500);
   await solveVisibleLevel();
   await sleep(850);

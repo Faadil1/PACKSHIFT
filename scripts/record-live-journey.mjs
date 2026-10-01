@@ -48,7 +48,7 @@ async function solveVisibleLevel() {
     const target = page.locator('.g-face.hinted').first();
     await target.waitFor({ state: 'visible', timeout: 5000 });
     await sleep(240);
-    await target.click();
+    await target.evaluate((el) => el.click());
     await sleep(520);
   }
   throw new Error('Could not place every visible requirement with hints.');

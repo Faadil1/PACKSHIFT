@@ -47,47 +47,47 @@ async function solveVisibleLevel() {
     await hint.click();
     const target = page.locator('.g-face.hinted').first();
     await target.waitFor({ state: 'visible', timeout: 5000 });
-    await sleep(240);
+    await sleep(120);
     await target.evaluate((el) => el.click());
-    await sleep(520);
+    await sleep(280);
   }
   throw new Error('Could not place every visible requirement with hints.');
 }
 
 try {
-  await page.goto(BASE + '/?lang=fr', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto(BASE + '/?lang=en', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.real-intro').waitFor({ state: 'visible', timeout: 15000 });
 
   // Real-size opening: arrive calm, then let the mandatory-copy overflow happen.
-  await sleep(3700);
-  await sleep(900);
+  await sleep(3200);
+  await sleep(450);
 
   // Hand the same real-size object into the game.
   await page.locator('.ri-foot .g-cta').click();
   await page.locator('.play').waitFor({ state: 'visible', timeout: 12000 });
-  await sleep(1500);
+  await sleep(380);
 
   // Jump to the hydraulic-press challenge; this remains the same physical box.
   const level5 = page.locator('.g-levels button').filter({ hasText: /^5$/ });
   await level5.click();
   await page.locator('.g-stage.press').waitFor({ state: 'visible', timeout: 12000 });
-  await sleep(1800);
+  await sleep(950);
 
   // First arrange a valid nominal box.
   await solveVisibleLevel();
-  await sleep(1000);
+  await sleep(450);
 
   // Make the box physically smaller in visible steps until it cannot hold the brief.
   const slider = page.locator('.g-size input[type="range"]');
-  await moveRange(slider, 'ArrowLeft', 6, 420);
+  await moveRange(slider, 'ArrowLeft', 6, 240);
 
   // Hold on the actual CRAC consequence.
   await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 5000 });
-  await sleep(520);
+  await sleep(320);
 
   // Recover: release pressure, then re-place what the surface rejected.
-  await moveRange(slider, 'ArrowRight', 6, 190);
-  await sleep(500);
+  await moveRange(slider, 'ArrowRight', 6, 110);
+  await sleep(260);
   await solveVisibleLevel();
   await sleep(850);
 
@@ -101,10 +101,10 @@ try {
   await page.locator('.g-provenance').waitFor({ state: 'visible', timeout: 8000 });
   const provenance = (await page.locator('.g-provenance').innerText()).replace(/\s+/g, ' ').trim();
   console.log('PACKSHIFT_PROVENANCE:', provenance);
-  await sleep(5200);
+  await sleep(2800);
 
   await page.screenshot({ path: path.join(OUT, 'museum-final.png'), fullPage: false });
-  if (!/CRAC|rejet|surcharge|réduite/i.test(provenance)) {
+  if (!/CRAC|crack|reject|overload|shrunk/i.test(provenance)) {
     throw new Error('Museum provenance did not retain the expected journey history: ' + provenance);
   }
 
@@ -118,7 +118,7 @@ try {
   await browser.close();
   if (video) {
     const source = await video.path();
-    const target = path.join(OUT, 'packshift-live-journey.webm');
+    const target = path.join(OUT, 'packshift-live-journey-en.webm');
     await fs.copyFile(source, target);
     console.log('PACKSHIFT_VIDEO:', target);
   }

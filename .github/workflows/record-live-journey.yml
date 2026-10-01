@@ -62,21 +62,21 @@ jobs:
       - name: Convert to MP4
         if: always()
         run: |
-          test -f artifacts/live-journey/packshift-live-journey-en.webm
-          ffmpeg -y -i artifacts/live-journey/packshift-live-journey-en.webm             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart             artifacts/live-journey/packshift-live-journey-en.mp4
+          test -f artifacts/live-journey/packshift-depth-live-en.webm
+          ffmpeg -y -i artifacts/live-journey/packshift-depth-live-en.webm             -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -movflags +faststart             artifacts/live-journey/packshift-depth-live-en.mp4
 
       - name: Show recording outputs
         if: always()
         run: |
           ls -lh artifacts/live-journey
-          test -s artifacts/live-journey/packshift-live-journey-en.mp4
+          test -s artifacts/live-journey/packshift-depth-live-en.mp4
           test -s artifacts/live-journey/museum-final.png
 
       - name: Upload live recording
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: packshift-v7-1-live-journey-en
+          name: packshift-v7-1-depth-live-en
           path: artifacts/live-journey
           retention-days: 30
 

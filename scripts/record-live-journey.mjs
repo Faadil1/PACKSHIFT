@@ -79,14 +79,14 @@ try {
 
   // Make the box physically smaller in visible steps until it cannot hold the brief.
   const slider = page.locator('.g-size input[type="range"]');
-  await moveRange(slider, 'ArrowLeft', 6, 240);
+  await moveRange(slider, 'ArrowLeft', 6, 170);
 
   // Hold on the actual CRAC consequence.
   await page.locator('.g-crack').waitFor({ state: 'visible', timeout: 5000 });
   await sleep(320);
 
   // Recover: release pressure, then re-place what the surface rejected.
-  await moveRange(slider, 'ArrowRight', 6, 110);
+  await moveRange(slider, 'ArrowRight', 6, 85);
   await sleep(260);
   await solveVisibleLevel();
   await sleep(850);
@@ -101,12 +101,23 @@ try {
   await page.locator('.g-provenance').waitFor({ state: 'visible', timeout: 8000 });
   const provenance = (await page.locator('.g-provenance').innerText()).replace(/\s+/g, ' ').trim();
   console.log('PACKSHIFT_PROVENANCE:', provenance);
-  await sleep(2800);
+  await sleep(2300);
 
   await page.screenshot({ path: path.join(OUT, 'museum-final.png'), fullPage: false });
   if (!/CRAC|crack|reject|overload|shrunk/i.test(provenance)) {
     throw new Error('Museum provenance did not retain the expected journey history: ' + provenance);
   }
+
+  // Continue the same live recording into the professional compiler.
+  // Time is spent on meaningful system depth rather than idle pauses.
+  await page.goto(BASE + '/?lang=en#pro', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.locator('.report').waitFor({ state: 'visible', timeout: 15000 });
+  await sleep(1100);
+
+  await page.keyboard.press('t');
+  await page.locator('.tour').waitFor({ state: 'visible', timeout: 5000 });
+  await page.locator('.tour').waitFor({ state: 'hidden', timeout: 45000 });
+  await sleep(1800);
 
   if (browserErrors.length) {
     console.log('PACKSHIFT_BROWSER_ERRORS:', JSON.stringify(browserErrors, null, 2));
@@ -118,7 +129,7 @@ try {
   await browser.close();
   if (video) {
     const source = await video.path();
-    const target = path.join(OUT, 'packshift-live-journey-en.webm');
+    const target = path.join(OUT, 'packshift-depth-live-en.webm');
     await fs.copyFile(source, target);
     console.log('PACKSHIFT_VIDEO:', target);
   }

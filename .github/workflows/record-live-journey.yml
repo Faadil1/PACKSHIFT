@@ -33,6 +33,11 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      - name: Install system FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Start PACKSHIFT
         run: |
           npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/packshift-vite.log 2>&1 &
